@@ -8,7 +8,13 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+// Use admin client if service role key is available, otherwise use anon key
+const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 const premiumProducts = [
   // Tequila
@@ -234,7 +240,64 @@ async function seed() {
     }
   }
 
-  console.log('✅ Seed completed!');
+  // Create demo users (requires service role key)
+  const demoUsers = [
+    { email: 'admin@lastkings.com', password: 'admin123', full_name: 'Admin User', role: 'admin' },
+    { email: 'manager@lastkings.com', password: 'manager123', full_name: 'Manager User', role: 'manager' },
+    { email: 'staff@lastkings.com', password: 'staff123', full_name: 'Staff User', role: 'staff' },
+  ];
+
+  console.log('\n📧 Creating demo users...');
+  for (const user of demoUsers) {
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: user.email,
+        password: user.password,
+        email_confirm: true,
+      });
+
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          console.log(`⚠ User ${user.email} already exists, skipping...`);
+          continue;
+        }
+        throw authError;
+      }
+
+      if (authData.user) {
+        // Create user record in users table
+        const { error: userError } = await supabase
+          .from('users')
+          .upsert({
+            id: authData.user.id,
+            email: user.email,
+            full_name: user.full_name,
+            role: user.role,
+          }, { onConflict: 'id' });
+
+        if (userError) {
+          console.error(`Error creating user record for ${user.email}:`, userError);
+        } else {
+          console.log(`✓ User: ${user.email} (${user.role}) - Password: ${user.password}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error creating user ${user.email}:`, error);
+      // If service role key is not available, skip user creation
+      if (error instanceof Error && error.message.includes('JWT')) {
+        console.log('⚠ Service role key not found. Skipping user creation.');
+        console.log('   You can create users manually through the registration page.');
+        break;
+      }
+    }
+  }
+
+  console.log('\n✅ Seed completed!');
+  console.log('\n📝 Demo Credentials:');
+  console.log('   Admin:   admin@lastkings.com / admin123');
+  console.log('   Manager: manager@lastkings.com / manager123');
+  console.log('   Staff:   staff@lastkings.com / staff123');
 }
 
 seed().catch(console.error);
