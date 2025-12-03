@@ -48,35 +48,36 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // Protect routes that start with /dashboard, /products, etc.
-  if (request.nextUrl.pathname.startsWith('/dashboard') ||
-      request.nextUrl.pathname.startsWith('/products') ||
-      request.nextUrl.pathname.startsWith('/purchase-orders') ||
-      request.nextUrl.pathname.startsWith('/receiving') ||
-      request.nextUrl.pathname.startsWith('/inventory') ||
-      request.nextUrl.pathname.startsWith('/pos') ||
-      request.nextUrl.pathname.startsWith('/customers') ||
-      request.nextUrl.pathname.startsWith('/reports') ||
-      request.nextUrl.pathname.startsWith('/settings')) {
-    if (!user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/auth/login'
-      return NextResponse.redirect(url)
-    }
+  // COMPLETELY SKIP auth pages - let client handle everything
+  if (request.nextUrl.pathname.startsWith('/auth/')) {
+    return response
   }
 
-  // Redirect authenticated users away from auth pages
-  if (request.nextUrl.pathname.startsWith('/auth/login') ||
-      request.nextUrl.pathname.startsWith('/auth/register')) {
-    if (user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
-      return NextResponse.redirect(url)
-    }
+  // Skip API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return response
+  }
+
+  // Only protect actual protected routes
+  const protectedPaths = ['/dashboard', '/products', '/purchase-orders', '/receiving', '/inventory', '/pos', '/customers', '/reports', '/settings']
+  const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  
+  if (!isProtected) {
+    return response
+  }
+
+  // Get user from cookies
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser()
+
+  // Only redirect if we're on a protected route and no user
+  if (!user || authError) {
+    console.log('Middleware: No user found, redirecting to login')
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    return NextResponse.redirect(url)
   }
 
   return response
@@ -87,4 +88,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-
