@@ -3,20 +3,25 @@ import { redirect } from 'next/navigation';
 import type { UserRole } from '@/types/supabase';
 
 export async function getCurrentUser() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  
-  if (error || !user) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      return null;
+    }
+    
+    const { data: userData } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    return userData ? { ...user, ...userData } : null;
+  } catch (error) {
+    // If Supabase isn't configured, return null
     return null;
   }
-  
-  const { data: userData } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-  
-  return userData ? { ...user, ...userData } : null;
 }
 
 export async function requireAuth() {
