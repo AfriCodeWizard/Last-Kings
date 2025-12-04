@@ -31,17 +31,17 @@ export default async function ReportsPage() {
 
   // Sales by category (unused for now)
   // const { data: salesByCategory } = await supabase
-    .from("sale_items")
-    .select(`
-      quantity,
-      unit_price,
-      product_variants!inner(
-        products!inner(
-          categories!inner(name)
-        )
-      )
-    `)
-    .gte("created_at", thirtyDaysAgo.toISOString())
+  //   .from("sale_items")
+  //   .select(`
+  //     quantity,
+  //     unit_price,
+  //     product_variants!inner(
+  //       products!inner(
+  //         categories!inner(name)
+  //       )
+  //     )
+  //   `)
+  //   .gte("created_at", thirtyDaysAgo.toISOString())
 
   // Dead stock (items with no sales in 90 days)
   const ninetyDaysAgo = new Date()
