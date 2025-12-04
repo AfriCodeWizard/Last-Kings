@@ -1,5 +1,4 @@
 import { getCurrentUser } from "@/lib/auth"
-import { Navbar } from "@/components/layout/navbar"
 import { Sidebar } from "@/components/layout/sidebar"
 import { SessionSync } from "@/components/auth/session-sync"
 import { MobileLayout } from "@/components/layout/mobile-layout"
