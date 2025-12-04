@@ -30,12 +30,8 @@ export default function NewCustomerPage() {
     setLoading(true)
 
     try {
-      if (!supabase) {
-        throw new Error("Supabase client not initialized")
-      }
-
       // Prepare data for insert - convert empty strings to null for optional fields
-      const insertData = {
+      const insertData: CustomerInsert = {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email && formData.email.trim() !== "" ? formData.email : null,
