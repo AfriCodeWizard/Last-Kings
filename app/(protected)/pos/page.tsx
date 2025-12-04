@@ -205,13 +205,13 @@ export default function POSPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-4xl font-serif font-bold text-gold mb-2">POS / Quick Sale</h1>
-        <p className="text-muted-foreground">Process sales and transactions</p>
+        <h1 className="text-2xl md:text-4xl font-serif font-bold text-gold mb-2">POS / Quick Sale</h1>
+        <p className="text-sm md:text-base text-muted-foreground">Process sales and transactions</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-4">
           <Card>
             <CardHeader>
