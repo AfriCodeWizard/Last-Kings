@@ -24,7 +24,7 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#FFD700",
+          DEFAULT: "#E6C04A",
           foreground: "#000000",
         },
         secondary: {
@@ -40,7 +40,7 @@ const config: Config = {
           foreground: "#A0A0A0",
         },
         accent: {
-          DEFAULT: "#FFE55C",
+          DEFAULT: "#F0D675",
           foreground: "#000000",
         },
         card: {
@@ -48,10 +48,10 @@ const config: Config = {
           foreground: "#FFFFFF",
         },
         gold: {
-          DEFAULT: "#FFD700",
-          light: "#FFE55C",
+          DEFAULT: "#E6C04A",
+          light: "#F0D675",
           dark: "#D4AF37",
-          metallic: "#FFC125",
+          metallic: "#E8C85A",
         },
       },
       borderRadius: {
@@ -74,12 +74,12 @@ const config: Config = {
         },
         "gold-pulse": {
           "0%, 100%": { 
-            boxShadow: "0 0 0 0 rgba(255, 215, 0, 0.8)",
-            filter: "brightness(1) saturate(1.2)"
+            boxShadow: "0 0 0 0 rgba(230, 192, 74, 0.6)",
+            filter: "brightness(1) saturate(1.1)"
           },
           "50%": { 
-            boxShadow: "0 0 25px 12px rgba(255, 215, 0, 0.5)",
-            filter: "brightness(1.15) saturate(1.4)"
+            boxShadow: "0 0 20px 10px rgba(230, 192, 74, 0.4)",
+            filter: "brightness(1.08) saturate(1.2)"
           },
         },
         "gold-shimmer": {
@@ -100,8 +100,8 @@ const config: Config = {
         "gold-shimmer": "gold-shimmer 3s ease-in-out infinite",
       },
       boxShadow: {
-        "gold": "0 0 10px rgba(255, 215, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.2)",
-        "gold-lg": "0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3)",
+        "gold": "0 0 8px rgba(230, 192, 74, 0.3), 0 0 16px rgba(230, 192, 74, 0.15)",
+        "gold-lg": "0 0 16px rgba(230, 192, 74, 0.4), 0 0 32px rgba(230, 192, 74, 0.2)",
         "depth": "0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
         "depth-lg": "0 8px 32px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
       },
