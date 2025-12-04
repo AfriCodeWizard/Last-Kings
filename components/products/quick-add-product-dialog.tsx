@@ -93,18 +93,52 @@ export function QuickAddProductDialog({
     setLoading(true)
 
     try {
+      // Validate required fields
+      if (!formData.productName.trim()) {
+        toast.error("Product name is required")
+        setLoading(false)
+        return
+      }
+      if (!formData.brandId) {
+        toast.error("Please select a brand")
+        setLoading(false)
+        return
+      }
+      if (!formData.categoryId) {
+        toast.error("Please select a category")
+        setLoading(false)
+        return
+      }
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        toast.error("Please enter a valid selling price")
+        setLoading(false)
+        return
+      }
+      if (!formData.upc || !formData.upc.trim()) {
+        toast.error("UPC is required")
+        setLoading(false)
+        return
+      }
+
       // Create product first
       const { data: product, error: productError } = await ((supabase
         .from("products") as any)
         .insert({
-          name: formData.productName,
+          name: formData.productName.trim(),
           brand_id: formData.brandId,
           category_id: formData.categoryId,
         })
         .select()
         .single())
 
-      if (productError) throw productError
+      if (productError) {
+        console.error("Product creation error:", productError)
+        throw new Error(productError.message || "Failed to create product")
+      }
+
+      if (!product || !product.id) {
+        throw new Error("Product was created but no ID was returned")
+      }
 
       // Create variant with the scanned UPC
       const { data: variant, error: variantError } = await ((supabase
@@ -112,34 +146,29 @@ export function QuickAddProductDialog({
         .insert({
           product_id: product.id,
           size_ml: parseInt(formData.sizeMl),
-          sku: formData.sku || `SKU-${Date.now()}`,
-          upc: formData.upc,
+          sku: formData.sku.trim() || `SKU-${Date.now()}`,
+          upc: formData.upc.trim() || null,
           cost: parseFloat(formData.cost) || 0,
-          price: parseFloat(formData.price) || 0,
+          price: parseFloat(formData.price),
         })
         .select()
         .single())
 
-      if (variantError) throw variantError
+      if (variantError) {
+        console.error("Variant creation error:", variantError)
+        throw new Error(variantError.message || "Failed to create product variant")
+      }
+
+      if (!variant || !variant.id) {
+        throw new Error("Variant was created but no ID was returned")
+      }
 
       toast.success("Product created successfully!")
       onProductCreated(variant.id)
       onClose()
-      
-      // Reset form
-      setFormData({
-        productName: "",
-        brandId: "",
-        categoryId: "",
-        sizeMl: "750",
-        price: "",
-        cost: "",
-        sku: "",
-        upc: scannedUPC,
-      })
     } catch (error: any) {
       console.error("Error creating product:", error)
-      toast.error(`Error creating product: ${error.message}`)
+      toast.error(`Error creating product: ${error.message || "Unknown error"}`)
     } finally {
       setLoading(false)
     }
