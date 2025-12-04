@@ -13,10 +13,20 @@ import type { Database } from "@/types/supabase"
 
 type CustomerInsert = Database["public"]["Tables"]["customers"]["Insert"]
 
+// Form state type - uses strings instead of nullable types for inputs
+type CustomerFormData = {
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  date_of_birth: string
+  is_whale: boolean
+}
+
 export default function NewCustomerPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState<CustomerInsert>({
+  const [formData, setFormData] = useState<CustomerFormData>({
     first_name: "",
     last_name: "",
     email: "",
@@ -34,10 +44,10 @@ export default function NewCustomerPage() {
       const insertData: CustomerInsert = {
         first_name: formData.first_name,
         last_name: formData.last_name,
-        email: formData.email && formData.email.trim() !== "" ? formData.email : null,
-        phone: formData.phone && formData.phone.trim() !== "" ? formData.phone : null,
-        date_of_birth: formData.date_of_birth && formData.date_of_birth.trim() !== "" ? formData.date_of_birth : null,
-        is_whale: formData.is_whale ?? false,
+        email: formData.email.trim() || null,
+        phone: formData.phone.trim() || null,
+        date_of_birth: formData.date_of_birth.trim() || null,
+        is_whale: formData.is_whale,
       }
 
       // Type assertion to work around TypeScript inference issue during build
