@@ -292,31 +292,31 @@ export default function ReceivingPage() {
   const checkAndUpdatePOStatus = async (poId: string) => {
     try {
       // Get all PO items with their expected quantities
-      const { data: poItems, error: poItemsError } = await supabase
-        .from("po_items")
+      const { data: poItems, error: poItemsError } = await ((supabase
+        .from("po_items") as any)
         .select("id, variant_id, quantity")
-        .eq("po_id", poId)
+        .eq("po_id", poId))
 
       if (poItemsError) throw poItemsError
       if (!poItems || poItems.length === 0) return
 
       // Get all received items for this PO (from all receiving sessions linked to this PO)
-      const { data: receivingSessions, error: sessionsError } = await supabase
-        .from("receiving_sessions")
+      const { data: receivingSessions, error: sessionsError } = await ((supabase
+        .from("receiving_sessions") as any)
         .select("id")
         .eq("po_id", poId)
-        .eq("status", "completed")
+        .eq("status", "completed"))
 
       if (sessionsError) throw sessionsError
       if (!receivingSessions || receivingSessions.length === 0) return
 
-      const sessionIds = receivingSessions.map(s => s.id)
+      const sessionIds = (receivingSessions as any[]).map((s: any) => s.id)
 
       // Get all received items for these sessions
-      const { data: receivedItems, error: receivedError } = await supabase
-        .from("received_items")
+      const { data: receivedItems, error: receivedError } = await ((supabase
+        .from("received_items") as any)
         .select("variant_id, quantity")
-        .in("session_id", sessionIds)
+        .in("session_id", sessionIds))
 
       if (receivedError) throw receivedError
 
@@ -337,19 +337,19 @@ export default function ReceivingPage() {
       // If all items are fully received, update PO status to 'received'
       if (allFullyReceived) {
         // Get PO number before updating
-        const { data: poData } = await supabase
-          .from("purchase_orders")
+        const { data: poData } = await ((supabase
+          .from("purchase_orders") as any)
           .select("po_number")
           .eq("id", poId)
-          .single()
+          .single())
 
-        const { error: updateError } = await supabase
-          .from("purchase_orders")
+        const { error: updateError } = await ((supabase
+          .from("purchase_orders") as any)
           .update({ status: "received" })
-          .eq("id", poId)
+          .eq("id", poId))
 
         if (updateError) throw updateError
-        toast.success(`Purchase order ${poData?.po_number || 'PO'} marked as fully received!`)
+        toast.success(`Purchase order ${(poData as any)?.po_number || 'PO'} marked as fully received!`)
       }
     } catch (error) {
       console.error("Error checking PO status:", error)
