@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScanLine, CheckCircle2, X } from "lucide-react"
+import { ScanLine, CheckCircle2, X, Camera } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
@@ -32,7 +32,6 @@ interface ScannedItem {
 export default function ReceivingPage() {
   const [barcode, setBarcode] = useState("")
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([])
-  const [isScanning, setIsScanning] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [showLotModal, setShowLotModal] = useState(false)
   const [currentItem, setCurrentItem] = useState<ScannedItem | null>(null)
@@ -237,12 +236,12 @@ export default function ReceivingPage() {
 
             <div className="flex gap-2">
               <Button
-                variant="outline"
-                onClick={() => setIsScanning(!isScanning)}
-                className={isScanning ? "animate-gold-pulse" : ""}
+                type="button"
+                onClick={() => setShowScanner(true)}
+                className="bg-gold text-black hover:bg-gold/90 font-sans"
               >
-                <ScanLine className="mr-2 h-4 w-4" />
-                {isScanning ? "Stop Scanning" : "Start Scanning"}
+                <Camera className="h-5 w-5 mr-2" />
+                Open Camera Scanner
               </Button>
             </div>
           </CardContent>

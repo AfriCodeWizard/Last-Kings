@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Html5Qrcode } from "html5-qrcode"
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
 import { Button } from "@/components/ui/button"
 import { X, Camera, CameraOff } from "lucide-react"
 import {
@@ -33,16 +33,21 @@ export function BarcodeScanner({
   const scannerId = "barcode-scanner-viewfinder"
 
   useEffect(() => {
-    if (isOpen && !scannerRef.current) {
-      startScanning()
-    } else if (!isOpen && scannerRef.current) {
-      stopScanning()
-    }
-
-    return () => {
-      if (scannerRef.current) {
-        stopScanning()
+    if (isOpen) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        if (!scannerRef.current) {
+          startScanning()
+        }
+      }, 100)
+      return () => {
+        clearTimeout(timer)
+        if (scannerRef.current) {
+          stopScanning()
+        }
       }
+    } else {
+      stopScanning()
     }
   }, [isOpen])
 
@@ -89,7 +94,6 @@ export function BarcodeScanner({
         aspectRatio: 1.0,
         disableFlip: false, // Allow rotation
         // Configure for barcode scanning only - exclude QR codes
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
         formatsToSupport: [
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
@@ -99,7 +103,7 @@ export function BarcodeScanner({
           Html5QrcodeSupportedFormats.UPC_A,
           Html5QrcodeSupportedFormats.UPC_E,
           Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
-        ],
+        ] as any,
       }
 
       await html5QrCode.start(
