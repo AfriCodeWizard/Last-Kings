@@ -24,33 +24,34 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#D4AF37",
+          DEFAULT: "#FFD700",
           foreground: "#000000",
         },
         secondary: {
-          DEFAULT: "#0A0A0A",
-          foreground: "#D4AF37",
+          DEFAULT: "#000000",
+          foreground: "#FFD700",
         },
         destructive: {
           DEFAULT: "#8B0000",
           foreground: "#FFFFFF",
         },
         muted: {
-          DEFAULT: "#111111",
-          foreground: "#9CA3AF",
+          DEFAULT: "#000000",
+          foreground: "#A0A0A0",
         },
         accent: {
-          DEFAULT: "#E6C04A",
+          DEFAULT: "#FFE55C",
           foreground: "#000000",
         },
         card: {
-          DEFAULT: "#0A0A0A",
+          DEFAULT: "#000000",
           foreground: "#FFFFFF",
         },
         gold: {
-          DEFAULT: "#D4AF37",
-          light: "#E6C04A",
-          dark: "#B8941F",
+          DEFAULT: "#FFD700",
+          light: "#FFE55C",
+          dark: "#D4AF37",
+          metallic: "#FFC125",
         },
       },
       borderRadius: {
@@ -72,14 +73,37 @@ const config: Config = {
           to: { height: "0" },
         },
         "gold-pulse": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(212, 175, 55, 0.7)" },
-          "50%": { boxShadow: "0 0 20px 10px rgba(212, 175, 55, 0.4)" },
+          "0%, 100%": { 
+            boxShadow: "0 0 0 0 rgba(255, 215, 0, 0.8)",
+            filter: "brightness(1) saturate(1.2)"
+          },
+          "50%": { 
+            boxShadow: "0 0 25px 12px rgba(255, 215, 0, 0.5)",
+            filter: "brightness(1.15) saturate(1.4)"
+          },
+        },
+        "gold-shimmer": {
+          "0%, 100%": { 
+            backgroundPosition: "0% 50%",
+            filter: "brightness(1) saturate(1.2)"
+          },
+          "50%": { 
+            backgroundPosition: "100% 50%",
+            filter: "brightness(1.2) saturate(1.4)"
+          },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "gold-pulse": "gold-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "gold-shimmer": "gold-shimmer 3s ease-in-out infinite",
+      },
+      boxShadow: {
+        "gold": "0 0 10px rgba(255, 215, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.2)",
+        "gold-lg": "0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3)",
+        "depth": "0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+        "depth-lg": "0 8px 32px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
       },
     },
   },

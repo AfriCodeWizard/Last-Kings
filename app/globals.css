@@ -8,23 +8,23 @@
   :root {
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
-    --card: 0 0% 4%;
+    --card: 0 0% 2%;
     --card-foreground: 0 0% 100%;
-    --popover: 0 0% 4%;
+    --popover: 0 0% 2%;
     --popover-foreground: 0 0% 100%;
-    --primary: 43 74% 49%;
+    --primary: 43 85% 52%;
     --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 4%;
-    --secondary-foreground: 43 74% 49%;
-    --muted: 0 0% 7%;
-    --muted-foreground: 0 0% 63%;
-    --accent: 43 74% 55%;
+    --secondary: 0 0% 3%;
+    --secondary-foreground: 43 85% 52%;
+    --muted: 0 0% 5%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 43 90% 58%;
     --accent-foreground: 0 0% 0%;
-    --destructive: 0 100% 27%;
+    --destructive: 0 100% 30%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 43 74% 49%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 43 85% 52%;
     --radius: 0.5rem;
   }
 }
@@ -41,19 +41,62 @@
 
 @layer utilities {
   .glass {
-    @apply backdrop-blur-md border border-gold/20 bg-card/80;
+    @apply backdrop-blur-xl border border-gold/40 bg-black/60;
+    box-shadow: 
+      0 8px 32px 0 rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 0 rgba(212, 175, 55, 0.2),
+      0 0 0 1px rgba(212, 175, 55, 0.1);
+  }
+  
+  .glass-strong {
+    @apply backdrop-blur-2xl border border-gold/50 bg-black/70;
+    box-shadow: 
+      0 12px 40px 0 rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 0 rgba(212, 175, 55, 0.3),
+      0 0 20px 0 rgba(212, 175, 55, 0.15);
   }
   
   .gold-gradient {
     @apply bg-gradient-to-r from-gold via-gold-light to-gold;
+    filter: saturate(1.2) brightness(1.1);
+  }
+  
+  .gold-glow {
+    box-shadow: 
+      0 0 10px rgba(212, 175, 55, 0.4),
+      0 0 20px rgba(212, 175, 55, 0.2),
+      0 0 30px rgba(212, 175, 55, 0.1);
   }
   
   .text-gold {
-    @apply text-[#D4AF37];
+    @apply text-[#FFD700];
+    filter: saturate(1.3) brightness(1.15);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
   }
   
   .text-gold-light {
-    @apply text-[#E6C04A];
+    @apply text-[#FFE55C];
+    filter: saturate(1.2) brightness(1.1);
+  }
+  
+  .gold-border {
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 215, 0, 0.3),
+      0 0 8px 0 rgba(255, 215, 0, 0.2);
+  }
+  
+  .depth-shadow {
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.5),
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  .highlight-gold {
+    box-shadow: 
+      inset 0 1px 0 0 rgba(255, 215, 0, 0.2),
+      0 0 12px 0 rgba(255, 215, 0, 0.15);
   }
 }
 

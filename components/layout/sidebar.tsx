@@ -58,7 +58,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed md:static inset-y-0 left-0 z-50 w-64 border-r border-gold/20 glass min-h-screen p-4 transition-transform duration-300 ease-in-out",
+          "fixed md:static inset-y-0 left-0 z-50 w-64 border-r border-gold/50 glass-strong min-h-screen p-4 transition-transform duration-300 ease-in-out shadow-depth-lg",
           // On mobile: hide by default, show when isOpen is true
           // On desktop (md+): always visible
           isOpen === true ? "translate-x-0" : "-translate-x-full",

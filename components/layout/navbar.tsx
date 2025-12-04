@@ -27,7 +27,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   }
 
   return (
-    <nav className="border-b border-gold/20 glass sticky top-0 z-50 bg-black/95 backdrop-blur-sm">
+    <nav className="border-b border-gold/50 glass-strong sticky top-0 z-50 bg-black/95 backdrop-blur-xl shadow-depth">
       <div className="container mx-auto px-3 sm:px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Hamburger menu button for mobile */}
