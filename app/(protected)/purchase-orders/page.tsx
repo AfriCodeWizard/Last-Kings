@@ -30,7 +30,7 @@ export default async function PurchaseOrdersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-gold mb-2">Purchase Orders</h1>
+          <h1 className="text-4xl font-sans font-bold text-white mb-2">Purchase Orders</h1>
           <p className="text-muted-foreground">Manage purchase orders and suppliers</p>
         </div>
         <Link href="/purchase-orders/new">

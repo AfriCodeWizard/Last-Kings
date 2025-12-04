@@ -67,7 +67,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Close button for mobile */}
         <div className="flex items-center justify-between mb-4 md:hidden">
-          <span className="text-lg font-serif font-bold text-gold">Menu</span>
+          <span className="text-lg font-sans font-bold text-gold">Menu</span>
           <Button
             variant="ghost"
             size="icon"
@@ -89,14 +89,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-sans",
                   isActive
-                    ? "bg-gold/20 text-gold border border-gold/30"
+                    ? "bg-gold text-black"
                     : "text-muted-foreground hover:bg-gold/10 hover:text-gold"
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium font-sans">{item.label}</span>
               </Link>
             )
           })}

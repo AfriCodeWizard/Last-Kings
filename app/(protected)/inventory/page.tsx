@@ -39,7 +39,7 @@ export default async function InventoryPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-gold mb-2">Inventory</h1>
+          <h1 className="text-4xl font-sans font-bold text-white mb-2">Inventory</h1>
           <p className="text-muted-foreground">Manage stock levels and locations</p>
         </div>
         <div className="flex gap-2">

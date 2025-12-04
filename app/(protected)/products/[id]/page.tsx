@@ -41,7 +41,7 @@ export default async function ProductDetailPage({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-gold mb-2">{product.name}</h1>
+          <h1 className="text-4xl font-sans font-bold text-white mb-2">{product.name}</h1>
           <p className="text-muted-foreground">
             {product.brands.name} • {product.categories.name}
           </p>

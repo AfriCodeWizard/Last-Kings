@@ -22,7 +22,7 @@ export default async function ProductsPage() {
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-4xl font-serif font-bold text-gold mb-2">Products</h1>
+          <h1 className="text-2xl md:text-4xl font-sans font-bold text-white mb-2">Products</h1>
           <p className="text-sm md:text-base text-muted-foreground">Manage your product catalog</p>
         </div>
         <Link href="/products/new">

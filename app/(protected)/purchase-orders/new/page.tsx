@@ -10,7 +10,7 @@ export default function NewPurchaseOrderPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-serif font-bold text-gold mb-2">New Purchase Order</h1>
+        <h1 className="text-4xl font-sans font-bold text-white mb-2">New Purchase Order</h1>
         <p className="text-muted-foreground">Create a new purchase order</p>
       </div>
 
