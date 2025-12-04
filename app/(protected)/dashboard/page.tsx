@@ -1,8 +1,7 @@
-import { getCurrentUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, AlertTriangle, TrendingUp, DollarSign } from "lucide-react"
+import { Package, TrendingUp, DollarSign } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Table,
@@ -15,7 +14,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser()
   const supabase = await createClient()
 
   // Get today's sales
@@ -45,28 +43,6 @@ export default async function DashboardPage() {
     `)
     .lt("quantity", 10)
     .limit(10)
-
-  // Get pending receiving sessions
-  const { data: receivingQueue } = await supabase
-    .from("receiving_sessions")
-    .select("*")
-    .eq("status", "in_progress")
-    .limit(5)
-
-  // Get top movers (products with most sales in last 7 days)
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-  const { data: topMovers } = await supabase
-    .from("sale_items")
-    .select(`
-      quantity,
-      product_variants!inner(
-        products!inner(name)
-      )
-    `)
-    .gte("created_at", sevenDaysAgo.toISOString())
-    .limit(5)
 
   return (
     <div className="space-y-4 md:space-y-6">
