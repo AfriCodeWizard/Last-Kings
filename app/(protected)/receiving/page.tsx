@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScanLine, CheckCircle2, X } from "lucide-react"
+import { ScanLine, CheckCircle2, X, Camera } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase/client"
+import { BarcodeScanner } from "@/components/barcode-scanner"
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ export default function ReceivingPage() {
   const [barcode, setBarcode] = useState("")
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([])
   const [isScanning, setIsScanning] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
   const [showLotModal, setShowLotModal] = useState(false)
   const [currentItem, setCurrentItem] = useState<ScannedItem | null>(null)
   const [lotNumber, setLotNumber] = useState("")
@@ -346,6 +348,17 @@ export default function ReceivingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BarcodeScanner
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={(barcode) => {
+          processBarcode(barcode)
+          setBarcode("")
+        }}
+        title="Scan Barcode"
+        description="Position the barcode on the liquor bottle within the frame"
+      />
     </div>
   )
 }

@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, ScanLine, ShoppingCart, CreditCard, X, UserCheck } from "lucide-react"
+import { Search, ScanLine, ShoppingCart, CreditCard, X, UserCheck, Camera } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
 import { calculateTotalExciseDuty, calculateKRATaxes } from "@/lib/kra-tax"
+import { BarcodeScanner } from "@/components/barcode-scanner"
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ interface CartItem {
 export default function POSPage() {
   const [search, setSearch] = useState("")
   const [barcode, setBarcode] = useState("")
+  const [showScanner, setShowScanner] = useState(false)
   const [products, setProducts] = useState<Array<{
     id: string
     name: string
@@ -244,21 +246,37 @@ export default function POSPage() {
                   className="pl-10"
                 />
               </div>
-              <div className="relative">
-                <ScanLine className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gold" />
-                <Input
-                  ref={inputRef}
-                  placeholder="Scan barcode..."
-                  value={barcode}
-                  onChange={(e) => {
-                    setBarcode(e.target.value)
-                    if (e.target.value.length > 8) {
-                      handleBarcodeScan(e.target.value)
-                      setBarcode("")
-                    }
-                  }}
-                  className="pl-10"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <ScanLine className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gold" />
+                  <Input
+                    ref={inputRef}
+                    placeholder="Scan barcode or enter UPC..."
+                    value={barcode}
+                    onChange={(e) => {
+                      setBarcode(e.target.value)
+                      if (e.target.value.length > 8) {
+                        handleBarcodeScan(e.target.value)
+                        setBarcode("")
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && barcode.trim().length > 8) {
+                        handleBarcodeScan(barcode.trim())
+                        setBarcode("")
+                      }
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  className="bg-gold text-black hover:bg-gold/90 font-sans"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Camera
+                </Button>
               </div>
 
               <div className="grid gap-2 max-h-96 overflow-y-auto">
@@ -417,6 +435,17 @@ export default function POSPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <BarcodeScanner
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={(barcode) => {
+          handleBarcodeScan(barcode)
+          setBarcode("")
+        }}
+        title="Scan Barcode"
+        description="Position the barcode on the liquor bottle within the frame"
+      />
     </div>
   )
 }
