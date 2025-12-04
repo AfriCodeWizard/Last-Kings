@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Edit } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { UPCDialogWrapper } from "@/components/products/upc-dialog-wrapper"
 
 // Note: Image component requires Next.js Image optimization
 import { formatCurrency } from "@/lib/utils"
@@ -100,26 +101,34 @@ export default async function ProductDetailPage({
                   key={variant.id}
                   className="flex justify-between items-center p-4 rounded-lg border border-gold/10"
                 >
-                  <div>
-                    <div className="font-medium">{variant.size_ml}ml</div>
-                    <div className="text-sm text-muted-foreground">
+                  <div className="flex-1">
+                    <div className="font-medium font-sans">{variant.size_ml}ml</div>
+                    <div className="text-sm text-muted-foreground font-sans">
                       SKU: {variant.sku}
                       {variant.upc && ` • UPC: ${variant.upc}`}
+                      {!variant.upc && ` • No UPC assigned`}
                     </div>
                     {variant.collectible && (
-                      <div className="text-xs text-gold mt-1">Collectible</div>
+                      <div className="text-xs text-gold mt-1 font-sans">Collectible</div>
                     )}
                     {variant.allocation_only && (
-                      <div className="text-xs text-gold-light mt-1">Allocation Only</div>
+                      <div className="text-xs text-gold-light mt-1 font-sans">Allocation Only</div>
                     )}
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-gold">{formatCurrency(variant.price)}</div>
-                    {showCosts && (
-                      <div className="text-sm text-muted-foreground">
-                        Cost: {formatCurrency(variant.cost)}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="font-bold text-gold font-sans">{formatCurrency(variant.price)}</div>
+                      {showCosts && (
+                        <div className="text-sm text-muted-foreground font-sans">
+                          Cost: {formatCurrency(variant.cost)}
+                        </div>
+                      )}
+                    </div>
+                    <UPCDialogWrapper
+                      variant={variant}
+                      productName={product.name}
+                      onUpdate={() => window.location.reload()}
+                    />
                   </div>
                 </div>
               ))}
