@@ -25,9 +25,7 @@ export default function NewProductPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase
-        .from("products")
-        .insert(formData)
+      const { error } = await ((supabase.from("products") as any).insert(formData))
 
       if (error) throw error
 

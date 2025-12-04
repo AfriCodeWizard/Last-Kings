@@ -79,14 +79,12 @@ export default function LoginPage() {
         // If user doesn't exist in users table, create it
         if (userError.code === 'PGRST116') {
           console.log("User not in users table, creating record...")
-          const { error: createError } = await supabase
-            .from("users")
-            .insert({
+          const { error: createError } = await ((supabase.from("users") as any).insert({
               id: data.user.id,
               email: data.user.email || email,
               full_name: data.user.user_metadata?.full_name || null,
               role: data.user.user_metadata?.role || 'staff',
-            })
+            }))
 
           if (createError) {
             console.error("Error creating user record:", createError)

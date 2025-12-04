@@ -144,14 +144,13 @@ export default function ReceivingPage() {
       }
 
       // Create receiving session
-      const { data: session, error: sessionError } = await supabase
-        .from("receiving_sessions")
+      const { data: session, error: sessionError } = await ((supabase.from("receiving_sessions") as any)
         .insert({
           received_by: user.id,
           status: "in_progress",
         })
         .select()
-        .single()
+        .single())
 
       if (sessionError) throw sessionError
 
@@ -178,17 +177,14 @@ export default function ReceivingPage() {
         expiry_date: item.expiry_date,
       }))
 
-      const { error: itemsError } = await supabase
-        .from("received_items")
-        .insert(receivedItems)
+      const { error: itemsError } = await ((supabase.from("received_items") as any).insert(receivedItems))
 
       if (itemsError) throw itemsError
 
       // Complete session
-      await supabase
-        .from("receiving_sessions")
+      await ((supabase.from("receiving_sessions") as any)
         .update({ status: "completed", completed_at: new Date().toISOString() })
-        .eq("id", session.id)
+        .eq("id", session.id))
 
       toast.success("Receiving session completed!")
       setScannedItems([])
