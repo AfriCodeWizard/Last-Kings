@@ -79,7 +79,7 @@ export default function POSPage() {
   }
 
   const handleBarcodeScan = async (value: string) => {
-    const { data: variant } = await supabase
+    const { data: variant } = await (supabase
       .from("product_variants")
       .select(`
         id,
@@ -89,7 +89,7 @@ export default function POSPage() {
         products!inner(name)
       `)
       .eq("upc", value)
-      .single()
+      .single() as any)
 
     if (variant) {
       playScanBeep()
