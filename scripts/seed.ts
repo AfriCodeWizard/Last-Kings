@@ -226,10 +226,12 @@ async function seed() {
     }
   }
 
-  // Create default tax rates
+  // Create KRA-compliant tax rates
   const taxRates = [
-    { name: 'State Sales Tax', rate: 0.08, type: 'sales', active: true },
-    { name: 'Federal Excise Tax', rate: 0.05, type: 'excise', active: true },
+    { name: 'KRA VAT', rate: 0.16, type: 'sales', active: true },
+    { name: 'KRA Excise Duty - Spirits', rate: 0.35642, type: 'excise', active: true }, // Per liter (KES 356.42 / 1000 for percentage representation)
+    { name: 'KRA Excise Duty - Beer', rate: 0.14244, type: 'excise', active: true }, // Per liter (KES 142.44 / 1000)
+    { name: 'KRA Excise Duty - Wine', rate: 0.22994, type: 'excise', active: true }, // Per liter (KES 229.94 / 1000)
   ];
 
   for (const rate of taxRates) {
