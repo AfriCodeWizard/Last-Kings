@@ -48,6 +48,7 @@ export function BarcodeScanner({
       }
     } else {
       stopScanning()
+      return undefined
     }
   }, [isOpen])
 
@@ -109,14 +110,14 @@ export function BarcodeScanner({
       await html5QrCode.start(
         cameraId,
         config,
-        (decodedText, decodedResult) => {
+        (decodedText) => {
           // Successfully scanned a barcode
           console.log("Barcode scanned:", decodedText)
           onScan(decodedText)
           stopScanning()
           onClose()
         },
-        (errorMessage) => {
+        () => {
           // Ignore scanning errors (they're frequent during scanning)
           // These are expected while waiting for a barcode
         }
