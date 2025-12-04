@@ -35,7 +35,7 @@ export default function NewCustomerPage() {
       }
 
       // Prepare data for insert - convert empty strings to null for optional fields
-      const insertData: CustomerInsert = {
+      const insertData = {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email && formData.email.trim() !== "" ? formData.email : null,

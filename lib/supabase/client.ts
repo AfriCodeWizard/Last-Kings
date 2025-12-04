@@ -8,7 +8,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase environment variables. Please create .env.local file with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
-export const supabase = supabaseUrl && supabaseAnonKey 
+export const supabase: ReturnType<typeof createClient<Database>> = supabaseUrl && supabaseAnonKey 
   ? createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
@@ -18,5 +18,11 @@ export const supabase = supabaseUrl && supabaseAnonKey
         storageKey: 'sb-auth-token'
       }
     })
-  : null as unknown as ReturnType<typeof createClient<Database>>;
+  : createClient<Database>('', '', {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      }
+    });
 
