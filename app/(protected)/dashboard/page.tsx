@@ -56,13 +56,13 @@ export default async function DashboardPage() {
     .limit(5)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-4xl font-serif font-bold text-gold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, {user?.full_name || user?.email}</p>
+        <h1 className="text-2xl md:text-4xl font-serif font-bold text-gold mb-2">Dashboard</h1>
+        <p className="text-sm md:text-base text-muted-foreground">Welcome back, {user?.full_name || user?.email}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sales Today</CardTitle>
