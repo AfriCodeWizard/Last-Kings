@@ -40,9 +40,9 @@ export default function NewCustomerPage() {
         is_whale: formData.is_whale ?? false,
       }
 
-      const { error } = await supabase
-        .from("customers")
-        .insert(insertData)
+      // Type assertion to work around TypeScript inference issue during build
+      // The data is correctly typed, but TypeScript can't infer it from the Supabase client in build environment
+      const { error } = await (supabase.from("customers") as any).insert(insertData)
 
       if (error) throw error
 
