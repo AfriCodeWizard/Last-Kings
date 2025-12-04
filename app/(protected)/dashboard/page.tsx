@@ -117,12 +117,13 @@ export default async function DashboardPage() {
           <CardContent>
             {lowStock && lowStock.length > 0 ? (
               <div className="space-y-2">
-                {lowStock.map((item, idx) => {
+                {lowStock.map((item: any, idx: number) => {
                   const variant = Array.isArray(item.product_variants) 
                     ? item.product_variants[0] 
                     : item.product_variants
-                  const productName = variant?.products 
-                    ? (Array.isArray(variant.products) ? variant.products[0]?.name : variant.products?.name)
+                  const products = variant?.products
+                  const productName = products 
+                    ? (Array.isArray(products) ? products[0]?.name : (products as any)?.name)
                     : 'Unknown Product'
                   const sku = variant?.sku || 'N/A'
                   
