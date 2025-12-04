@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Search } from "lucide-react"
+import { Plus } from "lucide-react"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { ProductsTable } from "@/components/products/products-table"
