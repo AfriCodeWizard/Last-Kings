@@ -58,7 +58,7 @@ export default function ReceivingPage() {
   const [currentItem, setCurrentItem] = useState<ScannedItem | null>(null)
   const [lotNumber, setLotNumber] = useState("")
   const [expiryDate, setExpiryDate] = useState("")
-  const [selectedPOId, setSelectedPOId] = useState<string>("")
+  const [selectedPOId, setSelectedPOId] = useState<string | undefined>(undefined)
   const [pendingPOs, setPendingPOs] = useState<PurchaseOrder[]>([])
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -280,7 +280,7 @@ export default function ReceivingPage() {
 
       toast.success("Receiving session completed!")
       setScannedItems([])
-      setSelectedPOId("")
+      setSelectedPOId(undefined)
       setSelectedPO(null)
       await loadPendingPOs() // Refresh pending POs list
     } catch (error) {
@@ -373,21 +373,32 @@ export default function ReceivingPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="purchaseOrder">Purchase Order (Optional)</Label>
-              <Select value={selectedPOId} onValueChange={setSelectedPOId}>
-                <SelectTrigger className="font-sans">
-                  <SelectValue placeholder="Select purchase order to link..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="" className="font-sans">
-                    None (General Receiving)
-                  </SelectItem>
-                  {pendingPOs.map((po) => (
-                    <SelectItem key={po.id} value={po.id} className="font-sans">
-                      {po.po_number} - {po.distributors?.name} ({formatCurrency(po.total_amount)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select value={selectedPOId} onValueChange={setSelectedPOId}>
+                  <SelectTrigger className="font-sans flex-1">
+                    <SelectValue placeholder="Select purchase order to link..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pendingPOs.map((po) => (
+                      <SelectItem key={po.id} value={po.id} className="font-sans">
+                        {po.po_number} - {po.distributors?.name} ({formatCurrency(po.total_amount)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedPOId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSelectedPOId(undefined)}
+                    className="font-sans"
+                    title="Clear selection"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
               {selectedPO && (
                 <p className="text-xs text-muted-foreground font-sans">
                   Receiving items for {selectedPO.po_number}
