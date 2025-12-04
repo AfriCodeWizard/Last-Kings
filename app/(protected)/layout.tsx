@@ -19,7 +19,7 @@ export default async function ProtectedLayout({
       <div className="min-h-screen bg-black">
         <SessionSync />
         <MobileLayout>
-          <main className="flex-1 p-4 md:p-6 w-full min-w-0">{children}</main>
+          <main className="flex-1 p-3 sm:p-4 md:p-6 w-full min-w-0 overflow-x-hidden">{children}</main>
         </MobileLayout>
       </div>
     )

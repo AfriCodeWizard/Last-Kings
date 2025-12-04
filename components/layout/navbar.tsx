@@ -27,8 +27,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   }
 
   return (
-    <nav className="border-b border-gold/20 glass sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <nav className="border-b border-gold/20 glass sticky top-0 z-50 bg-black/95 backdrop-blur-sm">
+      <div className="container mx-auto px-3 sm:px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Hamburger menu button for mobile */}
           <Button
@@ -41,8 +41,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           </Button>
           
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Crown className="h-6 w-6 text-gold" />
-            <span className="text-xl font-serif font-bold text-gold">Last Kings</span>
+            <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-gold" />
+            <span className="text-lg sm:text-xl font-serif font-bold text-gold">Last Kings</span>
           </Link>
         </div>
         

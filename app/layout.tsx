@@ -17,6 +17,11 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Last Kings - Luxury Inventory & POS",
   description: "Premium inventory management and POS system for Last Kings liquor store",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+  },
 }
 
 export default function RootLayout({
