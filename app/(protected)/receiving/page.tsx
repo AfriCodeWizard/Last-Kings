@@ -20,6 +20,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { formatCurrency } from "@/lib/utils"
 
 interface ScannedItem {
   variant_id: string
@@ -28,6 +36,16 @@ interface ScannedItem {
   quantity: number
   lot_number: string | null
   expiry_date: string | null
+}
+
+interface PurchaseOrder {
+  id: string
+  po_number: string
+  distributor_id: string
+  total_amount: number
+  distributors: {
+    name: string
+  }
 }
 
 export default function ReceivingPage() {
@@ -40,13 +58,46 @@ export default function ReceivingPage() {
   const [currentItem, setCurrentItem] = useState<ScannedItem | null>(null)
   const [lotNumber, setLotNumber] = useState("")
   const [expiryDate, setExpiryDate] = useState("")
+  const [selectedPOId, setSelectedPOId] = useState<string>("")
+  const [pendingPOs, setPendingPOs] = useState<PurchaseOrder[]>([])
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus()
     }
+    loadPendingPOs()
   }, [])
+
+  useEffect(() => {
+    if (selectedPOId) {
+      const po = pendingPOs.find(p => p.id === selectedPOId)
+      setSelectedPO(po || null)
+    } else {
+      setSelectedPO(null)
+    }
+  }, [selectedPOId, pendingPOs])
+
+  const loadPendingPOs = async () => {
+    const { data, error } = await supabase
+      .from("purchase_orders")
+      .select(`
+        *,
+        distributors(name)
+      `)
+      .eq("status", "sent")
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      console.error("Error loading pending POs:", error)
+      return
+    }
+
+    if (data) {
+      setPendingPOs(data as any)
+    }
+  }
 
   const handleBarcodeScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.trim()
@@ -178,10 +229,11 @@ export default function ReceivingPage() {
         return
       }
 
-      // Create receiving session
+      // Create receiving session with optional PO link
       const { data: session, error: sessionError } = await ((supabase.from("receiving_sessions") as any)
         .insert({
           received_by: user.id,
+          po_id: selectedPOId || null,
           status: "in_progress",
         })
         .select()
@@ -221,11 +273,87 @@ export default function ReceivingPage() {
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", session.id))
 
+      // If PO is linked, check if it's fully received and update status
+      if (selectedPOId) {
+        await checkAndUpdatePOStatus(selectedPOId)
+      }
+
       toast.success("Receiving session completed!")
       setScannedItems([])
+      setSelectedPOId("")
+      setSelectedPO(null)
+      await loadPendingPOs() // Refresh pending POs list
     } catch (error) {
       toast.error("Error completing receiving session")
       console.error(error)
+    }
+  }
+
+  const checkAndUpdatePOStatus = async (poId: string) => {
+    try {
+      // Get all PO items with their expected quantities
+      const { data: poItems, error: poItemsError } = await supabase
+        .from("po_items")
+        .select("id, variant_id, quantity")
+        .eq("po_id", poId)
+
+      if (poItemsError) throw poItemsError
+      if (!poItems || poItems.length === 0) return
+
+      // Get all received items for this PO (from all receiving sessions linked to this PO)
+      const { data: receivingSessions, error: sessionsError } = await supabase
+        .from("receiving_sessions")
+        .select("id")
+        .eq("po_id", poId)
+        .eq("status", "completed")
+
+      if (sessionsError) throw sessionsError
+      if (!receivingSessions || receivingSessions.length === 0) return
+
+      const sessionIds = receivingSessions.map(s => s.id)
+
+      // Get all received items for these sessions
+      const { data: receivedItems, error: receivedError } = await supabase
+        .from("received_items")
+        .select("variant_id, quantity")
+        .in("session_id", sessionIds)
+
+      if (receivedError) throw receivedError
+
+      // Calculate received quantities per variant
+      const receivedByVariant: Record<string, number> = {}
+      if (receivedItems) {
+        receivedItems.forEach((item: any) => {
+          receivedByVariant[item.variant_id] = (receivedByVariant[item.variant_id] || 0) + item.quantity
+        })
+      }
+
+      // Check if all PO items are fully received
+      const allFullyReceived = poItems.every((poItem: any) => {
+        const receivedQty = receivedByVariant[poItem.variant_id] || 0
+        return receivedQty >= poItem.quantity
+      })
+
+      // If all items are fully received, update PO status to 'received'
+      if (allFullyReceived) {
+        // Get PO number before updating
+        const { data: poData } = await supabase
+          .from("purchase_orders")
+          .select("po_number")
+          .eq("id", poId)
+          .single()
+
+        const { error: updateError } = await supabase
+          .from("purchase_orders")
+          .update({ status: "received" })
+          .eq("id", poId)
+
+        if (updateError) throw updateError
+        toast.success(`Purchase order ${poData?.po_number || 'PO'} marked as fully received!`)
+      }
+    } catch (error) {
+      console.error("Error checking PO status:", error)
+      // Don't show error to user as receiving was successful
     }
   }
 
@@ -243,6 +371,29 @@ export default function ReceivingPage() {
             <CardDescription>Use barcode scanner or enter UPC manually</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="purchaseOrder">Purchase Order (Optional)</Label>
+              <Select value={selectedPOId} onValueChange={setSelectedPOId}>
+                <SelectTrigger className="font-sans">
+                  <SelectValue placeholder="Select purchase order to link..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="" className="font-sans">
+                    None (General Receiving)
+                  </SelectItem>
+                  {pendingPOs.map((po) => (
+                    <SelectItem key={po.id} value={po.id} className="font-sans">
+                      {po.po_number} - {po.distributors?.name} ({formatCurrency(po.total_amount)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedPO && (
+                <p className="text-xs text-muted-foreground font-sans">
+                  Receiving items for {selectedPO.po_number}
+                </p>
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="barcode">Barcode / UPC</Label>
               <div className="relative">
