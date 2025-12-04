@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase/client"
 import { BarcodeScanner } from "@/components/barcode-scanner"
+import { QuickAddProductDialog } from "@/components/products/quick-add-product-dialog"
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,8 @@ export default function ReceivingPage() {
   const [barcode, setBarcode] = useState("")
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([])
   const [showScanner, setShowScanner] = useState(false)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [scannedUPC, setScannedUPC] = useState("")
   const [showLotModal, setShowLotModal] = useState(false)
   const [currentItem, setCurrentItem] = useState<ScannedItem | null>(null)
   const [lotNumber, setLotNumber] = useState("")
@@ -86,7 +89,9 @@ export default function ReceivingPage() {
 
       if (!variants || variants.length === 0) {
         console.error("No variant found for UPC:", upc)
-        toast.error(`Product not found for barcode: ${upc}`)
+        // Show quick add dialog instead of just error
+        setScannedUPC(upc)
+        setShowQuickAdd(true)
         return
       }
 
@@ -386,6 +391,45 @@ export default function ReceivingPage() {
         }}
         title="Scan Barcode"
         description="Position the barcode on the liquor bottle within the frame"
+      />
+
+      <QuickAddProductDialog
+        scannedUPC={scannedUPC}
+        isOpen={showQuickAdd}
+        onClose={() => {
+          setShowQuickAdd(false)
+          setScannedUPC("")
+        }}
+        onProductCreated={async (variantId) => {
+          // After product is created, add it to receiving list
+          const { data: variant } = await ((supabase
+            .from("product_variants")
+            .select(`
+              id,
+              upc,
+              size_ml,
+              products!inner(name)
+            `)
+            .eq("id", variantId)
+            .single() as any))
+
+          if (variant) {
+            playScanBeep()
+            const newItem: ScannedItem = {
+              variant_id: variant.id,
+              product_name: variant.products.name,
+              size_ml: variant.size_ml,
+              quantity: 1,
+              lot_number: null,
+              expiry_date: null,
+            }
+            setScannedItems((prev) => [...prev, newItem])
+            setCurrentItem(newItem)
+            setShowLotModal(true)
+            toast.success(`${variant.products.name} added`)
+          }
+        }}
+        context="receiving"
       />
     </div>
   )

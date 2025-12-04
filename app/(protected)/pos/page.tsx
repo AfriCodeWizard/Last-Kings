@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
 import { calculateTotalExciseDuty, calculateKRATaxes } from "@/lib/kra-tax"
 import { BarcodeScanner } from "@/components/barcode-scanner"
+import { QuickAddProductDialog } from "@/components/products/quick-add-product-dialog"
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,8 @@ export default function POSPage() {
   const [showAgeVerification, setShowAgeVerification] = useState(false)
   const [ageVerified, setAgeVerified] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "split">("card")
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [scannedUPC, setScannedUPC] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -124,7 +127,9 @@ export default function POSPage() {
 
       if (!variants || variants.length === 0) {
         console.error("No variant found for UPC:", value)
-        toast.error(`Product not found for barcode: ${value}. Please ensure the product exists in the database.`)
+        // Show quick add dialog instead of just error
+        setScannedUPC(value)
+        setShowQuickAdd(true)
         return
       }
 
@@ -489,6 +494,45 @@ export default function POSPage() {
         }}
         title="Scan Barcode"
         description="Position the barcode on the liquor bottle within the frame"
+      />
+
+      <QuickAddProductDialog
+        scannedUPC={scannedUPC}
+        isOpen={showQuickAdd}
+        onClose={() => {
+          setShowQuickAdd(false)
+          setScannedUPC("")
+        }}
+        onProductCreated={async (variantId) => {
+          // After product is created, add it to cart
+          const { data: variant } = await (supabase
+            .from("product_variants")
+            .select(`
+              id,
+              size_ml,
+              price,
+              sku,
+              products!inner(
+                name,
+                categories!inner(name)
+              )
+            `)
+            .eq("id", variantId)
+            .single() as any)
+
+          if (variant) {
+            playScanBeep()
+            addToCart({
+              variant_id: variant.id,
+              product_name: variant.products.name,
+              size_ml: variant.size_ml,
+              price: variant.price,
+              quantity: 1,
+              category_name: variant.products.categories?.name,
+            })
+          }
+        }}
+        context="pos"
       />
     </div>
   )
