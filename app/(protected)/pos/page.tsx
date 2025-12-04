@@ -90,22 +90,27 @@ export default function POSPage() {
   }
 
   const handleBarcodeScan = async (value: string) => {
-    const { data: variant } = await (supabase
-      .from("product_variants")
-      .select(`
-        id,
-        size_ml,
-        price,
-        sku,
-        products!inner(
-          name,
-          categories!inner(name)
-        )
-      `)
-      .eq("upc", value)
-      .single() as any)
+    try {
+      const { data: variant, error } = await (supabase
+        .from("product_variants")
+        .select(`
+          id,
+          size_ml,
+          price,
+          sku,
+          products!inner(
+            name,
+            categories!inner(name)
+          )
+        `)
+        .eq("upc", value)
+        .single() as any)
 
-    if (variant) {
+      if (error || !variant) {
+        toast.error("Product not found")
+        return
+      }
+
       playScanBeep()
       addToCart({
         variant_id: variant.id,
@@ -115,8 +120,9 @@ export default function POSPage() {
         quantity: 1,
         category_name: variant.products.categories?.name,
       })
-    } else {
-      toast.error("Product not found")
+    } catch (error) {
+      console.error("Error scanning barcode:", error)
+      toast.error("Error processing barcode")
     }
   }
 

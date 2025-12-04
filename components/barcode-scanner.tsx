@@ -110,11 +110,13 @@ export function BarcodeScanner({
       await html5QrCode.start(
         cameraId,
         config,
-        (decodedText) => {
+        async (decodedText) => {
           // Successfully scanned a barcode
           console.log("Barcode scanned:", decodedText)
+          // Stop scanning first
+          await stopScanning()
+          // Then process the scan and close
           onScan(decodedText)
-          stopScanning()
           onClose()
         },
         () => {
