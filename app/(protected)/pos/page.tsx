@@ -162,7 +162,7 @@ export default function POSPage() {
       const saleNumber = `SALE-${Date.now()}`
 
       // Create sale
-      const { data: sale, error: saleError } = await supabase
+      const { data: sale, error: saleError } = await (supabase
         .from("sales")
         .insert({
           sale_number: saleNumber,
@@ -174,7 +174,7 @@ export default function POSPage() {
           age_verified: ageVerified,
         })
         .select()
-        .single()
+        .single() as any)
 
       if (saleError) throw saleError
 
@@ -186,9 +186,9 @@ export default function POSPage() {
         unit_price: item.price,
       }))
 
-      const { error: itemsError } = await supabase
+      const { error: itemsError } = await (supabase
         .from("sale_items")
-        .insert(saleItems)
+        .insert(saleItems) as any)
 
       if (itemsError) throw itemsError
 
