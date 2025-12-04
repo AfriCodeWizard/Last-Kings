@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -41,16 +40,8 @@ export default function LoginPage() {
         
         // Check for specific error types
         if (error.message.includes("Invalid login credentials")) {
-          // Check if user exists and email is confirmed
           // Note: getUserByEmail doesn't exist in Supabase admin API
-          // Using alternative approach - user will need to check email confirmation manually
-          const checkUser = null
-          
-          if (checkUser) {
-            console.log("User exists but login failed. Email confirmed:", checkUser.user?.email_confirmed_at)
-            throw new Error("Invalid password. If you just registered, please check your email for confirmation or reset your password.")
-          }
-          
+          // Email confirmation status cannot be checked without admin API
           throw new Error("Invalid email or password. Please check your credentials.")
         }
         
