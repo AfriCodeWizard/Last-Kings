@@ -65,7 +65,8 @@ export default function ReceivingPage() {
     }
     try {
       console.log("Querying database for UPC:", upc.trim())
-      const { data: variant, error } = await ((supabase
+      // Query without .single() to avoid error when no results
+      const { data: variants, error } = await ((supabase
         .from("product_variants")
         .select(`
           id,
@@ -73,22 +74,24 @@ export default function ReceivingPage() {
           size_ml,
           products!inner(name)
         `)
-        .eq("upc", upc.trim())
-        .single() as any))
+        .eq("upc", upc.trim()) as any))
 
-      console.log("Database query result:", { variant, error })
+      console.log("Database query result:", { variants, error, count: variants?.length })
 
       if (error) {
         console.error("Database error:", error)
-        toast.error(`Product not found: ${error.message}`)
+        toast.error(`Database error: ${error.message}`)
         return
       }
 
-      if (!variant) {
+      if (!variants || variants.length === 0) {
         console.error("No variant found for UPC:", upc)
-        toast.error("Product not found")
+        toast.error(`Product not found for barcode: ${upc}`)
         return
       }
+
+      const variant = variants[0]
+      console.log("Variant found:", variant)
 
       console.log("Variant found:", variant)
       playScanBeep()

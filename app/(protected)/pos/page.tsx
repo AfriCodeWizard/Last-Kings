@@ -98,7 +98,8 @@ export default function POSPage() {
     }
     try {
       console.log("Querying database for UPC:", value.trim())
-      const { data: variant, error } = await (supabase
+      // Query without .single() to avoid error when no results
+      const { data: variants, error } = await (supabase
         .from("product_variants")
         .select(`
           id,
@@ -111,7 +112,24 @@ export default function POSPage() {
           )
         `)
         .eq("upc", value.trim())
-        .single() as any)
+        .limit(1) as any)
+
+      console.log("Database query result:", { variants, error, count: variants?.length })
+
+      if (error) {
+        console.error("Database error:", error)
+        toast.error(`Database error: ${error.message}`)
+        return
+      }
+
+      if (!variants || variants.length === 0) {
+        console.error("No variant found for UPC:", value)
+        toast.error(`Product not found for barcode: ${value}. Please ensure the product exists in the database.`)
+        return
+      }
+
+      const variant = variants[0]
+      console.log("Variant found:", variant)
 
       console.log("Database query result:", { variant, error })
 
