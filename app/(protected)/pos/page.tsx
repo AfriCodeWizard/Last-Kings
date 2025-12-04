@@ -10,6 +10,7 @@ import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
+import { calculateTotalExciseDuty, calculateKRATaxes } from "@/lib/kra-tax"
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ interface CartItem {
   size_ml: number
   price: number
   quantity: number
+  category_name?: string
 }
 
 export default function POSPage() {
@@ -56,7 +58,10 @@ export default function POSPage() {
         size_ml,
         price,
         sku,
-        products!inner(name)
+        products!inner(
+          name,
+          categories!inner(name)
+        )
       `)
       .eq("allocation_only", false)
       .limit(100)
@@ -67,13 +72,17 @@ export default function POSPage() {
         size_ml: number
         price: number
         sku: string
-        products: { name: string }
+        products: { 
+          name: string
+          categories: { name: string }
+        }
       }) => ({
         id: v.id,
         name: v.products.name,
         size_ml: v.size_ml,
         price: v.price,
         sku: v.sku,
+        category_name: v.products.categories?.name,
       })))
     }
   }
@@ -86,7 +95,10 @@ export default function POSPage() {
         size_ml,
         price,
         sku,
-        products!inner(name)
+        products!inner(
+          name,
+          categories!inner(name)
+        )
       `)
       .eq("upc", value)
       .single() as any)
@@ -99,6 +111,7 @@ export default function POSPage() {
         size_ml: variant.size_ml,
         price: variant.price,
         quantity: 1,
+        category_name: variant.products.categories?.name,
       })
     } else {
       toast.error("Product not found")
@@ -133,12 +146,16 @@ export default function POSPage() {
     ))
   }
 
+  // Calculate subtotal
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const taxRate = 0.08 // 8% sales tax
-  const exciseTaxRate = 0.05 // 5% excise tax
-  const tax = subtotal * taxRate
-  const exciseTax = subtotal * exciseTaxRate
-  const total = subtotal + tax + exciseTax
+  
+  // Calculate KRA-compliant taxes
+  const exciseDuty = calculateTotalExciseDuty(cart)
+  const { vat, total } = calculateKRATaxes(subtotal, exciseDuty)
+  
+  // For display purposes
+  const tax = vat // VAT is the main tax shown
+  const exciseTax = exciseDuty
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
@@ -255,6 +272,7 @@ export default function POSPage() {
                       size_ml: product.size_ml,
                       price: product.price,
                       quantity: 1,
+                      category_name: (product as any).category_name,
                     })}
                   >
                     <div>
@@ -329,11 +347,11 @@ export default function POSPage() {
                     <span>{formatCurrency(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Tax (8%)</span>
+                    <span>VAT (16%)</span>
                     <span>{formatCurrency(tax)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Excise Tax (5%)</span>
+                    <span>Excise Duty (KRA)</span>
                     <span>{formatCurrency(exciseTax)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg text-gold pt-2 border-t border-gold/20">
