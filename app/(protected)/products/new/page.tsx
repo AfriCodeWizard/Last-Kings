@@ -64,7 +64,7 @@ export default function NewProductPage() {
         return
       }
 
-      const { error, data } = await ((supabase.from("products") as any).insert({
+      const { error } = await ((supabase.from("products") as any).insert({
         name: formData.name.trim(),
         brand_id: formData.brand_id,
         category_id: formData.category_id,

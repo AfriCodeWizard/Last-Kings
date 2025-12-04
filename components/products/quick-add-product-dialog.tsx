@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
 
 interface QuickAddProductDialogProps {
   scannedUPC: string
@@ -36,7 +35,7 @@ export function QuickAddProductDialog({
   isOpen,
   onClose,
   onProductCreated,
-  context,
+  context: _context,
 }: QuickAddProductDialogProps) {
   const [loading, setLoading] = useState(false)
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([])
