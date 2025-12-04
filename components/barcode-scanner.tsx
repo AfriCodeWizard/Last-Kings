@@ -73,8 +73,7 @@ export function BarcodeScanner({
         cameraId = backCamera.id
       }
 
-      // Start scanning with optimized settings for barcodes
-      // Use simpler config for better performance and compatibility
+      // Start scanning with optimized settings for BARCODES ONLY (not QR codes)
       const config = {
         fps: 10, // Lower FPS for better performance
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
@@ -89,23 +88,33 @@ export function BarcodeScanner({
         },
         aspectRatio: 1.0,
         disableFlip: false, // Allow rotation
+        // Configure for barcode scanning only - exclude QR codes
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
+        ],
       }
 
       await html5QrCode.start(
         cameraId,
         config,
-        (decodedText) => {
-          // Successfully scanned
+        (decodedText, decodedResult) => {
+          // Successfully scanned a barcode
+          console.log("Barcode scanned:", decodedText)
           onScan(decodedText)
           stopScanning()
           onClose()
         },
         (errorMessage) => {
           // Ignore scanning errors (they're frequent during scanning)
-          // Only log if it's not a "not found" error
-          if (!errorMessage.includes("No QR code") && !errorMessage.includes("No MultiFormat Readers")) {
-            // Silent - these are expected during scanning
-          }
+          // These are expected while waiting for a barcode
         }
       )
 
