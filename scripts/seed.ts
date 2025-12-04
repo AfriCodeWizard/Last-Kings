@@ -200,7 +200,7 @@ async function seed() {
           price: pricing.price * (product.collectible ? 2 : 1) * (product.allocation ? 1.3 : 1),
           collectible: product.collectible || false,
           allocation_only: product.allocation || false,
-        }, { onConflict: 'sku' });
+        }, { onConflict: 'sku' }));
 
       if (variantError && !variantError.message.includes('duplicate')) {
         console.error(`Error creating variant for ${product.name} ${size}ml:`, variantError);
@@ -276,7 +276,7 @@ async function seed() {
             email: user.email,
             full_name: user.full_name,
             role: user.role,
-          }, { onConflict: 'id' });
+          }, { onConflict: 'id' }));
 
         if (userError) {
           console.error(`Error creating user record for ${user.email}:`, userError);
