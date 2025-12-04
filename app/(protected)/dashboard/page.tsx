@@ -117,12 +117,22 @@ export default async function DashboardPage() {
           <CardContent>
             {lowStock && lowStock.length > 0 ? (
               <div className="space-y-2">
-                {lowStock.map((item: never, idx: number) => (
-                  <div key={idx} className="flex justify-between items-center p-2 rounded border border-gold/10">
-                    <span className="text-sm">Item {idx + 1}</span>
-                    <span className="text-sm text-destructive">Low Stock</span>
-                  </div>
-                ))}
+                {lowStock.map((item, idx) => {
+                  const variant = Array.isArray(item.product_variants) 
+                    ? item.product_variants[0] 
+                    : item.product_variants
+                  const productName = variant?.products 
+                    ? (Array.isArray(variant.products) ? variant.products[0]?.name : variant.products?.name)
+                    : 'Unknown Product'
+                  const sku = variant?.sku || 'N/A'
+                  
+                  return (
+                    <div key={idx} className="flex justify-between items-center p-2 rounded border border-gold/10">
+                      <span className="text-sm">{productName} ({sku})</span>
+                      <span className="text-sm text-destructive">Qty: {item.quantity}</span>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">All items are well stocked</p>
