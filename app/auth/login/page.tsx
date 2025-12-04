@@ -13,7 +13,6 @@ import { toast } from "sonner"
 import { syncSessionToCookies } from "@/lib/auth-sync"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -43,7 +42,9 @@ export default function LoginPage() {
         // Check for specific error types
         if (error.message.includes("Invalid login credentials")) {
           // Check if user exists and email is confirmed
-          const { data: checkUser } = await supabase.auth.admin?.getUserByEmail(email.trim()).catch(() => null)
+          // Note: getUserByEmail doesn't exist in Supabase admin API
+          // Using alternative approach - user will need to check email confirmation manually
+          const checkUser = null
           
           if (checkUser) {
             console.log("User exists but login failed. Email confirmed:", checkUser.user?.email_confirmed_at)

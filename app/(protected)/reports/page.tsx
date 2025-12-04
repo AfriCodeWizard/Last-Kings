@@ -29,8 +29,8 @@ export default async function ReportsPage() {
   const totalTax = sales?.reduce((sum, s) => sum + s.tax_amount, 0) || 0
   const totalExcise = sales?.reduce((sum, s) => sum + s.excise_tax, 0) || 0
 
-  // Sales by category
-  const { data: salesByCategory } = await supabase
+  // Sales by category (unused for now)
+  // const { data: salesByCategory } = await supabase
     .from("sale_items")
     .select(`
       quantity,
@@ -163,25 +163,28 @@ export default async function ReportsPage() {
           <CardContent>
             {deadStock.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {deadStock.slice(0, 10).map((stock: {
-                  variant_id: string
-                  quantity: number
-                  product_variants: {
-                    products: { name: string }
-                  }
-                }) => (
+                {deadStock.slice(0, 10).map((stock: any) => {
+                  const variant = Array.isArray(stock.product_variants) 
+                    ? stock.product_variants[0] 
+                    : stock.product_variants
+                  const productName = variant?.products 
+                    ? (Array.isArray(variant.products) ? variant.products[0]?.name : (variant.products as any)?.name)
+                    : 'Unknown Product'
+                  
+                  return (
                   <div
                     key={stock.variant_id}
                     className="flex justify-between items-center p-2 rounded border border-destructive/20"
                   >
                     <div className="text-sm">
-                      {stock.product_variants.products.name}
+                      {productName}
                     </div>
                     <div className="text-sm text-destructive font-bold">
                       Qty: {stock.quantity}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">

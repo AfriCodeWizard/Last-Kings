@@ -10,7 +10,6 @@ import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase/client"
-import { formatCurrency } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -58,7 +57,7 @@ export default function ReceivingPage() {
 
   const processBarcode = async (upc: string) => {
     try {
-      const { data: variant, error } = await supabase
+      const { data: variant, error } = await ((supabase
         .from("product_variants")
         .select(`
           id,
@@ -67,7 +66,7 @@ export default function ReceivingPage() {
           products!inner(name)
         `)
         .eq("upc", upc)
-        .single()
+        .single() as any))
 
       if (error || !variant) {
         toast.error("Product not found")
@@ -76,22 +75,23 @@ export default function ReceivingPage() {
 
       playScanBeep()
 
-      const existingItem = scannedItems.find((item) => item.variant_id === variant.id)
+      const variantTyped = variant as any
+      const existingItem = scannedItems.find((item) => item.variant_id === variantTyped.id)
 
       if (existingItem) {
         setScannedItems((prev) =>
           prev.map((item) =>
-            item.variant_id === variant.id
+            item.variant_id === variantTyped.id
               ? { ...item, quantity: item.quantity + 1 }
               : item
           )
         )
-        toast.success(`${variant.products.name} quantity increased`)
+        toast.success(`${variantTyped.products.name} quantity increased`)
       } else {
         const newItem: ScannedItem = {
-          variant_id: variant.id,
-          product_name: variant.products.name,
-          size_ml: variant.size_ml,
+          variant_id: variantTyped.id,
+          product_name: variantTyped.products.name,
+          size_ml: variantTyped.size_ml,
           quantity: 1,
           lot_number: null,
           expiry_date: null,
@@ -99,7 +99,7 @@ export default function ReceivingPage() {
         setScannedItems((prev) => [...prev, newItem])
         setCurrentItem(newItem)
         setShowLotModal(true)
-        toast.success(`${variant.products.name} added`)
+        toast.success(`${variantTyped.products.name} added`)
       }
     } catch (error) {
       toast.error("Error processing barcode")
@@ -155,12 +155,12 @@ export default function ReceivingPage() {
       if (sessionError) throw sessionError
 
       // Get default location
-      const { data: location } = await supabase
+      const { data: location } = await ((supabase
         .from("inventory_locations")
         .select("id")
         .eq("type", "warehouse")
         .limit(1)
-        .single()
+        .single() as any))
 
       if (!location) {
         toast.error("No warehouse location found")
@@ -171,7 +171,7 @@ export default function ReceivingPage() {
       const receivedItems = scannedItems.map((item) => ({
         session_id: session.id,
         variant_id: item.variant_id,
-        location_id: location.id,
+        location_id: (location as any).id,
         quantity: item.quantity,
         lot_number: item.lot_number,
         expiry_date: item.expiry_date,

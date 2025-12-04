@@ -5,7 +5,7 @@ let scanSound: Howl | null = null;
 export function initScanSound() {
   if (typeof window !== 'undefined' && !scanSound) {
     // Create a beep sound using Web Audio API
-    const audioContext = new (window.AudioContext || (window as never).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -29,7 +29,7 @@ export function playScanBeep() {
   try {
     initScanSound();
     // Simple beep using Web Audio API
-    const audioContext = new (window.AudioContext || (window as never).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     

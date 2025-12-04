@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,7 +11,6 @@ import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
 export default function ResetPasswordPage() {
-  const router = useRouter()
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
 

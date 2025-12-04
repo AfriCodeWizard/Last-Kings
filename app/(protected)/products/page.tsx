@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import { Input } from "@/components/ui/input"
 import { ProductsTable } from "@/components/products/products-table"
 
 export default async function ProductsPage() {

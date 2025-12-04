@@ -119,16 +119,16 @@ async function seed() {
   const uniqueBrands = [...new Set(premiumProducts.map(p => p.brand))];
   
   for (const brandName of uniqueBrands) {
-    const { data, error } = await supabase
-      .from('brands')
+    const { data, error } = await ((supabase
+      .from('brands') as any)
       .upsert({ name: brandName }, { onConflict: 'name' })
       .select()
-      .single();
+      .single());
     
     if (error && !error.message.includes('duplicate')) {
       console.error(`Error creating brand ${brandName}:`, error);
     } else if (data) {
-      brandsMap.set(brandName, data.id);
+      brandsMap.set(brandName, (data as any).id);
       console.log(`✓ Brand: ${brandName}`);
     }
   }
@@ -138,16 +138,16 @@ async function seed() {
   const uniqueCategories = [...new Set(premiumProducts.map(p => p.category))];
   
   for (const categoryName of uniqueCategories) {
-    const { data, error } = await supabase
-      .from('categories')
+    const { data, error } = await ((supabase
+      .from('categories') as any)
       .upsert({ name: categoryName }, { onConflict: 'name' })
       .select()
-      .single();
+      .single());
     
     if (error && !error.message.includes('duplicate')) {
       console.error(`Error creating category ${categoryName}:`, error);
     } else if (data) {
-      categoriesMap.set(categoryName, data.id);
+      categoriesMap.set(categoryName, (data as any).id);
       console.log(`✓ Category: ${categoryName}`);
     }
   }
@@ -163,8 +163,8 @@ async function seed() {
     }
 
     // Create product
-    const { data: productData, error: productError } = await supabase
-      .from('products')
+    const { data: productData, error: productError } = await ((supabase
+      .from('products') as any)
       .upsert({
         name: product.name,
         brand_id: brandId,
@@ -172,7 +172,7 @@ async function seed() {
         description: product.description,
       }, { onConflict: 'name' })
       .select()
-      .single();
+      .single());
 
     if (productError && !productError.message.includes('duplicate')) {
       console.error(`Error creating product ${product.name}:`, productError);
@@ -189,10 +189,10 @@ async function seed() {
       const sku = `${product.brand.toUpperCase().replace(/\s/g, '')}-${product.name.toUpperCase().replace(/\s/g, '')}-${size}`;
       const upc = `8${Math.random().toString().slice(2, 11)}`;
 
-      const { error: variantError } = await supabase
-        .from('product_variants')
+      const { error: variantError } = await ((supabase
+        .from('product_variants') as any)
         .upsert({
-          product_id: productData.id,
+          product_id: (productData as any).id,
           size_ml: size,
           sku,
           upc,
@@ -216,9 +216,8 @@ async function seed() {
   ];
 
   for (const location of locations) {
-    const { error } = await supabase
-      .from('inventory_locations')
-      .upsert(location, { onConflict: 'name' });
+    const { error } = await ((supabase.from('inventory_locations') as any)
+      .upsert(location, { onConflict: 'name' }));
     
     if (error && !error.message.includes('duplicate')) {
       console.error(`Error creating location ${location.name}:`, error);
@@ -234,9 +233,8 @@ async function seed() {
   ];
 
   for (const rate of taxRates) {
-    const { error } = await supabase
-      .from('tax_rates')
-      .upsert(rate, { onConflict: 'name' });
+    const { error } = await ((supabase.from('tax_rates') as any)
+      .upsert(rate, { onConflict: 'name' }));
     
     if (error && !error.message.includes('duplicate')) {
       console.error(`Error creating tax rate ${rate.name}:`, error);
@@ -272,8 +270,7 @@ async function seed() {
 
       if (authData.user) {
         // Create user record in users table
-        const { error: userError } = await supabase
-          .from('users')
+        const { error: userError } = await ((supabase.from('users') as any)
           .upsert({
             id: authData.user.id,
             email: user.email,

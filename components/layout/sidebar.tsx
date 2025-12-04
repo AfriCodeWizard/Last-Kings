@@ -12,7 +12,6 @@ import {
   Users,
   FileText,
   Settings,
-  ScanLine
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
