@@ -13,18 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
-import { Plus, Trash2, Mail, MessageCircle, X } from "lucide-react"
+import { Plus, Mail, MessageCircle, X } from "lucide-react"
 
 interface Distributor {
   id: string
