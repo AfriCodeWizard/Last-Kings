@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
+import { Html5Qrcode } from "html5-qrcode"
 import { Button } from "@/components/ui/button"
 import { X, Camera, CameraOff } from "lucide-react"
 import {

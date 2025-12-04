@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScanLine, CheckCircle2, X, Camera } from "lucide-react"
+import { ScanLine, CheckCircle2, X } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
