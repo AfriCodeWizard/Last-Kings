@@ -9,11 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import type { Database } from "@/types/supabase"
+
+type CustomerInsert = Database["public"]["Tables"]["customers"]["Insert"]
 
 export default function NewCustomerPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CustomerInsert>({
     first_name: "",
     last_name: "",
     email: "",
@@ -27,9 +30,23 @@ export default function NewCustomerPage() {
     setLoading(true)
 
     try {
+      if (!supabase) {
+        throw new Error("Supabase client not initialized")
+      }
+
+      // Prepare data for insert - convert empty strings to null for optional fields
+      const insertData: CustomerInsert = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email && formData.email.trim() !== "" ? formData.email : null,
+        phone: formData.phone && formData.phone.trim() !== "" ? formData.phone : null,
+        date_of_birth: formData.date_of_birth && formData.date_of_birth.trim() !== "" ? formData.date_of_birth : null,
+        is_whale: formData.is_whale ?? false,
+      }
+
       const { error } = await supabase
         .from("customers")
-        .insert(formData)
+        .insert(insertData)
 
       if (error) throw error
 
