@@ -15,7 +15,7 @@ import {
 interface BarcodeScannerProps {
   isOpen: boolean
   onClose: () => void
-  onScan: (barcode: string) => void
+  onScan: (barcode: string) => void | Promise<void>
   title?: string
   description?: string
 }
@@ -113,11 +113,25 @@ export function BarcodeScanner({
         async (decodedText) => {
           // Successfully scanned a barcode
           console.log("Barcode scanned:", decodedText)
-          // Stop scanning first
-          await stopScanning()
-          // Then process the scan and close
-          onScan(decodedText)
-          onClose()
+          try {
+            // Stop scanning first
+            await stopScanning()
+            // Then process the scan (await if it's async)
+            const result = onScan(decodedText)
+            if (result instanceof Promise) {
+              await result
+            }
+            // Close after processing is complete
+            setTimeout(() => {
+              onClose()
+            }, 100)
+          } catch (error) {
+            console.error("Error processing scan:", error)
+            // Still close the scanner even if there's an error
+            setTimeout(() => {
+              onClose()
+            }, 100)
+          }
         },
         () => {
           // Ignore scanning errors (they're frequent during scanning)

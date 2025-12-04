@@ -351,8 +351,8 @@ export default function ReceivingPage() {
       <BarcodeScanner
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
-        onScan={(barcode) => {
-          processBarcode(barcode)
+        onScan={async (barcode) => {
+          await processBarcode(barcode)
           setBarcode("")
         }}
         title="Scan Barcode"

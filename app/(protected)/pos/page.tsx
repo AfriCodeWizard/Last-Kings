@@ -445,8 +445,8 @@ export default function POSPage() {
       <BarcodeScanner
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
-        onScan={(barcode) => {
-          handleBarcodeScan(barcode)
+        onScan={async (barcode) => {
+          await handleBarcodeScan(barcode)
           setBarcode("")
         }}
         title="Scan Barcode"
