@@ -57,7 +57,14 @@ export default function ReceivingPage() {
   }
 
   const processBarcode = async (upc: string) => {
+    console.log("processBarcode called with UPC:", upc)
+    if (!upc || upc.trim().length === 0) {
+      console.error("Empty UPC provided")
+      toast.error("Invalid barcode")
+      return
+    }
     try {
+      console.log("Querying database for UPC:", upc.trim())
       const { data: variant, error } = await ((supabase
         .from("product_variants")
         .select(`
@@ -66,20 +73,33 @@ export default function ReceivingPage() {
           size_ml,
           products!inner(name)
         `)
-        .eq("upc", upc)
+        .eq("upc", upc.trim())
         .single() as any))
 
-      if (error || !variant) {
+      console.log("Database query result:", { variant, error })
+
+      if (error) {
+        console.error("Database error:", error)
+        toast.error(`Product not found: ${error.message}`)
+        return
+      }
+
+      if (!variant) {
+        console.error("No variant found for UPC:", upc)
         toast.error("Product not found")
         return
       }
 
+      console.log("Variant found:", variant)
       playScanBeep()
 
       const variantTyped = variant as any
+      console.log("Variant typed:", variantTyped)
       const existingItem = scannedItems.find((item) => item.variant_id === variantTyped.id)
+      console.log("Existing item:", existingItem)
 
       if (existingItem) {
+        console.log("Updating existing item quantity")
         setScannedItems((prev) =>
           prev.map((item) =>
             item.variant_id === variantTyped.id
@@ -89,6 +109,7 @@ export default function ReceivingPage() {
         )
         toast.success(`${variantTyped.products.name} quantity increased`)
       } else {
+        console.log("Adding new item to scanned items")
         const newItem: ScannedItem = {
           variant_id: variantTyped.id,
           product_name: variantTyped.products.name,
@@ -97,7 +118,12 @@ export default function ReceivingPage() {
           lot_number: null,
           expiry_date: null,
         }
-        setScannedItems((prev) => [...prev, newItem])
+        console.log("New item:", newItem)
+        setScannedItems((prev) => {
+          const updated = [...prev, newItem]
+          console.log("Updated scanned items:", updated)
+          return updated
+        })
         setCurrentItem(newItem)
         setShowLotModal(true)
         toast.success(`${variantTyped.products.name} added`)

@@ -90,7 +90,14 @@ export default function POSPage() {
   }
 
   const handleBarcodeScan = async (value: string) => {
+    console.log("handleBarcodeScan called with value:", value)
+    if (!value || value.trim().length === 0) {
+      console.error("Empty barcode provided")
+      toast.error("Invalid barcode")
+      return
+    }
     try {
+      console.log("Querying database for UPC:", value.trim())
       const { data: variant, error } = await (supabase
         .from("product_variants")
         .select(`
@@ -103,23 +110,36 @@ export default function POSPage() {
             categories!inner(name)
           )
         `)
-        .eq("upc", value)
+        .eq("upc", value.trim())
         .single() as any)
 
-      if (error || !variant) {
+      console.log("Database query result:", { variant, error })
+
+      if (error) {
+        console.error("Database error:", error)
+        toast.error(`Product not found: ${error.message}`)
+        return
+      }
+
+      if (!variant) {
+        console.error("No variant found for UPC:", value)
         toast.error("Product not found")
         return
       }
 
+      console.log("Variant found:", variant)
       playScanBeep()
-      addToCart({
+      const cartItem = {
         variant_id: variant.id,
         product_name: variant.products.name,
         size_ml: variant.size_ml,
         price: variant.price,
         quantity: 1,
         category_name: variant.products.categories?.name,
-      })
+      }
+      console.log("Adding to cart:", cartItem)
+      addToCart(cartItem)
+      console.log("Item added to cart")
     } catch (error) {
       console.error("Error scanning barcode:", error)
       toast.error("Error processing barcode")

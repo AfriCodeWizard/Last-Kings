@@ -112,25 +112,34 @@ export function BarcodeScanner({
         config,
         async (decodedText) => {
           // Successfully scanned a barcode
-          console.log("Barcode scanned:", decodedText)
+          console.log("Barcode scanned:", decodedText, "Type:", typeof decodedText, "Length:", decodedText?.length)
+          if (!decodedText || decodedText.trim().length === 0) {
+            console.error("Empty barcode scanned")
+            return
+          }
           try {
             // Stop scanning first
+            console.log("Stopping scanner...")
             await stopScanning()
+            console.log("Scanner stopped, processing barcode...")
             // Then process the scan (await if it's async)
-            const result = onScan(decodedText)
+            const result = onScan(decodedText.trim())
+            console.log("onScan called, result:", result)
             if (result instanceof Promise) {
               await result
+              console.log("onScan promise resolved")
             }
             // Close after processing is complete
+            console.log("Closing scanner...")
             setTimeout(() => {
               onClose()
-            }, 100)
+            }, 200)
           } catch (error) {
             console.error("Error processing scan:", error)
             // Still close the scanner even if there's an error
             setTimeout(() => {
               onClose()
-            }, 100)
+            }, 200)
           }
         },
         () => {
