@@ -42,7 +42,10 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           
           <Link href="/dashboard" className="flex items-center gap-2">
             <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-gold" />
-            <span className="text-lg sm:text-xl font-serif font-bold text-gold">Last Kings</span>
+            <div className="flex flex-col">
+              <span className="text-lg sm:text-xl font-serif font-bold text-gold">Last Kings</span>
+              <span className="text-xs sm:text-sm font-sans text-gold/70 -mt-1">liquor store</span>
+            </div>
           </Link>
         </div>
         
