@@ -65,7 +65,7 @@ ${po.po_items.map((item: any, index: number) => {
   const variant = item.product_variants
   const product = variant.products
   const brand = product.brands
-  return `${index + 1}. ${brand.name} ${product.name} (${variant.size_ml}ml)
+  return `${index + 1}. ${brand.name} (${variant.size_ml}ml)
    SKU: ${variant.sku}
    Qty: ${item.quantity} × KES ${item.unit_cost.toLocaleString('en-KE', {
      minimumFractionDigits: 2,

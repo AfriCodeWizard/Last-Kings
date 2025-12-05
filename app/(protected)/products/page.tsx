@@ -16,7 +16,7 @@ export default async function ProductsPage() {
       categories(name),
       product_variants(id, size_ml, sku, price, cost)
     `)
-    .order("name")
+    .order("product_type")
 
   // Separate products by type
   const liquorProducts = products?.filter(p => p.product_type === 'liquor') || []

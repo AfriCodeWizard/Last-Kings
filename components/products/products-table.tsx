@@ -43,7 +43,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
   const [search, setSearch] = useState("")
 
   const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(search.toLowerCase()) ||
+    (product.product_type === 'liquor' ? 'liquor' : 'beverage').includes(search.toLowerCase()) ||
     product.brands.name.toLowerCase().includes(search.toLowerCase()) ||
     product.categories.name.toLowerCase().includes(search.toLowerCase())
   )
@@ -94,14 +94,16 @@ export function ProductsTable({ products }: ProductsTableProps) {
                         {product.image_url && (
                           <Image
                             src={product.image_url}
-                            alt={product.name}
+                            alt={product.brands.name}
                             width={40}
                             height={40}
                             className="rounded"
                           />
                         )}
                         <div>
-                          <div className="font-medium">{product.name}</div>
+                          <div className="font-medium">
+                            {product.brands.name}
+                          </div>
                           {product.description && (
                             <div className="text-sm text-muted-foreground line-clamp-1">
                               {product.description}

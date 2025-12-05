@@ -41,7 +41,6 @@ export function QuickAddProductDialog({
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([])
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
   const [formData, setFormData] = useState({
-    productName: "",
     brandId: "",
     categoryId: "",
     productType: "liquor" as "liquor" | "beverage",
@@ -57,7 +56,6 @@ export function QuickAddProductDialog({
       loadBrandsAndCategories()
       // Reset form and set UPC when dialog opens
       setFormData({
-        productName: "",
         brandId: "",
         categoryId: "",
         productType: "liquor",
@@ -71,13 +69,13 @@ export function QuickAddProductDialog({
   }, [isOpen, scannedUPC])
 
   useEffect(() => {
-    // Auto-generate SKU from product name when it changes
-    if (formData.productName && formData.brandId && brands.length > 0) {
+    // Auto-generate SKU from brand and size when it changes
+    if (formData.brandId && brands.length > 0) {
       const brandName = brands.find(b => b.id === formData.brandId)?.name || ""
-      const sku = `${brandName.toUpperCase().replace(/\s/g, '')}-${formData.productName.toUpperCase().replace(/\s/g, '')}-${formData.sizeMl}`
+      const sku = `${brandName.toUpperCase().replace(/\s/g, '')}-${formData.sizeMl}`
       setFormData(prev => ({ ...prev, sku }))
     }
-  }, [formData.productName, formData.brandId, formData.sizeMl, brands])
+  }, [formData.brandId, formData.sizeMl, brands])
 
   const loadBrandsAndCategories = async () => {
     const [brandsRes, categoriesRes] = await Promise.all([
@@ -95,11 +93,6 @@ export function QuickAddProductDialog({
 
     try {
       // Validate required fields
-      if (!formData.productName.trim()) {
-        toast.error("Product name is required")
-        setLoading(false)
-        return
-      }
       if (!formData.brandId) {
         toast.error("Please select a brand")
         setLoading(false)
@@ -125,7 +118,6 @@ export function QuickAddProductDialog({
       const { data: product, error: productError } = await ((supabase
         .from("products") as any)
         .insert({
-          name: formData.productName.trim(),
           brand_id: formData.brandId,
           category_id: formData.categoryId,
           product_type: formData.productType,
@@ -187,29 +179,32 @@ export function QuickAddProductDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="productName" className="font-sans">Product Name *</Label>
-                <Input
-                  id="productName"
-                  value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                  placeholder="e.g., Glenfiddich 18 Year"
-                  required
-                  className="font-sans"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="upc" className="font-sans">UPC / Barcode *</Label>
-                <Input
-                  id="upc"
-                  value={formData.upc}
-                  onChange={(e) => setFormData({ ...formData, upc: e.target.value })}
-                  required
-                  className="font-sans"
-                  readOnly
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="productType" className="font-sans">Product Type *</Label>
+              <Select
+                value={formData.productType}
+                onValueChange={(value) => setFormData({ ...formData, productType: value as "liquor" | "beverage" })}
+                required
+              >
+                <SelectTrigger className="font-sans">
+                  <SelectValue placeholder="Select product type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
+                  <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="upc" className="font-sans">UPC / Barcode *</Label>
+              <Input
+                id="upc"
+                value={formData.upc}
+                onChange={(e) => setFormData({ ...formData, upc: e.target.value })}
+                required
+                className="font-sans"
+                readOnly
+              />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -251,23 +246,6 @@ export function QuickAddProductDialog({
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="productType" className="font-sans">Product Type *</Label>
-              <Select
-                value={formData.productType}
-                onValueChange={(value) => setFormData({ ...formData, productType: value as "liquor" | "beverage" })}
-                required
-              >
-                <SelectTrigger className="font-sans">
-                  <SelectValue placeholder="Select product type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
-                  <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">

@@ -38,7 +38,9 @@ export default function POSPage() {
   const [showScanner, setShowScanner] = useState(false)
   const [products, setProducts] = useState<Array<{
     id: string
-    name: string
+    brand_name: string
+    category_name: string
+    product_type: string
     size_ml: number
     price: number
     sku: string
@@ -64,7 +66,8 @@ export default function POSPage() {
         price,
         sku,
         products!inner(
-          name,
+          product_type,
+          brands!inner(name),
           categories!inner(name)
         )
       `)
@@ -78,16 +81,18 @@ export default function POSPage() {
         price: number
         sku: string
         products: { 
-          name: string
+          product_type: string
+          brands: { name: string }
           categories: { name: string }
         }
       }) => ({
         id: v.id,
-        name: v.products.name,
+        brand_name: v.products.brands?.name || '',
+        category_name: v.products.categories?.name || '',
+        product_type: v.products.product_type,
         size_ml: v.size_ml,
         price: v.price,
         sku: v.sku,
-        category_name: v.products.categories?.name,
       })))
     }
   }
@@ -110,7 +115,8 @@ export default function POSPage() {
           price,
           sku,
           products!inner(
-            name,
+            product_type,
+            brands!inner(name),
             categories!inner(name)
           )
         `)
@@ -154,7 +160,8 @@ export default function POSPage() {
       playScanBeep()
       const cartItem = {
         variant_id: variant.id,
-        product_name: variant.products.name,
+        brand_name: variant.products.brands?.name || '',
+        product_type: variant.products.product_type || 'liquor',
         size_ml: variant.size_ml,
         price: variant.price,
         quantity: 1,
@@ -180,7 +187,7 @@ export default function POSPage() {
     } else {
       setCart([...cart, item])
     }
-    toast.success(`${item.product_name} added to cart`)
+    toast.success(`${item.brand_name} added to cart`)
   }
 
   const removeFromCart = (variantId: string) => {
@@ -335,7 +342,8 @@ export default function POSPage() {
                     className="flex justify-between items-center p-3 rounded-lg border border-gold/10 hover:bg-gold/5 cursor-pointer"
                     onClick={() => addToCart({
                       variant_id: product.id,
-                      product_name: product.name,
+                      brand_name: product.brand_name,
+                      product_type: product.product_type,
                       size_ml: product.size_ml,
                       price: product.price,
                       quantity: 1,
@@ -343,7 +351,9 @@ export default function POSPage() {
                     })}
                   >
                     <div>
-                      <div className="font-medium">{product.name}</div>
+                      <div className="font-medium">
+                        {product.brand_name}
+                      </div>
                       <div className="text-sm text-muted-foreground">
                         {product.size_ml}ml • {formatCurrency(product.price)}
                       </div>
@@ -375,7 +385,9 @@ export default function POSPage() {
                       className="flex justify-between items-center p-2 rounded border border-gold/10"
                     >
                       <div className="flex-1">
-                        <div className="text-sm font-medium">{item.product_name}</div>
+                        <div className="text-sm font-medium">
+                          {item.brand_name}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {item.size_ml}ml • {formatCurrency(item.price)}
                         </div>
@@ -524,7 +536,8 @@ export default function POSPage() {
             playScanBeep()
             addToCart({
               variant_id: variant.id,
-              product_name: variant.products.name,
+              brand_name: variant.products.brands?.name || '',
+              product_type: variant.products.product_type || 'liquor',
               size_ml: variant.size_ml,
               price: variant.price,
               quantity: 1,

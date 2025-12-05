@@ -42,9 +42,11 @@ export default async function ProductDetailPage({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-sans font-bold text-white mb-2">{product.name}</h1>
+          <h1 className="text-4xl font-sans font-bold text-white mb-2">
+            {product.brands.name}
+          </h1>
           <p className="text-muted-foreground">
-            {product.brands.name} • {product.categories.name} • {product.product_type === 'liquor' ? 'Liquor' : 'Beverage'}
+            {product.categories.name} • {product.product_type === 'liquor' ? 'Liquor' : 'Beverage'}
           </p>
         </div>
         <Link href={`/products/${id}/edit`}>
@@ -65,7 +67,7 @@ export default async function ProductDetailPage({
               <div className="relative w-full h-64 rounded-lg overflow-hidden border border-gold/20">
                 <Image
                   src={product.image_url}
-                  alt={product.name}
+                  alt={product.brands.name}
                   fill
                   className="object-cover"
                 />
@@ -126,7 +128,7 @@ export default async function ProductDetailPage({
                     </div>
                     <UPCDialogWrapper
                       variant={variant}
-                      productName={product.name}
+                      productName={product.brands.name}
                       onUpdate={() => window.location.reload()}
                     />
                   </div>

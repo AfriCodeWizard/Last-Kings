@@ -22,7 +22,6 @@ export default function NewProductPage() {
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([])
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
   const [formData, setFormData] = useState({
-    name: "",
     brand_id: "",
     category_id: "",
     product_type: "liquor" as "liquor" | "beverage",
@@ -49,11 +48,6 @@ export default function NewProductPage() {
 
     try {
       // Validate required fields
-      if (!formData.name.trim()) {
-        toast.error("Product name is required")
-        setLoading(false)
-        return
-      }
       if (!formData.brand_id) {
         toast.error("Please select a brand")
         setLoading(false)
@@ -66,7 +60,6 @@ export default function NewProductPage() {
       }
 
       const { error } = await ((supabase.from("products") as any).insert({
-        name: formData.name.trim(),
         brand_id: formData.brand_id,
         category_id: formData.category_id,
         product_type: formData.product_type,
@@ -104,14 +97,20 @@ export default function NewProductPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="font-sans">Product Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              <Label htmlFor="product_type" className="font-sans">Product Type *</Label>
+              <Select
+                value={formData.product_type}
+                onValueChange={(value) => setFormData({ ...formData, product_type: value as "liquor" | "beverage" })}
                 required
-                className="font-sans"
-              />
+              >
+                <SelectTrigger className="font-sans">
+                  <SelectValue placeholder="Select product type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
+                  <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="brand" className="font-sans">Brand *</Label>
@@ -148,22 +147,6 @@ export default function NewProductPage() {
                       {category.name}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="product_type" className="font-sans">Product Type *</Label>
-              <Select
-                value={formData.product_type}
-                onValueChange={(value) => setFormData({ ...formData, product_type: value as "liquor" | "beverage" })}
-                required
-              >
-                <SelectTrigger className="font-sans">
-                  <SelectValue placeholder="Select product type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
-                  <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
                 </SelectContent>
               </Select>
             </div>

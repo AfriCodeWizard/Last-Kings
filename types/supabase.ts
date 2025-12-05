@@ -83,7 +83,7 @@ export interface Database {
       products: {
         Row: {
           id: string;
-          name: string;
+          name: string | null;
           brand_id: string;
           category_id: string;
           product_type: 'liquor' | 'beverage';
@@ -94,7 +94,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          name: string;
+          name?: string | null;
           brand_id: string;
           category_id: string;
           product_type?: 'liquor' | 'beverage';

@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS categories (
 -- Products table
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
+  name TEXT,
   brand_id UUID NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
   product_type product_type NOT NULL DEFAULT 'liquor',

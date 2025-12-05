@@ -84,12 +84,12 @@ export default function NewPurchaseOrderPage() {
         price,
         cost,
         products!inner(
-          name,
+          product_type,
           brands!inner(name),
           categories!inner(name)
         )
       `)
-      .order("products(name)")
+      .order("products(product_type)")
 
     if (prodData) {
       setProducts(prodData as any)
@@ -116,7 +116,7 @@ export default function NewPurchaseOrderPage() {
     } else {
       const newItem: POItem = {
         variant_id: variant.id,
-        product_name: variant.products.name,
+        product_type: variant.products.product_type || 'liquor',
         brand_name: variant.products.brands.name,
         size_ml: variant.size_ml,
         sku: variant.sku,
@@ -336,7 +336,7 @@ export default function NewPurchaseOrderPage() {
   }
 
   const filteredProducts = products.filter(variant =>
-    variant.products.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (variant.products.product_type === 'liquor' ? 'liquor' : 'beverage').includes(searchTerm.toLowerCase()) ||
     variant.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
     variant.products.brands.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -418,7 +418,7 @@ export default function NewPurchaseOrderPage() {
                     >
                       <div className="flex-1">
                         <div className="font-medium font-sans">
-                          {variant.products.brands.name} {variant.products.name}
+                          {variant.products.brands.name}
                         </div>
                         <div className="text-sm text-muted-foreground font-sans">
                           {variant.size_ml}ml • SKU: {variant.sku} • Cost: {formatCurrency(variant.cost)}
@@ -465,7 +465,7 @@ export default function NewPurchaseOrderPage() {
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="font-medium font-sans text-sm">
-                              {item.brand_name} {item.product_name}
+                              {item.brand_name}
                             </div>
                             <div className="text-xs text-muted-foreground font-sans">
                               {item.size_ml}ml • {item.sku}

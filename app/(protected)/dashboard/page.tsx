@@ -302,7 +302,7 @@ export default async function DashboardPage() {
                       : item.product_variants
                     const products = variant?.products
                     const productName = products 
-                      ? (Array.isArray(products) ? products[0]?.name : (products as any)?.name)
+                      ? (Array.isArray(products) ? products[0]?.brands?.name : (products as any)?.brands?.name)
                       : 'Unknown Product'
                     const category = products 
                       ? (Array.isArray(products) 

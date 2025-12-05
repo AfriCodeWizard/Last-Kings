@@ -31,7 +31,8 @@ import { formatCurrency } from "@/lib/utils"
 
 interface ScannedItem {
   variant_id: string
-  product_name: string
+  brand_name: string
+  product_type: string
   size_ml: number
   quantity: number
   lot_number: string | null
@@ -126,7 +127,7 @@ export default function ReceivingPage() {
           id,
           upc,
           size_ml,
-          products!inner(name)
+          products!inner(product_type, brands!inner(name))
         `)
         .eq("upc", upc.trim()) as any))
 
@@ -166,12 +167,13 @@ export default function ReceivingPage() {
               : item
           )
         )
-        toast.success(`${variantTyped.products.name} quantity increased`)
+        toast.success(`${variantTyped.products.brands?.name || 'Product'} quantity increased`)
       } else {
         console.log("Adding new item to scanned items")
         const newItem: ScannedItem = {
           variant_id: variantTyped.id,
-          product_name: variantTyped.products.name,
+          brand_name: variantTyped.products.brands?.name || '',
+          product_type: variantTyped.products.product_type || 'liquor',
           size_ml: variantTyped.size_ml,
           quantity: 1,
           lot_number: null,
@@ -185,7 +187,7 @@ export default function ReceivingPage() {
         })
         setCurrentItem(newItem)
         setShowLotModal(true)
-        toast.success(`${variantTyped.products.name} added`)
+        toast.success(`${variantTyped.products.brands?.name || 'Product'} added`)
       }
     } catch (error) {
       toast.error("Error processing barcode")
@@ -465,7 +467,9 @@ export default function ReceivingPage() {
                       className="flex justify-between items-center p-3 rounded-lg border border-gold/10 hover:bg-gold/5"
                     >
                       <div className="flex-1">
-                        <div className="font-medium">{item.product_name}</div>
+                        <div className="font-medium">
+                          {item.brand_name}
+                        </div>
                         <div className="text-sm text-muted-foreground">
                           {item.size_ml}ml
                           {item.lot_number && ` • Lot: ${item.lot_number}`}
@@ -508,7 +512,7 @@ export default function ReceivingPage() {
           <DialogHeader>
             <DialogTitle>Lot / Batch Information</DialogTitle>
             <DialogDescription>
-              Enter lot number and expiry date for {currentItem?.product_name}
+              Enter lot number and expiry date for {currentItem?.brand_name || 'this item'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -570,7 +574,7 @@ export default function ReceivingPage() {
               id,
               upc,
               size_ml,
-              products!inner(name)
+              products!inner(product_type, brands!inner(name))
             `)
             .eq("id", variantId)
             .single() as any))
@@ -579,7 +583,8 @@ export default function ReceivingPage() {
             playScanBeep()
             const newItem: ScannedItem = {
               variant_id: variant.id,
-              product_name: variant.products.name,
+              brand_name: variant.products.brands?.name || '',
+              product_type: variant.products.product_type || 'liquor',
               size_ml: variant.size_ml,
               quantity: 1,
               lot_number: null,
@@ -588,7 +593,7 @@ export default function ReceivingPage() {
             setScannedItems((prev) => [...prev, newItem])
             setCurrentItem(newItem)
             setShowLotModal(true)
-            toast.success(`${variant.products.name} added`)
+            toast.success(`${variant.products.brands?.name || 'Product'} added`)
           }
         }}
         context="receiving"

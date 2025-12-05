@@ -168,7 +168,7 @@ export default async function ReportsPage() {
                     ? stock.product_variants[0] 
                     : stock.product_variants
                   const productName = variant?.products 
-                    ? (Array.isArray(variant.products) ? variant.products[0]?.name : (variant.products as any)?.name)
+                    ? (Array.isArray(variant.products) ? variant.products[0]?.brands?.name : (variant.products as any)?.brands?.name)
                     : 'Unknown Product'
                   
                   return (
