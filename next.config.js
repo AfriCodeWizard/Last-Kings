@@ -15,6 +15,7 @@ const withPWA = require('next-pwa')({
       },
     },
   ],
+  buildExcludes: [/middleware-manifest\.json$/],
 });
 
 /** @type {import('next').NextConfig} */
@@ -37,10 +38,15 @@ const nextConfig = {
   },
   // Enable React strict mode for better performance
   reactStrictMode: true,
-  // Optimize production builds
-  swcMinify: true,
   // Compress responses
   compress: true,
+  // Use webpack for next-pwa compatibility (required for service worker generation)
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // PWA service worker generation
+    }
+    return config;
+  },
 };
 
 module.exports = withPWA(nextConfig);
