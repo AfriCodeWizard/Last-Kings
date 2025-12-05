@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, AlertTriangle, TrendingUp, DollarSign } from "lucide-react"
+import { Package, AlertTriangle, TrendingUp, DollarSign, TrendingDown } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Table,
@@ -27,6 +27,26 @@ export default async function DashboardPage() {
     .gte("created_at", today.toISOString())
 
   const salesTotal = salesToday?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+
+  // Get yesterday's sales for comparison
+  const yesterdayStart = new Date(today)
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1)
+  
+  const { data: salesYesterday } = await supabase
+    .from("sales")
+    .select("total_amount")
+    .gte("created_at", yesterdayStart.toISOString())
+    .lt("created_at", today.toISOString())
+
+  const salesYesterdayTotal = salesYesterday?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+  
+  // Calculate percentage change
+  let salesPercentageChange = 0
+  if (salesYesterdayTotal > 0) {
+    salesPercentageChange = ((salesTotal - salesYesterdayTotal) / salesYesterdayTotal) * 100
+  } else if (salesTotal > 0) {
+    salesPercentageChange = 100 // 100% increase if no sales yesterday
+  }
 
   // Get low stock items with categories
   const { data: lowStock } = await supabase
@@ -129,20 +149,57 @@ export default async function DashboardPage() {
     }
   }
 
-  // Get top movers (products with most sales in last 7 days)
+  // Get top movers (brands with most sales in last 7 days)
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-  const { data: topMovers } = await supabase
+  const { data: saleItems } = await supabase
     .from("sale_items")
     .select(`
       quantity,
+      unit_price,
       product_variants!inner(
-        products!inner(name)
+        products!inner(
+          brands(name)
+        )
       )
     `)
     .gte("created_at", sevenDaysAgo.toISOString())
-    .limit(5)
+
+  // Calculate sales by brand
+  const salesByBrand: Record<string, number> = {}
+  if (saleItems) {
+    saleItems.forEach((item: any) => {
+      const variant = Array.isArray(item.product_variants) 
+        ? item.product_variants[0] 
+        : item.product_variants
+      const products = variant?.products
+      
+      // Extract brand name - brands is a direct relationship on products
+      let brandName = 'Unknown'
+      if (products) {
+        if (Array.isArray(products)) {
+          const product = products[0]
+          if (product?.brands) {
+            brandName = Array.isArray(product.brands) 
+              ? product.brands[0]?.name || 'Unknown'
+              : product.brands?.name || 'Unknown'
+          }
+        } else {
+          brandName = (products as any)?.brands?.name || 'Unknown'
+        }
+      }
+      
+      const salesAmount = item.quantity * item.unit_price
+      salesByBrand[brandName] = (salesByBrand[brandName] || 0) + salesAmount
+    })
+  }
+
+  // Get top moving brand
+  const topMovingBrand = Object.entries(salesByBrand)
+    .sort(([, a], [, b]) => (b as number) - (a as number))[0]
+  
+  const topBrandName = topMovingBrand ? topMovingBrand[0] : null
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -159,7 +216,14 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-sans text-gold">{formatCurrency(salesTotal)}</div>
-            <p className="text-xs text-muted-foreground font-sans">+12.5% from yesterday</p>
+            <p className={`text-xs font-sans flex items-center gap-1 ${salesPercentageChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {salesPercentageChange >= 0 ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              {salesPercentageChange >= 0 ? '+' : ''}{salesPercentageChange.toFixed(1)}% from yesterday
+            </p>
           </CardContent>
         </Card>
 
@@ -188,11 +252,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium font-sans">Top Movers</CardTitle>
-            <TrendingUp className="h-4 w-4 text-gold" />
+            <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-sans">{topMovers?.length || 0}</div>
-            <p className="text-xs text-muted-foreground font-sans">Best sellers this week</p>
+            <div className="text-2xl font-bold font-sans text-green-500">{topBrandName || 'N/A'}</div>
+            <p className="text-xs text-muted-foreground font-sans">Best selling brand this week</p>
           </CardContent>
         </Card>
       </div>
@@ -247,10 +311,8 @@ export default async function DashboardPage() {
                         <TableCell className="text-right">
                           {quantity < 5 ? (
                             <Badge variant="destructive" className="font-sans">Low Stock</Badge>
-                          ) : quantity < 10 ? (
-                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-sans">Medium Stock</Badge>
                           ) : (
-                            <Badge variant="default" className="font-sans">In Stock</Badge>
+                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-sans">Medium Stock</Badge>
                           )}
                         </TableCell>
                       </TableRow>
