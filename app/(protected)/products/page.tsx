@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Plus, ScanLine, Camera } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
@@ -16,6 +17,7 @@ import { ProductsTable } from "@/components/products/products-table"
 export default function ProductsPage() {
   const [liquorProducts, setLiquorProducts] = useState<any[]>([])
   const [beverageProducts, setBeverageProducts] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<"liquor" | "beverage">("liquor")
   const [barcode, setBarcode] = useState("")
   const [showScanner, setShowScanner] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
@@ -166,21 +168,32 @@ export default function ProductsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Liquor</CardTitle>
-          <CardDescription>All liquor products in your inventory</CardDescription>
+          <CardTitle>Product Catalog</CardTitle>
+          <CardDescription>Manage your product catalog by type</CardDescription>
         </CardHeader>
         <CardContent>
-          <ProductsTable products={liquorProducts} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Beverage</CardTitle>
-          <CardDescription>All beverage products in your inventory</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProductsTable products={beverageProducts} />
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "liquor" | "beverage")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="liquor" className="font-sans">Liquor</TabsTrigger>
+              <TabsTrigger value="beverage" className="font-sans">Beverage</TabsTrigger>
+            </TabsList>
+            <TabsContent value="liquor" className="mt-0">
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground mb-4">
+                  All liquor products in your inventory ({liquorProducts.length} products)
+                </div>
+                <ProductsTable products={liquorProducts} />
+              </div>
+            </TabsContent>
+            <TabsContent value="beverage" className="mt-0">
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground mb-4">
+                  All beverage products in your inventory ({beverageProducts.length} products)
+                </div>
+                <ProductsTable products={beverageProducts} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
