@@ -46,20 +46,20 @@ export default async function InventoryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-sans font-bold text-white mb-2">Inventory</h1>
-          <p className="text-muted-foreground">Manage stock levels and locations</p>
+          <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Inventory</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage stock levels and locations</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/inventory/transfer">
-            <Button variant="outline">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/inventory/transfer" className="flex-1 sm:flex-initial">
+            <Button variant="outline" className="w-full sm:w-auto">
               <ArrowRightLeft className="mr-2 h-4 w-4" />
               Transfer
             </Button>
           </Link>
-          <Link href="/inventory/cycle-count">
-            <Button variant="outline">
+          <Link href="/inventory/cycle-count" className="flex-1 sm:flex-initial">
+            <Button variant="outline" className="w-full sm:w-auto">
               <ClipboardList className="mr-2 h-4 w-4" />
               Cycle Count
             </Button>

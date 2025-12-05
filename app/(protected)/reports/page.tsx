@@ -78,11 +78,11 @@ export default async function ReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-sans font-bold text-white mb-2">Reports</h1>
-        <p className="text-muted-foreground">Sales analytics and tax reporting</p>
+        <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Reports</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Sales analytics and tax reporting</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales (30d)</CardTitle>
@@ -128,48 +128,50 @@ export default async function ReportsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <Card className="w-full overflow-hidden">
           <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
-            <CardDescription>Last 30 days</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Recent Sales</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Last 30 days</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sale #</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales && sales.slice(0, 10).map((sale: {
-                  id: string
-                  sale_number: string
-                  created_at: string
-                  total_amount: number
-                  payment_method: string
-                }) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium">{sale.sale_number}</TableCell>
-                    <TableCell>{formatDate(sale.created_at)}</TableCell>
-                    <TableCell>{formatCurrency(sale.total_amount)}</TableCell>
-                    <TableCell>{sale.payment_method}</TableCell>
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Sale #</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Amount</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Method</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sales && sales.slice(0, 10).map((sale: {
+                    id: string
+                    sale_number: string
+                    created_at: string
+                    total_amount: number
+                    payment_method: string
+                  }) => (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-medium text-xs sm:text-sm">{sale.sale_number}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{formatDate(sale.created_at)}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{formatCurrency(sale.total_amount)}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{sale.payment_method}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full overflow-hidden">
           <CardHeader>
-            <CardTitle>Dead Stock Alert</CardTitle>
-            <CardDescription>Items with no sales in 90 days</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">Dead Stock Alert</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Items with no sales in 90 days</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             {deadStock.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {deadStock.slice(0, 10).map((stock: any) => {
@@ -183,12 +185,12 @@ export default async function ReportsPage() {
                   return (
                   <div
                     key={stock.variant_id}
-                    className="flex justify-between items-center p-2 rounded border border-destructive/20"
+                    className="flex justify-between items-center p-2 rounded border border-destructive/20 text-xs sm:text-sm"
                   >
-                    <div className="text-sm">
+                    <div className="flex-1 truncate mr-2">
                       {productName}
                     </div>
-                    <div className="text-sm text-destructive font-bold">
+                    <div className="text-destructive font-bold whitespace-nowrap">
                       Qty: {stock.quantity}
                     </div>
                   </div>
@@ -196,7 +198,7 @@ export default async function ReportsPage() {
                 })}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-center text-muted-foreground py-8 text-sm">
                 No dead stock items
               </p>
             )}

@@ -62,9 +62,9 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             variant="ghost"
             size="icon"
             onClick={onMenuClick}
-            className="md:hidden text-gold hover:bg-gold/10"
+            className="md:hidden text-gold hover:bg-gold/10 h-10 w-10"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-7 w-7" />
           </Button>
           
           <Link href="/dashboard" className="flex items-center gap-2">
