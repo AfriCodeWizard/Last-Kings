@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getCurrentUser, canAddCustomers } from "@/lib/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Crown } from "lucide-react"
@@ -16,6 +17,7 @@ import { formatCurrency } from "@/lib/utils"
 
 export default async function CustomersPage() {
   const supabase = await createClient()
+  const user = await getCurrentUser()
 
   const { data: customers } = await supabase
     .from("customers")
@@ -31,12 +33,14 @@ export default async function CustomersPage() {
           <h1 className="text-2xl md:text-4xl font-sans font-bold text-white mb-2">Customers</h1>
           <p className="text-sm md:text-base text-muted-foreground">Manage customer profiles and allocations</p>
         </div>
-        <Link href="/customers/new">
-          <Button className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
-        </Link>
+        {canAddCustomers(user?.role || 'staff') && (
+          <Link href="/customers/new">
+            <Button className="w-full md:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Customer
+            </Button>
+          </Link>
+        )}
       </div>
 
       {whales.length > 0 && (
