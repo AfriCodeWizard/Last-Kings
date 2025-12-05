@@ -55,7 +55,7 @@ export default function NewProductPage() {
     if (brandsRes.data) {
       // Sort brands: catalog brands first, then others
       const catalogBrands = getBrandsForType(formData.product_type)
-      const sorted = brandsRes.data.sort((a, b) => {
+      const sorted = (brandsRes.data as Array<{ id: string; name: string }>).sort((a, b) => {
         const aInCatalog = catalogBrands.includes(a.name)
         const bInCatalog = catalogBrands.includes(b.name)
         if (aInCatalog && !bInCatalog) return -1
@@ -67,7 +67,7 @@ export default function NewProductPage() {
     if (categoriesRes.data) {
       // Filter categories by product type
       const catalogCategories = getCategoriesForType(formData.product_type)
-      const filtered = categoriesRes.data.filter(cat => catalogCategories.includes(cat.name))
+      const filtered = (categoriesRes.data as Array<{ id: string; name: string }>).filter(cat => catalogCategories.includes(cat.name))
       setCategories(filtered)
     }
   }
@@ -94,8 +94,8 @@ export default function NewProductPage() {
       return
     }
 
-    const { data, error } = await supabase
-      .from("brands")
+    const { data, error } = await (supabase
+      .from("brands") as any)
       .insert({ name: newBrandName.trim() })
       .select()
       .single()
@@ -106,8 +106,9 @@ export default function NewProductPage() {
     }
 
     if (data) {
-      setBrands([...brands, data])
-      setFormData({ ...formData, brand_id: data.id })
+      const newBrand = data as { id: string; name: string }
+      setBrands([...brands, newBrand])
+      setFormData({ ...formData, brand_id: newBrand.id })
       setNewBrandName("")
       setShowNewBrandDialog(false)
       toast.success("Brand created!")
@@ -120,8 +121,8 @@ export default function NewProductPage() {
       return
     }
 
-    const { data, error } = await supabase
-      .from("categories")
+    const { data, error } = await (supabase
+      .from("categories") as any)
       .insert({ name: newCategoryName.trim() })
       .select()
       .single()
@@ -132,8 +133,9 @@ export default function NewProductPage() {
     }
 
     if (data) {
-      setCategories([...categories, data])
-      setFormData({ ...formData, category_id: data.id })
+      const newCategory = data as { id: string; name: string }
+      setCategories([...categories, newCategory])
+      setFormData({ ...formData, category_id: newCategory.id })
       setNewCategoryName("")
       setShowNewCategoryDialog(false)
       toast.success("Category created!")

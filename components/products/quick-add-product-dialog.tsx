@@ -99,7 +99,7 @@ export function QuickAddProductDialog({
     if (brandsRes.data) {
       // Sort brands: catalog brands first, then others
       const catalogBrands = getBrandsForType(formData.productType)
-      const sorted = brandsRes.data.sort((a, b) => {
+      const sorted = (brandsRes.data as Array<{ id: string; name: string }>).sort((a, b) => {
         const aInCatalog = catalogBrands.includes(a.name)
         const bInCatalog = catalogBrands.includes(b.name)
         if (aInCatalog && !bInCatalog) return -1
@@ -111,7 +111,7 @@ export function QuickAddProductDialog({
     if (categoriesRes.data) {
       // Filter categories by product type
       const catalogCategories = getCategoriesForType(formData.productType)
-      const filtered = categoriesRes.data.filter(cat => catalogCategories.includes(cat.name))
+      const filtered = (categoriesRes.data as Array<{ id: string; name: string }>).filter(cat => catalogCategories.includes(cat.name))
       setCategories(filtered)
     }
   }
@@ -138,8 +138,8 @@ export function QuickAddProductDialog({
       return
     }
 
-    const { data, error } = await supabase
-      .from("brands")
+    const { data, error } = await (supabase
+      .from("brands") as any)
       .insert({ name: newBrandName.trim() })
       .select()
       .single()
@@ -150,8 +150,9 @@ export function QuickAddProductDialog({
     }
 
     if (data) {
-      setBrands([...brands, data])
-      setFormData({ ...formData, brandId: data.id })
+      const newBrand = data as { id: string; name: string }
+      setBrands([...brands, newBrand])
+      setFormData({ ...formData, brandId: newBrand.id })
       setNewBrandName("")
       setShowNewBrandDialog(false)
       toast.success("Brand created!")
@@ -164,8 +165,8 @@ export function QuickAddProductDialog({
       return
     }
 
-    const { data, error } = await supabase
-      .from("categories")
+    const { data, error } = await (supabase
+      .from("categories") as any)
       .insert({ name: newCategoryName.trim() })
       .select()
       .single()
@@ -176,8 +177,9 @@ export function QuickAddProductDialog({
     }
 
     if (data) {
-      setCategories([...categories, data])
-      setFormData({ ...formData, categoryId: data.id })
+      const newCategory = data as { id: string; name: string }
+      setCategories([...categories, newCategory])
+      setFormData({ ...formData, categoryId: newCategory.id })
       setNewCategoryName("")
       setShowNewCategoryDialog(false)
       toast.success("Category created!")
