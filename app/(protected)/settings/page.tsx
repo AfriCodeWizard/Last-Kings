@@ -39,82 +39,84 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-sans font-bold text-white mb-2">Settings</h1>
-        <p className="text-muted-foreground">Manage system configuration</p>
+        <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Manage system configuration</p>
       </div>
 
       <div className="grid gap-6">
         {canAddDistributors(user?.role || 'staff') && (
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     <Building2 className="h-5 w-5 text-gold" />
                     Distributors
                   </CardTitle>
-                  <CardDescription>Manage supplier relationships</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">Manage supplier relationships</CardDescription>
                 </div>
-                <Link href="/settings/distributors/new">
-                  <Button size="sm">
+                <Link href="/settings/distributors/new" className="w-full sm:w-auto">
+                  <Button size="sm" className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Distributor
                   </Button>
                 </Link>
               </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {distributors && distributors.length > 0 ? (
-                    distributors.map((dist: {
-                      id: string
-                      name: string
-                      contact_name: string | null
-                      email: string | null
-                      phone: string | null
-                    }) => (
-                      <TableRow key={dist.id}>
-                        <TableCell className="font-medium">{dist.name}</TableCell>
-                        <TableCell>{dist.contact_name || "-"}</TableCell>
-                        <TableCell>{dist.email || "-"}</TableCell>
-                        <TableCell>{dist.phone || "-"}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
+            <CardContent className="overflow-x-auto">
+              <div className="min-w-full">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        No distributors found
-                      </TableCell>
+                      <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Contact</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Email</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Phone</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {distributors && distributors.length > 0 ? (
+                      distributors.map((dist: {
+                        id: string
+                        name: string
+                        contact_name: string | null
+                        email: string | null
+                        phone: string | null
+                      }) => (
+                        <TableRow key={dist.id}>
+                          <TableCell className="font-medium text-xs sm:text-sm">{dist.name}</TableCell>
+                          <TableCell className="text-xs sm:text-sm">{dist.contact_name || "-"}</TableCell>
+                          <TableCell className="text-xs sm:text-sm">{dist.email || "-"}</TableCell>
+                          <TableCell className="text-xs sm:text-sm">{dist.phone || "-"}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                          No distributors found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         )}
 
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <MapPin className="h-5 w-5 text-gold" />
                   Inventory Locations
                 </CardTitle>
-                <CardDescription>Manage storage locations</CardDescription>
+                <CardDescription className="text-xs sm:text-sm">Manage storage locations</CardDescription>
               </div>
               {canAddDistributors(user?.role || 'staff') && (
-                <Link href="/settings/locations/new">
-                  <Button size="sm">
+                <Link href="/settings/locations/new" className="w-full sm:w-auto">
+                  <Button size="sm" className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Location
                   </Button>
@@ -123,14 +125,14 @@ export default async function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
               {locations?.map((loc: { id: string; name: string; type: string }) => (
                 <div
                   key={loc.id}
                   className="p-4 rounded-lg border border-gold/10"
                 >
-                  <div className="font-medium">{loc.name}</div>
-                  <div className="text-sm text-muted-foreground mt-1">{loc.type}</div>
+                  <div className="font-medium text-sm sm:text-base">{loc.name}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">{loc.type}</div>
                 </div>
               ))}
             </div>
@@ -140,83 +142,85 @@ export default async function SettingsPage() {
         {canManageUsers(user?.role || 'staff') && (
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     <Users className="h-5 w-5 text-gold" />
                     Users
                   </CardTitle>
-                  <CardDescription>Manage system users and roles</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">Manage system users and roles</CardDescription>
                 </div>
-                <Link href="/settings/users">
-                  <Button size="sm" variant="outline">
+                <Link href="/settings/users" className="w-full sm:w-auto">
+                  <Button size="sm" variant="outline" className="w-full sm:w-auto">
                     Manage Users
                   </Button>
                 </Link>
               </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users && users.length > 0 ? (
-                    users.map((u: {
-                      id: string
-                      full_name: string | null
-                      email: string
-                      role: string
-                      is_approved?: boolean
-                    }) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">
-                          {u.full_name || "-"}
-                        </TableCell>
-                        <TableCell>{u.email}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{u.role}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {u.is_approved ? (
-                            <Badge variant="default">Approved</Badge>
-                          ) : (
-                            <Badge variant="secondary">Pending</Badge>
-                          )}
+            <CardContent className="overflow-x-auto">
+              <div className="min-w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Email</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Role</TableHead>
+                      <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users && users.length > 0 ? (
+                      users.map((u: {
+                        id: string
+                        full_name: string | null
+                        email: string
+                        role: string
+                        is_approved?: boolean
+                      }) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium text-xs sm:text-sm">
+                            {u.full_name || "-"}
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm">{u.email}</TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            <Badge variant="outline" className="text-xs">{u.role}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            {u.is_approved ? (
+                              <Badge variant="default" className="text-xs">Approved</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">Pending</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                          No users found
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        No users found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         )}
 
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Percent className="h-5 w-5 text-gold" />
                   Tax Rates
                 </CardTitle>
-                <CardDescription>Configure sales and excise tax rates</CardDescription>
+                <CardDescription className="text-xs sm:text-sm">Configure sales and excise tax rates</CardDescription>
               </div>
               {canAddDistributors(user?.role || 'staff') && (
-                <Link href="/settings/tax-rates/new">
-                  <Button size="sm">
+                <Link href="/settings/tax-rates/new" className="w-full sm:w-auto">
+                  <Button size="sm" className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Tax Rate
                   </Button>
@@ -224,47 +228,49 @@ export default async function SettingsPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Rate</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {taxRates && taxRates.length > 0 ? (
-                  taxRates.map((rate: {
-                    id: string
-                    name: string
-                    type: string
-                    rate: number
-                    active: boolean
-                  }) => (
-                    <TableRow key={rate.id}>
-                      <TableCell className="font-medium">{rate.name}</TableCell>
-                      <TableCell>{rate.type}</TableCell>
-                      <TableCell>{(rate.rate * 100).toFixed(2)}%</TableCell>
-                      <TableCell>
-                        {rate.active ? (
-                          <Badge variant="default">Active</Badge>
-                        ) : (
-                          <Badge variant="outline">Inactive</Badge>
-                        )}
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Name</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Rate</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {taxRates && taxRates.length > 0 ? (
+                    taxRates.map((rate: {
+                      id: string
+                      name: string
+                      type: string
+                      rate: number
+                      active: boolean
+                    }) => (
+                      <TableRow key={rate.id}>
+                        <TableCell className="font-medium text-xs sm:text-sm">{rate.name}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">{rate.type}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">{(rate.rate * 100).toFixed(2)}%</TableCell>
+                        <TableCell className="text-xs sm:text-sm">
+                          {rate.active ? (
+                            <Badge variant="default" className="text-xs">Active</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">Inactive</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                        No tax rates found
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
-                      No tax rates found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
