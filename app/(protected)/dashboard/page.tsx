@@ -15,6 +15,23 @@ import { Badge } from "@/components/ui/badge"
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
+  
+  // Show blank dashboard for unapproved users (except admin)
+  if (user && !user.is_approved && user.role !== 'admin') {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="w-full max-w-md glass">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-sans text-gold">Account Pending Approval</CardTitle>
+            <CardDescription className="mt-4">
+              Your account is waiting for admin approval. You will be able to access the dashboard once an administrator approves your account.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
+  
   const supabase = await createClient()
 
   // Get today's sales
