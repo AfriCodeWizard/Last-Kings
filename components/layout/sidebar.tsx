@@ -17,26 +17,31 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import type { UserRole } from "@/types/supabase"
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/products", label: "Products", icon: Package },
-  { href: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
-  { href: "/receiving", label: "Receiving", icon: Receipt },
-  { href: "/inventory", label: "Inventory", icon: Warehouse },
-  { href: "/pos", label: "POS / Quick Sale", icon: CreditCard },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/settings", label: "Settings", icon: Settings },
+const allNavItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "staff"] as UserRole[] },
+  { href: "/products", label: "Products", icon: Package, roles: ["admin", "manager", "staff"] as UserRole[] },
+  { href: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart, roles: ["admin", "manager", "staff"] as UserRole[] },
+  { href: "/receiving", label: "Receiving", icon: Receipt, roles: ["admin", "manager", "staff"] as UserRole[] },
+  { href: "/inventory", label: "Inventory", icon: Warehouse, roles: ["admin", "manager"] as UserRole[] },
+  { href: "/pos", label: "POS / Quick Sale", icon: CreditCard, roles: ["admin", "manager", "staff"] as UserRole[] },
+  { href: "/customers", label: "Customers", icon: Users, roles: ["admin", "manager", "staff"] as UserRole[] },
+  { href: "/reports", label: "Reports", icon: FileText, roles: ["admin", "manager"] as UserRole[] },
+  { href: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager", "staff"] as UserRole[] },
 ]
 
 interface SidebarProps {
   isOpen?: boolean
   onClose?: () => void
+  userRole?: UserRole
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, userRole = "staff" }: SidebarProps) {
   const pathname = usePathname()
+
+  // Filter nav items based on user role
+  const navItems = allNavItems.filter(item => item.roles.includes(userRole))
 
   // Close sidebar when route changes on mobile
   useEffect(() => {

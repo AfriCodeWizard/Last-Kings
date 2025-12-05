@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+import { getCurrentUser } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Download, TrendingUp, AlertTriangle } from "lucide-react"
@@ -13,6 +15,13 @@ import {
 } from "@/components/ui/table"
 
 export default async function ReportsPage() {
+  const user = await getCurrentUser()
+  
+  // Redirect staff users - they don't have access to reports
+  if (user?.role === 'staff') {
+    redirect('/dashboard')
+  }
+  
   const supabase = await createClient()
 
   // Sales report (last 30 days)

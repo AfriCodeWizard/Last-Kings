@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+import { getCurrentUser } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
@@ -14,6 +16,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 
 export default async function InventoryPage() {
+  const user = await getCurrentUser()
+  
+  // Redirect staff users - they don't have access to inventory
+  if (user?.role === 'staff') {
+    redirect('/dashboard')
+  }
+  
   const supabase = await createClient()
 
   const { data: stockLevels } = await supabase
