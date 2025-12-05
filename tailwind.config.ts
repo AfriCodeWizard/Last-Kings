@@ -92,18 +92,33 @@ const config: Config = {
             filter: "brightness(1.2) saturate(1.4)"
           },
         },
+        "flip": {
+          "0%": { 
+            transform: "rotateY(0deg)",
+          },
+          "50%": { 
+            transform: "rotateY(180deg)",
+          },
+          "100%": { 
+            transform: "rotateY(360deg)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "gold-pulse": "gold-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "gold-shimmer": "gold-shimmer 3s ease-in-out infinite",
+        "flip": "flip 1.5s ease-in-out infinite",
       },
       boxShadow: {
         "gold": "0 0 8px rgba(230, 192, 74, 0.3), 0 0 16px rgba(230, 192, 74, 0.15)",
         "gold-lg": "0 0 16px rgba(230, 192, 74, 0.4), 0 0 32px rgba(230, 192, 74, 0.2)",
         "depth": "0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
         "depth-lg": "0 8px 32px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+      },
+      perspective: {
+        "1000": "1000px",
       },
     },
   },
