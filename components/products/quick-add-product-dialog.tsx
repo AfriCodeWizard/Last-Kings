@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { getBrandsForType, getCategoryForBrand, getCategoriesForType } from "@/data/product-catalog"
+import { Plus } from "lucide-react"
 
 interface QuickAddProductDialogProps {
   scannedUPC: string
@@ -40,6 +42,10 @@ export function QuickAddProductDialog({
   const [loading, setLoading] = useState(false)
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([])
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+  const [showNewBrandDialog, setShowNewBrandDialog] = useState(false)
+  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false)
+  const [newBrandName, setNewBrandName] = useState("")
+  const [newCategoryName, setNewCategoryName] = useState("")
   const [formData, setFormData] = useState({
     brandId: "",
     categoryId: "",
@@ -69,6 +75,13 @@ export function QuickAddProductDialog({
   }, [isOpen, scannedUPC])
 
   useEffect(() => {
+    if (isOpen) {
+      loadBrandsAndCategories()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.productType])
+
+  useEffect(() => {
     // Auto-generate SKU from brand and size when it changes
     if (formData.brandId && brands.length > 0) {
       const brandName = brands.find(b => b.id === formData.brandId)?.name || ""
@@ -83,8 +96,92 @@ export function QuickAddProductDialog({
       supabase.from("categories").select("id, name").order("name"),
     ])
 
-    if (brandsRes.data) setBrands(brandsRes.data)
-    if (categoriesRes.data) setCategories(categoriesRes.data)
+    if (brandsRes.data) {
+      // Sort brands: catalog brands first, then others
+      const catalogBrands = getBrandsForType(formData.productType)
+      const sorted = brandsRes.data.sort((a, b) => {
+        const aInCatalog = catalogBrands.includes(a.name)
+        const bInCatalog = catalogBrands.includes(b.name)
+        if (aInCatalog && !bInCatalog) return -1
+        if (!aInCatalog && bInCatalog) return 1
+        return a.name.localeCompare(b.name)
+      })
+      setBrands(sorted)
+    }
+    if (categoriesRes.data) {
+      // Filter categories by product type
+      const catalogCategories = getCategoriesForType(formData.productType)
+      const filtered = categoriesRes.data.filter(cat => catalogCategories.includes(cat.name))
+      setCategories(filtered)
+    }
+  }
+
+  const handleBrandChange = async (brandId: string) => {
+    const selectedBrand = brands.find(b => b.id === brandId)
+    if (selectedBrand) {
+      const categoryInfo = getCategoryForBrand(selectedBrand.name)
+      if (categoryInfo && categoryInfo.productType === formData.productType) {
+        // Find the category ID
+        const category = categories.find(c => c.name === categoryInfo.category)
+        if (category) {
+          setFormData({ ...formData, brandId, categoryId: category.id })
+          return
+        }
+      }
+    }
+    setFormData({ ...formData, brandId })
+  }
+
+  const handleAddNewBrand = async () => {
+    if (!newBrandName.trim()) {
+      toast.error("Brand name is required")
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("brands")
+      .insert({ name: newBrandName.trim() })
+      .select()
+      .single()
+
+    if (error) {
+      toast.error(`Error creating brand: ${error.message}`)
+      return
+    }
+
+    if (data) {
+      setBrands([...brands, data])
+      setFormData({ ...formData, brandId: data.id })
+      setNewBrandName("")
+      setShowNewBrandDialog(false)
+      toast.success("Brand created!")
+    }
+  }
+
+  const handleAddNewCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("Category name is required")
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("categories")
+      .insert({ name: newCategoryName.trim() })
+      .select()
+      .single()
+
+    if (error) {
+      toast.error(`Error creating category: ${error.message}`)
+      return
+    }
+
+    if (data) {
+      setCategories([...categories, data])
+      setFormData({ ...formData, categoryId: data.id })
+      setNewCategoryName("")
+      setShowNewCategoryDialog(false)
+      toast.success("Category created!")
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,10 +310,22 @@ export function QuickAddProductDialog({
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="brand" className="font-sans">Brand *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="brand" className="font-sans">Brand *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewBrandDialog(true)}
+                    className="h-8 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
                 <Select
                   value={formData.brandId}
-                  onValueChange={(value) => setFormData({ ...formData, brandId: value })}
+                  onValueChange={handleBrandChange}
                   required
                 >
                   <SelectTrigger className="font-sans">
@@ -232,7 +341,19 @@ export function QuickAddProductDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category" className="font-sans">Category *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="category" className="font-sans">Category *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewCategoryDialog(true)}
+                    className="h-8 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
                 <Select
                   value={formData.categoryId}
                   onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
@@ -321,6 +442,76 @@ export function QuickAddProductDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <Dialog open={showNewBrandDialog} onOpenChange={setShowNewBrandDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Brand</DialogTitle>
+            <DialogDescription>Create a new brand that's not in the catalog</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newBrand">Brand Name</Label>
+              <Input
+                id="newBrand"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="Enter brand name"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    handleAddNewBrand()
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowNewBrandDialog(false)
+              setNewBrandName("")
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddNewBrand}>Add Brand</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNewCategoryDialog} onOpenChange={setShowNewCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Category</DialogTitle>
+            <DialogDescription>Create a new category for {formData.productType === 'liquor' ? 'liquor' : 'beverage'} products</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newCategory">Category Name</Label>
+              <Input
+                id="newCategory"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Enter category name"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    handleAddNewCategory()
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowNewCategoryDialog(false)
+              setNewCategoryName("")
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddNewCategory}>Add Category</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

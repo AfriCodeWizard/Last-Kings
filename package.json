@@ -9,6 +9,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "seed-catalog": "tsx scripts/seed-product-catalog.ts",
     "check-users": "tsx scripts/check-users.ts"
   },
   "dependencies": {
