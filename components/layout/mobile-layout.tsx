@@ -10,7 +10,7 @@ export function MobileLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
-      <div className="flex relative">
+      <div className="flex relative pt-16">
         <Sidebar 
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 

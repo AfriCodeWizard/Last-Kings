@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Crown, LogOut, User, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,28 @@ interface NavbarProps {
 
 export function Navbar({ onMenuClick }: NavbarProps) {
   const router = useRouter()
+  const [isVisible, setIsVisible] = useState(true)
+  const [lastScrollY, setLastScrollY] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+
+      // Show navbar when scrolling up or at the top
+      if (currentScrollY < lastScrollY || currentScrollY < 10) {
+        setIsVisible(true)
+      } 
+      // Hide navbar when scrolling down
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false)
+      }
+
+      setLastScrollY(currentScrollY)
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [lastScrollY])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -27,7 +50,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   }
 
   return (
-    <nav className="border-b border-gold/50 glass-strong sticky top-0 z-50 bg-black/95 backdrop-blur-xl shadow-depth">
+    <nav 
+      className={`border-b border-gold/50 glass-strong fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl shadow-depth transition-transform duration-300 ease-in-out ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="container mx-auto px-3 sm:px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Hamburger menu button for mobile */}
