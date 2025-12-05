@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { playScanBeep } from "@/lib/sound"
 
 interface BarcodeScannerProps {
   isOpen: boolean
@@ -118,28 +119,26 @@ export function BarcodeScanner({
             return
           }
           try {
-            // Stop scanning first
-            console.log("Stopping scanner...")
+            // Play sound immediately when barcode is successfully scanned
+            playScanBeep()
+            
+            // Stop scanning immediately
             await stopScanning()
-            console.log("Scanner stopped, processing barcode...")
-            // Then process the scan (await if it's async)
-            const result = onScan(decodedText.trim())
-            console.log("onScan called, result:", result)
-            if (result instanceof Promise) {
-              await result
-              console.log("onScan promise resolved")
-            }
-            // Close after processing is complete
-            console.log("Closing scanner...")
-            setTimeout(() => {
-              onClose()
-            }, 200)
+            
+            // Close scanner immediately after sound
+            onClose()
+            
+            // Process the scan asynchronously (don't wait for it)
+            // This allows the scanner to close immediately while processing happens in background
+            const trimmedBarcode = decodedText.trim()
+            Promise.resolve(onScan(trimmedBarcode)).catch((error) => {
+              console.error("Error processing scan:", error)
+            })
           } catch (error) {
-            console.error("Error processing scan:", error)
+            console.error("Error in scan handler:", error)
             // Still close the scanner even if there's an error
-            setTimeout(() => {
-              onClose()
-            }, 200)
+            await stopScanning()
+            onClose()
           }
         },
         () => {

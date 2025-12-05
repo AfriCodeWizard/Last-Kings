@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Plus, ScanLine } from "lucide-react"
-import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { QuickAddProductDialog } from "@/components/products/quick-add-product-dialog"
@@ -86,7 +85,7 @@ export default function ProductsPage() {
       }
 
       // Product found - reload products to show it in the appropriate section
-      playScanBeep()
+      // Note: Sound is played by barcode scanner component, no need to play here
       await loadProducts()
       toast.success("Product found and displayed in catalog")
     } catch (error) {
@@ -97,7 +96,7 @@ export default function ProductsPage() {
   const handleProductCreated = async (_variantId: string) => {
     // Reload products after new product is created to show it in the appropriate section
     await loadProducts()
-    playScanBeep()
+    // Note: Sound is played when product is created via scanner, but not for manual creation
     toast.success("Product created and added to catalog")
   }
 
