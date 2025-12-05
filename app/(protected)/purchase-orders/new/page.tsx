@@ -41,7 +41,7 @@ interface ProductVariant {
 
 interface POItem {
   variant_id: string
-  product_name: string
+  product_type: string
   brand_name: string
   size_ml: number
   sku: string
@@ -116,7 +116,7 @@ export default function NewPurchaseOrderPage() {
     } else {
       const newItem: POItem = {
         variant_id: variant.id,
-        product_type: variant.products.product_type || 'liquor',
+        product_type: (variant.products as any).product_type || 'liquor',
         brand_name: variant.products.brands.name,
         size_ml: variant.size_ml,
         sku: variant.sku,
@@ -336,7 +336,7 @@ export default function NewPurchaseOrderPage() {
   }
 
   const filteredProducts = products.filter(variant =>
-    (variant.products.product_type === 'liquor' ? 'liquor' : 'beverage').includes(searchTerm.toLowerCase()) ||
+    ((variant.products as any).product_type === 'liquor' ? 'liquor' : 'beverage').includes(searchTerm.toLowerCase()) ||
     variant.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
     variant.products.brands.name.toLowerCase().includes(searchTerm.toLowerCase())
   )

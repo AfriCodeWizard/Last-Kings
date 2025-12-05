@@ -25,7 +25,8 @@ import { Badge } from "@/components/ui/badge"
 
 interface CartItem {
   variant_id: string
-  product_name: string
+  brand_name: string
+  product_type: string
   size_ml: number
   price: number
   quantity: number
@@ -275,7 +276,7 @@ export default function POSPage() {
   }
 
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.brand_name.toLowerCase().includes(search.toLowerCase()) ||
     p.sku.toLowerCase().includes(search.toLowerCase())
   )
 
