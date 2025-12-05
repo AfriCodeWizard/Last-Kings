@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +26,6 @@ interface ScannedItem {
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<any[]>([])
   const [liquorProducts, setLiquorProducts] = useState<any[]>([])
   const [beverageProducts, setBeverageProducts] = useState<any[]>([])
   const [barcode, setBarcode] = useState("")
@@ -35,7 +34,6 @@ export default function ProductsPage() {
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [scannedUPC, setScannedUPC] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     loadProducts()
@@ -56,7 +54,6 @@ export default function ProductsPage() {
       .order("product_type")
 
     if (data) {
-      setProducts(data)
       setLiquorProducts(data.filter((p: any) => p.product_type === 'liquor'))
       setBeverageProducts(data.filter((p: any) => p.product_type === 'beverage'))
     }
