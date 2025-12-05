@@ -37,16 +37,24 @@ export default function RegisterPage() {
       if (authError) throw authError
 
       if (authData.user) {
+        // Admin users are auto-approved, others need approval
+        const isApproved = role === 'admin'
+        
         const { error: userError } = await ((supabase.from("users") as any).insert({
             id: authData.user.id,
             email,
             full_name: fullName,
             role,
+            is_approved: isApproved,
           }))
 
         if (userError) throw userError
 
-        toast.success("Account created! Please sign in.")
+        if (isApproved) {
+          toast.success("Account created! Please sign in.")
+        } else {
+          toast.success("Account created! Waiting for admin approval.")
+        }
         router.push("/auth/login")
       }
     } catch (error) {
