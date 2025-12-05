@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
 import { Button } from "@/components/ui/button"
-import { X, Camera, CameraOff } from "lucide-react"
+import { X, ScanLine, CameraOff } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -195,7 +195,7 @@ export function BarcodeScanner({
               <div className="text-center p-4">
                 <p className="text-red-500 font-sans mb-4">{error}</p>
                 <Button onClick={startScanning} variant="outline" className="font-sans">
-                  <Camera className="mr-2 h-4 w-4" />
+                  <ScanLine className="mr-2 h-4 w-4" />
                   Try Again
                 </Button>
               </div>

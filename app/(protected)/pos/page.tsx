@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, ScanLine, ShoppingCart, CreditCard, X, UserCheck, Camera } from "lucide-react"
+import { Search, ScanLine, ShoppingCart, CreditCard, X, UserCheck } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase/client"
@@ -331,8 +331,8 @@ export default function POSPage() {
                   onClick={() => setShowScanner(true)}
                   className="bg-gold text-black hover:bg-gold/90 font-sans"
                 >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Camera
+                  <ScanLine className="h-4 w-4 mr-2" />
+                  Start Scanning
                 </Button>
               </div>
 

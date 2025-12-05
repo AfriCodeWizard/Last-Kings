@@ -94,7 +94,8 @@ export function EditUPCDialog({
                     onClick={() => setShowScanner(true)}
                     className="bg-gold text-black hover:bg-gold/90 font-sans"
                   >
-                    Scan
+                    <ScanLine className="h-4 w-4 mr-2" />
+                    Start Scanning
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground font-sans">

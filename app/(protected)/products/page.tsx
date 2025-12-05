@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Plus, ScanLine, Camera } from "lucide-react"
+import { Plus, ScanLine } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { BarcodeScanner } from "@/components/barcode-scanner"
@@ -159,8 +159,8 @@ export default function ProductsPage() {
               onClick={() => setShowScanner(true)}
               className="bg-gold text-black hover:bg-gold/90 font-sans"
             >
-              <Camera className="h-5 w-5 mr-2" />
-              Open Camera Scanner
+              <ScanLine className="h-5 w-5 mr-2" />
+              Start Scanning
             </Button>
           </div>
         </CardContent>
