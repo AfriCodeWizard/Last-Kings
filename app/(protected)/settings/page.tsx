@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getCurrentUser, canManageUsers, canAddDistributors } from "@/lib/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Building2, MapPin, Users, Percent } from "lucide-react"
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
+  const user = await getCurrentUser()
 
   const { data: distributors } = await supabase
     .from("distributors")
@@ -28,7 +30,7 @@ export default async function SettingsPage() {
 
   const { data: users } = await supabase
     .from("users")
-    .select("*")
+    .select("id, email, full_name, role, is_approved, created_at")
     .order("created_at", { ascending: false })
 
   const { data: taxRates } = await supabase
@@ -54,12 +56,14 @@ export default async function SettingsPage() {
                 </CardTitle>
                 <CardDescription>Manage supplier relationships</CardDescription>
               </div>
-              <Link href="/settings/distributors/new">
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Distributor
-                </Button>
-              </Link>
+              {canAddDistributors(user?.role || 'staff') && (
+                <Link href="/settings/distributors/new">
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Distributor
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -133,60 +137,72 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-gold" />
-                  Users
-                </CardTitle>
-                <CardDescription>Manage system users and roles</CardDescription>
+        {canManageUsers(user?.role || 'staff') && (
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-gold" />
+                    Users
+                  </CardTitle>
+                  <CardDescription>Manage system users and roles</CardDescription>
+                </div>
+                <Link href="/settings/users">
+                  <Button size="sm" variant="outline">
+                    Manage Users
+                  </Button>
+                </Link>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users && users.length > 0 ? (
-                  users.map((user: {
-                    id: string
-                    full_name: string | null
-                    email: string
-                    role: string
-                  }) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        {user.full_name || "-"}
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{user.role}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="default">Active</Badge>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users && users.length > 0 ? (
+                    users.map((u: {
+                      id: string
+                      full_name: string | null
+                      email: string
+                      role: string
+                      is_approved?: boolean
+                    }) => (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">
+                          {u.full_name || "-"}
+                        </TableCell>
+                        <TableCell>{u.email}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{u.role}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {u.is_approved ? (
+                            <Badge variant="default">Approved</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pending</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        No users found
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
-                      No users found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
