@@ -92,7 +92,7 @@ export default function ProductsPage() {
     }
   }
 
-  const handleProductCreated = async (variantId: string) => {
+  const handleProductCreated = async (_variantId: string) => {
     // Reload products after new product is created to show it in the appropriate section
     await loadProducts()
     playScanBeep()
