@@ -44,6 +44,7 @@ export function QuickAddProductDialog({
     productName: "",
     brandId: "",
     categoryId: "",
+    productType: "liquor" as "liquor" | "beverage",
     sizeMl: "750",
     price: "",
     cost: "",
@@ -59,6 +60,7 @@ export function QuickAddProductDialog({
         productName: "",
         brandId: "",
         categoryId: "",
+        productType: "liquor",
         sizeMl: "750",
         price: "",
         cost: "",
@@ -126,6 +128,7 @@ export function QuickAddProductDialog({
           name: formData.productName.trim(),
           brand_id: formData.brandId,
           category_id: formData.categoryId,
+          product_type: formData.productType,
         })
         .select()
         .single())
@@ -248,6 +251,23 @@ export function QuickAddProductDialog({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="productType" className="font-sans">Product Type *</Label>
+              <Select
+                value={formData.productType}
+                onValueChange={(value) => setFormData({ ...formData, productType: value as "liquor" | "beverage" })}
+                required
+              >
+                <SelectTrigger className="font-sans">
+                  <SelectValue placeholder="Select product type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
+                  <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">

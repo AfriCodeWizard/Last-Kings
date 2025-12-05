@@ -25,6 +25,7 @@ export default function NewProductPage() {
     name: "",
     brand_id: "",
     category_id: "",
+    product_type: "liquor" as "liquor" | "beverage",
     description: "",
   })
 
@@ -68,6 +69,7 @@ export default function NewProductPage() {
         name: formData.name.trim(),
         brand_id: formData.brand_id,
         category_id: formData.category_id,
+        product_type: formData.product_type,
         description: formData.description.trim() || null,
       }).select().single())
 
@@ -146,6 +148,22 @@ export default function NewProductPage() {
                       {category.name}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product_type" className="font-sans">Product Type *</Label>
+              <Select
+                value={formData.product_type}
+                onValueChange={(value) => setFormData({ ...formData, product_type: value as "liquor" | "beverage" })}
+                required
+              >
+                <SelectTrigger className="font-sans">
+                  <SelectValue placeholder="Select product type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
+                  <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -86,6 +86,7 @@ export interface Database {
           name: string;
           brand_id: string;
           category_id: string;
+          product_type: 'liquor' | 'beverage';
           description: string | null;
           image_url: string | null;
           created_at: string;
@@ -96,6 +97,7 @@ export interface Database {
           name: string;
           brand_id: string;
           category_id: string;
+          product_type?: 'liquor' | 'beverage';
           description?: string | null;
           image_url?: string | null;
           created_at?: string;
@@ -106,6 +108,7 @@ export interface Database {
           name?: string;
           brand_id?: string;
           category_id?: string;
+          product_type?: 'liquor' | 'beverage';
           description?: string | null;
           image_url?: string | null;
           created_at?: string;

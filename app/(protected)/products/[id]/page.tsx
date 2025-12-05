@@ -44,7 +44,7 @@ export default async function ProductDetailPage({
         <div>
           <h1 className="text-4xl font-sans font-bold text-white mb-2">{product.name}</h1>
           <p className="text-muted-foreground">
-            {product.brands.name} • {product.categories.name}
+            {product.brands.name} • {product.categories.name} • {product.product_type === 'liquor' ? 'Liquor' : 'Beverage'}
           </p>
         </div>
         <Link href={`/products/${id}/edit`}>

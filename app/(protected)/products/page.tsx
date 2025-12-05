@@ -18,6 +18,10 @@ export default async function ProductsPage() {
     `)
     .order("name")
 
+  // Separate products by type
+  const liquorProducts = products?.filter(p => p.product_type === 'liquor') || []
+  const beverageProducts = products?.filter(p => p.product_type === 'beverage') || []
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -35,11 +39,21 @@ export default async function ProductsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Product Catalog</CardTitle>
-          <CardDescription>All products in your inventory</CardDescription>
+          <CardTitle>Liquor</CardTitle>
+          <CardDescription>All liquor products in your inventory</CardDescription>
         </CardHeader>
         <CardContent>
-          <ProductsTable products={products || []} />
+          <ProductsTable products={liquorProducts} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Beverage</CardTitle>
+          <CardDescription>All beverage products in your inventory</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ProductsTable products={beverageProducts} />
         </CardContent>
       </Card>
     </div>

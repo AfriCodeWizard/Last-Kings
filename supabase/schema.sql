@@ -9,6 +9,7 @@ CREATE TYPE transaction_type AS ENUM ('receiving', 'sale', 'transfer', 'adjustme
 CREATE TYPE allocation_status AS ENUM ('pending', 'fulfilled', 'cancelled');
 CREATE TYPE payment_method AS ENUM ('cash', 'card', 'split');
 CREATE TYPE tax_type AS ENUM ('sales', 'excise');
+CREATE TYPE product_type AS ENUM ('liquor', 'beverage');
 
 -- Users table (extends Supabase auth.users)
 CREATE TABLE IF NOT EXISTS users (
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   brand_id UUID NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
   category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  product_type product_type NOT NULL DEFAULT 'liquor',
   description TEXT,
   image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),

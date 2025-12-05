@@ -23,6 +23,7 @@ interface Product {
   name: string
   description: string | null
   image_url: string | null
+  product_type?: 'liquor' | 'beverage'
   brands: { name: string }
   categories: { name: string }
   product_variants: Array<{
