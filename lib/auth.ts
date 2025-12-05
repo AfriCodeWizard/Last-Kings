@@ -44,3 +44,23 @@ export function canViewCosts(role: UserRole): boolean {
   return role === 'admin' || role === 'manager';
 }
 
+export function canManageUsers(role: UserRole): boolean {
+  return role === 'admin';
+}
+
+export function canAddCustomers(role: UserRole): boolean {
+  return role === 'admin' || role === 'manager';
+}
+
+export function canAddDistributors(role: UserRole): boolean {
+  return role === 'admin' || role === 'manager';
+}
+
+export async function requireApproved() {
+  const user = await requireAuth();
+  if (!user.is_approved && user.role !== 'admin') {
+    redirect('/dashboard');
+  }
+  return user;
+}
+
