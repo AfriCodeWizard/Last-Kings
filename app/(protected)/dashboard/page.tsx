@@ -238,7 +238,6 @@ export default async function DashboardPage() {
                       : 'N/A'
                     
                     const quantity = item.quantity
-                    const status = quantity < 5 ? 'Low Stock' : quantity < 10 ? 'Medium Stock' : 'In Stock'
                     
                     return (
                       <TableRow key={idx}>
