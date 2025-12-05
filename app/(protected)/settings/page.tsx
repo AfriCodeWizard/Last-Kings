@@ -17,26 +17,24 @@ import { Badge } from "@/components/ui/badge"
 export default async function SettingsPage() {
   const supabase = await createClient()
   const user = await getCurrentUser()
+  const userRole = user?.role || 'staff'
 
-  const { data: distributors } = await supabase
-    .from("distributors")
-    .select("*")
-    .order("name")
+  // Only fetch data that the user has permission to see
+  const [distributorsResult, locationsResult, usersResult, taxRatesResult] = await Promise.all([
+    canAddDistributors(userRole)
+      ? supabase.from("distributors").select("*").order("name")
+      : Promise.resolve({ data: null }),
+    supabase.from("inventory_locations").select("*").order("name"),
+    canManageUsers(userRole)
+      ? supabase.from("users").select("id, email, full_name, role, is_approved, created_at").order("created_at", { ascending: false })
+      : Promise.resolve({ data: null }),
+    supabase.from("tax_rates").select("*").order("name"),
+  ])
 
-  const { data: locations } = await supabase
-    .from("inventory_locations")
-    .select("*")
-    .order("name")
-
-  const { data: users } = await supabase
-    .from("users")
-    .select("id, email, full_name, role, is_approved, created_at")
-    .order("created_at", { ascending: false })
-
-  const { data: taxRates } = await supabase
-    .from("tax_rates")
-    .select("*")
-    .order("name")
+  const distributors = distributorsResult?.data || null
+  const locations = locationsResult?.data || null
+  const users = usersResult?.data || null
+  const taxRates = taxRatesResult?.data || null
 
   return (
     <div className="space-y-6">
@@ -46,63 +44,63 @@ export default async function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-gold" />
-                  Distributors
-                </CardTitle>
-                <CardDescription>Manage supplier relationships</CardDescription>
-              </div>
-              {canAddDistributors(user?.role || 'staff') && (
+        {canAddDistributors(user?.role || 'staff') && (
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-gold" />
+                    Distributors
+                  </CardTitle>
+                  <CardDescription>Manage supplier relationships</CardDescription>
+                </div>
                 <Link href="/settings/distributors/new">
                   <Button size="sm">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Distributor
                   </Button>
                 </Link>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {distributors && distributors.length > 0 ? (
-                  distributors.map((dist: {
-                    id: string
-                    name: string
-                    contact_name: string | null
-                    email: string | null
-                    phone: string | null
-                  }) => (
-                    <TableRow key={dist.id}>
-                      <TableCell className="font-medium">{dist.name}</TableCell>
-                      <TableCell>{dist.contact_name || "-"}</TableCell>
-                      <TableCell>{dist.email || "-"}</TableCell>
-                      <TableCell>{dist.phone || "-"}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
-                      No distributors found
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {distributors && distributors.length > 0 ? (
+                    distributors.map((dist: {
+                      id: string
+                      name: string
+                      contact_name: string | null
+                      email: string | null
+                      phone: string | null
+                    }) => (
+                      <TableRow key={dist.id}>
+                        <TableCell className="font-medium">{dist.name}</TableCell>
+                        <TableCell>{dist.contact_name || "-"}</TableCell>
+                        <TableCell>{dist.email || "-"}</TableCell>
+                        <TableCell>{dist.phone || "-"}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        No distributors found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -114,12 +112,14 @@ export default async function SettingsPage() {
                 </CardTitle>
                 <CardDescription>Manage storage locations</CardDescription>
               </div>
-              <Link href="/settings/locations/new">
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Location
-                </Button>
-              </Link>
+              {canAddDistributors(user?.role || 'staff') && (
+                <Link href="/settings/locations/new">
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Location
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -214,12 +214,14 @@ export default async function SettingsPage() {
                 </CardTitle>
                 <CardDescription>Configure sales and excise tax rates</CardDescription>
               </div>
-              <Link href="/settings/tax-rates/new">
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Tax Rate
-                </Button>
-              </Link>
+              {canAddDistributors(user?.role || 'staff') && (
+                <Link href="/settings/tax-rates/new">
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Tax Rate
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardHeader>
           <CardContent>
