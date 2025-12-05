@@ -34,7 +34,7 @@ export default async function CustomersPage() {
           <p className="text-sm md:text-base text-muted-foreground">Manage customer profiles and allocations</p>
         </div>
         {canAddCustomers(user?.role || 'staff') && (
-          <Link href="/customers/new">
+          <Link href="/customers/new" prefetch={true}>
             <Button className="w-full md:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add Customer

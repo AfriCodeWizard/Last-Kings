@@ -55,7 +55,7 @@ export default async function SettingsPage() {
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">Manage supplier relationships</CardDescription>
                 </div>
-                <Link href="/settings/distributors/new" className="w-full sm:w-auto">
+                <Link href="/settings/distributors/new" prefetch={true} className="w-full sm:w-auto">
                   <Button size="sm" className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Distributor
@@ -115,7 +115,7 @@ export default async function SettingsPage() {
                 <CardDescription className="text-xs sm:text-sm">Manage storage locations</CardDescription>
               </div>
               {canAddDistributors(user?.role || 'staff') && (
-                <Link href="/settings/locations/new" className="w-full sm:w-auto">
+                <Link href="/settings/locations/new" prefetch={true} className="w-full sm:w-auto">
                   <Button size="sm" className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Location
@@ -150,7 +150,7 @@ export default async function SettingsPage() {
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">Manage system users and roles</CardDescription>
                 </div>
-                <Link href="/settings/users" className="w-full sm:w-auto">
+                <Link href="/settings/users" prefetch={true} className="w-full sm:w-auto">
                   <Button size="sm" variant="outline" className="w-full sm:w-auto">
                     Manage Users
                   </Button>
@@ -219,7 +219,7 @@ export default async function SettingsPage() {
                 <CardDescription className="text-xs sm:text-sm">Configure sales and excise tax rates</CardDescription>
               </div>
               {canAddDistributors(user?.role || 'staff') && (
-                <Link href="/settings/tax-rates/new" className="w-full sm:w-auto">
+                <Link href="/settings/tax-rates/new" prefetch={true} className="w-full sm:w-auto">
                   <Button size="sm" className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Tax Rate

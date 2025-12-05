@@ -49,7 +49,7 @@ export default async function ProductDetailPage({
             {product.categories.name} • {product.product_type === 'liquor' ? 'Liquor' : 'Beverage'}
           </p>
         </div>
-        <Link href={`/products/${id}/edit`}>
+        <Link href={`/products/${id}/edit`} prefetch={true}>
           <Button>
             <Edit className="mr-2 h-4 w-4" />
             Edit Product

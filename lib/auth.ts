@@ -1,8 +1,10 @@
 import { createClient } from './supabase/server';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import type { UserRole } from '@/types/supabase';
 
-export async function getCurrentUser() {
+// Cache user lookup per request to avoid duplicate queries
+export const getCurrentUser = cache(async () => {
   try {
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -22,7 +24,7 @@ export async function getCurrentUser() {
     // If Supabase isn't configured, return null
     return null;
   }
-}
+});
 
 export async function requireAuth() {
   const user = await getCurrentUser();

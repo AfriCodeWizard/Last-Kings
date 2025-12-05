@@ -33,7 +33,7 @@ export default async function PurchaseOrdersPage() {
           <h1 className="text-4xl font-sans font-bold text-white mb-2">Purchase Orders</h1>
           <p className="text-muted-foreground">Manage purchase orders and suppliers</p>
         </div>
-        <Link href="/purchase-orders/new">
+        <Link href="/purchase-orders/new" prefetch={true}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             New Purchase Order
@@ -86,7 +86,7 @@ export default async function PurchaseOrdersPage() {
                     <TableCell>{po.users.full_name || po.users.email}</TableCell>
                     <TableCell>{formatDate(po.created_at)}</TableCell>
                     <TableCell>
-                      <Link href={`/purchase-orders/${po.id}`}>
+                      <Link href={`/purchase-orders/${po.id}`} prefetch={true}>
                         <Button variant="ghost" size="sm">View</Button>
                       </Link>
                     </TableCell>

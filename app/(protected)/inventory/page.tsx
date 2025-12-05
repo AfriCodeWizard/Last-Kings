@@ -52,13 +52,13 @@ export default async function InventoryPage() {
           <p className="text-sm sm:text-base text-muted-foreground">Manage stock levels and locations</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Link href="/inventory/transfer" className="flex-1 sm:flex-initial">
+          <Link href="/inventory/transfer" prefetch={true} className="flex-1 sm:flex-initial">
             <Button variant="outline" className="w-full sm:w-auto">
               <ArrowRightLeft className="mr-2 h-4 w-4" />
               Transfer
             </Button>
           </Link>
-          <Link href="/inventory/cycle-count" className="flex-1 sm:flex-initial">
+          <Link href="/inventory/cycle-count" prefetch={true} className="flex-1 sm:flex-initial">
             <Button variant="outline" className="w-full sm:w-auto">
               <ClipboardList className="mr-2 h-4 w-4" />
               Cycle Count

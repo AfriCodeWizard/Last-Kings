@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { SessionSync } from "@/components/auth/session-sync"
 import { MobileLayout } from "@/components/layout/mobile-layout"
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
 
 export default async function ProtectedLayout({
   children,
@@ -19,7 +20,9 @@ export default async function ProtectedLayout({
       <div className="min-h-screen bg-black">
         <SessionSync />
         <MobileLayout userRole={user.role}>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 w-full min-w-0 overflow-x-hidden">{children}</main>
+          <Suspense fallback={<div className="flex-1 p-3 sm:p-4 md:p-6 w-full min-w-0 overflow-x-hidden" />}>
+            <main className="flex-1 p-3 sm:p-4 md:p-6 w-full min-w-0 overflow-x-hidden">{children}</main>
+          </Suspense>
         </MobileLayout>
       </div>
     )

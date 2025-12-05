@@ -34,28 +34,27 @@ export default async function DashboardPage() {
   
   const supabase = await createClient()
 
-  // Get today's sales
+  // Get today's sales and yesterday's sales in parallel
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
-  const { data: salesToday } = await supabase
-    .from("sales")
-    .select("total_amount")
-    .gte("created_at", today.toISOString())
-
-  const salesTotal = salesToday?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
-
-  // Get yesterday's sales for comparison
   const yesterdayStart = new Date(today)
   yesterdayStart.setDate(yesterdayStart.getDate() - 1)
   
-  const { data: salesYesterday } = await supabase
-    .from("sales")
-    .select("total_amount")
-    .gte("created_at", yesterdayStart.toISOString())
-    .lt("created_at", today.toISOString())
+  const [salesTodayResult, salesYesterdayResult] = await Promise.all([
+    supabase
+      .from("sales")
+      .select("total_amount")
+      .gte("created_at", today.toISOString()),
+    supabase
+      .from("sales")
+      .select("total_amount")
+      .gte("created_at", yesterdayStart.toISOString())
+      .lt("created_at", today.toISOString())
+  ])
 
-  const salesYesterdayTotal = salesYesterday?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+  const salesTotal = salesTodayResult.data?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+  const salesYesterdayTotal = salesYesterdayResult.data?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
   
   // Calculate percentage change
   let salesPercentageChange = 0
