@@ -11,7 +11,7 @@ export const productCatalog = {
     },
     {
       category: "Whisky",
-      brands: ["J. Walker Red/Black", "Vat 69", "Bond 7", "County", "Napoleon", "Kenya Kane", "Kenya King", "Black & White", "Singleton"]
+      brands: ["J. Walker Red Label", "J. Walker Black Label", "Vat 69", "Bond 7", "County", "Napoleon", "Kenya Kane", "Kenya King", "Black & White", "Singleton"]
     },
     {
       category: "Vodka",

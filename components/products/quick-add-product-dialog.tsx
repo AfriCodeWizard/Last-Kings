@@ -97,9 +97,30 @@ export function QuickAddProductDialog({
     ])
 
     if (brandsRes.data) {
-      // Sort brands: catalog brands first, then others
+      // Get catalog brands for the selected product type
       const catalogBrands = getBrandsForType(formData.productType)
-      const sorted = (brandsRes.data as Array<{ id: string; name: string }>).sort((a, b) => {
+      
+      // Filter brands: only show brands that match the product type
+      // A brand matches if it's in the catalog for this product type, or if it's not in any catalog
+      const allBrands = brandsRes.data as Array<{ id: string; name: string }>
+      const beverageBrands = getBrandsForType('beverage')
+      const liquorBrands = getBrandsForType('liquor')
+      
+      const filtered = allBrands.filter(brand => {
+        const isLiquorBrand = liquorBrands.includes(brand.name)
+        const isBeverageBrand = beverageBrands.includes(brand.name)
+        
+        if (formData.productType === 'liquor') {
+          // Show liquor brands or brands not in any catalog
+          return isLiquorBrand || (!isLiquorBrand && !isBeverageBrand)
+        } else {
+          // Show beverage brands or brands not in any catalog
+          return isBeverageBrand || (!isLiquorBrand && !isBeverageBrand)
+        }
+      })
+      
+      // Sort brands: catalog brands first, then others
+      const sorted = filtered.sort((a, b) => {
         const aInCatalog = catalogBrands.includes(a.name)
         const bInCatalog = catalogBrands.includes(b.name)
         if (aInCatalog && !bInCatalog) return -1
