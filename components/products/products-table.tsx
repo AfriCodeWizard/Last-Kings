@@ -114,7 +114,15 @@ export function ProductsTable({ products }: ProductsTableProps) {
                     </TableCell>
                     <TableCell>{product.brands.name}</TableCell>
                     <TableCell>{product.categories.name}</TableCell>
-                    <TableCell>{product.product_variants.length} sizes</TableCell>
+                    <TableCell>
+                      {product.product_variants
+                        .sort((a, b) => a.size_ml - b.size_ml)
+                        .map((v) => {
+                          if (v.size_ml === 1000) return '1L'
+                          return `${v.size_ml}ml`
+                        })
+                        .join(', ')}
+                    </TableCell>
                     <TableCell>
                       {minPrice === maxPrice
                         ? formatCurrency(minPrice)

@@ -249,10 +249,10 @@ export default function ProductsPage() {
                       <div className="font-medium">
                         {item.brand_name}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {item.size_ml}ml
-                        {item.lot_number && ` • Lot: ${item.lot_number}`}
-                      </div>
+                        <div className="text-sm text-muted-foreground">
+                          {item.size_ml === 1000 ? '1L' : `${item.size_ml}ml`}
+                          {item.lot_number && ` • Lot: ${item.lot_number}`}
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-gold">Qty: {item.quantity}</span>

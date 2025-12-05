@@ -104,7 +104,9 @@ export default async function ProductDetailPage({
                   className="flex justify-between items-center p-4 rounded-lg border border-gold/10"
                 >
                   <div className="flex-1">
-                    <div className="font-medium font-sans">{variant.size_ml}ml</div>
+                    <div className="font-medium font-sans">
+                      {variant.size_ml === 1000 ? '1L' : `${variant.size_ml}ml`}
+                    </div>
                     <div className="text-sm text-muted-foreground font-sans">
                       SKU: {variant.sku}
                       {variant.upc && ` • UPC: ${variant.upc}`}
