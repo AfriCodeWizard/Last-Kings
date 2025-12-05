@@ -7,7 +7,7 @@ CREATE TYPE po_status AS ENUM ('draft', 'sent', 'received', 'cancelled');
 CREATE TYPE location_type AS ENUM ('floor', 'backroom', 'warehouse');
 CREATE TYPE transaction_type AS ENUM ('receiving', 'sale', 'transfer', 'adjustment', 'cycle_count');
 CREATE TYPE allocation_status AS ENUM ('pending', 'fulfilled', 'cancelled');
-CREATE TYPE payment_method AS ENUM ('cash', 'card', 'split');
+CREATE TYPE payment_method AS ENUM ('cash', 'mpesa');
 CREATE TYPE tax_type AS ENUM ('sales', 'excise');
 CREATE TYPE product_type AS ENUM ('liquor', 'beverage');
 

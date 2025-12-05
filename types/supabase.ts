@@ -472,7 +472,7 @@ export interface Database {
           total_amount: number;
           tax_amount: number;
           excise_tax: number;
-          payment_method: 'cash' | 'card' | 'split';
+          payment_method: 'cash' | 'mpesa';
           sold_by: string;
           age_verified: boolean;
           created_at: string;
@@ -484,7 +484,7 @@ export interface Database {
           total_amount: number;
           tax_amount: number;
           excise_tax: number;
-          payment_method: 'cash' | 'card' | 'split';
+          payment_method: 'cash' | 'mpesa';
           sold_by: string;
           age_verified: boolean;
           created_at?: string;
@@ -573,7 +573,7 @@ export interface Database {
       location_type: 'floor' | 'backroom' | 'warehouse';
       transaction_type: 'receiving' | 'sale' | 'transfer' | 'adjustment' | 'cycle_count';
       allocation_status: 'pending' | 'fulfilled' | 'cancelled';
-      payment_method: 'cash' | 'card' | 'split';
+      payment_method: 'cash' | 'mpesa';
       tax_type: 'sales' | 'excise';
     };
   };

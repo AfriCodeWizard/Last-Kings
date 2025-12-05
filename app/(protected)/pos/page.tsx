@@ -49,7 +49,7 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [showAgeVerification, setShowAgeVerification] = useState(false)
   const [ageVerified, setAgeVerified] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "split">("card")
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash")
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [scannedUPC, setScannedUPC] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -441,14 +441,13 @@ export default function POSPage() {
 
                   <div className="space-y-2 pt-4">
                     <Label>Payment Method</Label>
-                    <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "cash" | "card" | "split")}>
+                    <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "cash" | "mpesa")}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="card">Card</SelectItem>
                         <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="split">Split</SelectItem>
+                        <SelectItem value="mpesa">M-Pesa</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
