@@ -137,11 +137,11 @@ export default function LoginPage() {
       <Card className="w-full max-w-md glass">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Crown className="h-12 w-12 text-gold" />
+            <Crown className="h-14 w-14 text-gold" />
           </div>
           <div className="flex flex-col items-center">
             <CardTitle className="text-3xl font-serif text-gold">Last Kings</CardTitle>
-            <span className="text-sm font-sans text-gold/70 -mt-1">liquor store</span>
+            <span className="text-sm font-serif text-white -mt-1">liquor store</span>
           </div>
           <CardDescription className="text-muted-foreground mt-2">
             Sign in to your account
