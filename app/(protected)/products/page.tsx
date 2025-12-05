@@ -6,30 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, ScanLine, Camera, X } from "lucide-react"
+import { Plus, ScanLine, Camera } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
-import { motion, AnimatePresence } from "framer-motion"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { QuickAddProductDialog } from "@/components/products/quick-add-product-dialog"
 import { ProductsTable } from "@/components/products/products-table"
-import Link from "next/link"
-
-interface ScannedItem {
-  variant_id: string
-  brand_name: string
-  product_type: string
-  size_ml: number
-  quantity: number
-  lot_number: string | null
-  expiry_date: string | null
-}
 
 export default function ProductsPage() {
   const [liquorProducts, setLiquorProducts] = useState<any[]>([])
   const [beverageProducts, setBeverageProducts] = useState<any[]>([])
   const [barcode, setBarcode] = useState("")
-  const [scannedItems, setScannedItems] = useState<ScannedItem[]>([])
   const [showScanner, setShowScanner] = useState(false)
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [scannedUPC, setScannedUPC] = useState("")
@@ -96,68 +83,20 @@ export default function ProductsPage() {
         return
       }
 
-      const variant = variants[0]
+      // Product found - reload products to show it in the appropriate section
       playScanBeep()
-
-      const variantTyped = variant as any
-      const existingItem = scannedItems.find((item) => item.variant_id === variantTyped.id)
-
-      if (existingItem) {
-        setScannedItems((prev) =>
-          prev.map((item) =>
-            item.variant_id === variantTyped.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
-        )
-        toast.success(`${variantTyped.products.brands?.name || 'Product'} quantity increased`)
-      } else {
-        const newItem: ScannedItem = {
-          variant_id: variantTyped.id,
-          brand_name: variantTyped.products.brands?.name || '',
-          product_type: variantTyped.products.product_type || 'liquor',
-          size_ml: variantTyped.size_ml,
-          quantity: 1,
-          lot_number: null,
-          expiry_date: null,
-        }
-        setScannedItems((prev) => [...prev, newItem])
-        toast.success(`${variantTyped.products.brands?.name || 'Product'} added`)
-      }
+      await loadProducts()
+      toast.success("Product found and displayed in catalog")
     } catch (error) {
       toast.error("Error processing barcode")
     }
   }
 
   const handleProductCreated = async (variantId: string) => {
-    // Reload products after new product is created
+    // Reload products after new product is created to show it in the appropriate section
     await loadProducts()
-    
-    // Try to add the newly created variant to scanned items
-    const { data: variant } = await supabase
-      .from("product_variants")
-      .select(`
-        id,
-        size_ml,
-        products!inner(product_type, brands!inner(name))
-      `)
-      .eq("id", variantId)
-      .single() as any
-
-    if (variant) {
-      playScanBeep()
-      const newItem: ScannedItem = {
-        variant_id: variant.id,
-        brand_name: variant.products.brands?.name || '',
-        product_type: variant.products.product_type || 'liquor',
-        size_ml: variant.size_ml,
-        quantity: 1,
-        lot_number: null,
-        expiry_date: null,
-      }
-      setScannedItems((prev) => [...prev, newItem])
-      toast.success(`${variant.products.brands?.name || 'Product'} added`)
-    }
+    playScanBeep()
+    toast.success("Product created and added to catalog")
   }
 
   return (
@@ -168,12 +107,16 @@ export default function ProductsPage() {
           <p className="text-sm md:text-base text-muted-foreground">Manage your product catalog</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/products/new">
-            <Button className="w-full md:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
-          </Link>
+          <Button 
+            className="w-full md:w-auto"
+            onClick={() => {
+              setScannedUPC("")
+              setShowQuickAdd(true)
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
         </div>
       </div>
 
@@ -218,58 +161,6 @@ export default function ProductsPage() {
               Open Camera Scanner
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Scanned Items ({scannedItems.length})</CardTitle>
-          <CardDescription>Products scanned or added</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {scannedItems.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              No items scanned yet
-            </p>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              <AnimatePresence>
-                {scannedItems.map((item, idx) => (
-                  <motion.div
-                    key={`${item.variant_id}-${idx}`}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="flex justify-between items-center p-3 rounded-lg border border-gold/10 hover:bg-gold/5"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium">
-                        {item.brand_name}
-                      </div>
-                        <div className="text-sm text-muted-foreground">
-                          {item.size_ml === 1000 ? '1L' : `${item.size_ml}ml`}
-                          {item.lot_number && ` • Lot: ${item.lot_number}`}
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gold">Qty: {item.quantity}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setScannedItems((prev) =>
-                            prev.filter((_, i) => i !== idx)
-                          )
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
         </CardContent>
       </Card>
 

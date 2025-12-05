@@ -108,7 +108,7 @@ export function QuickAddProductDialog({
         setLoading(false)
         return
       }
-      if (!formData.upc || !formData.upc.trim()) {
+      if (scannedUPC && (!formData.upc || !formData.upc.trim())) {
         toast.error("UPC is required")
         setLoading(false)
         return
@@ -169,14 +169,18 @@ export function QuickAddProductDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-sans">Quick Add Product</DialogTitle>
-          <DialogDescription className="font-sans">
-            Product not found for barcode: <strong>{scannedUPC}</strong>. Create it now?
-          </DialogDescription>
-        </DialogHeader>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-sans">Add Product</DialogTitle>
+            <DialogDescription className="font-sans">
+              {scannedUPC ? (
+                <>Product not found for barcode: <strong>{scannedUPC}</strong>. Create it now?</>
+              ) : (
+                <>Create a new product in the catalog</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -196,14 +200,14 @@ export function QuickAddProductDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="upc" className="font-sans">UPC / Barcode *</Label>
+              <Label htmlFor="upc" className="font-sans">UPC / Barcode {scannedUPC ? '*' : '(Optional)'}</Label>
               <Input
                 id="upc"
                 value={formData.upc}
                 onChange={(e) => setFormData({ ...formData, upc: e.target.value })}
-                required
+                required={!!scannedUPC}
                 className="font-sans"
-                readOnly
+                readOnly={!!scannedUPC}
               />
             </div>
 
