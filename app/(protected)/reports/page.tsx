@@ -52,10 +52,11 @@ export default async function ReportsPage() {
   //   `)
   //   .gte("created_at", thirtyDaysAgo.toISOString())
 
-  // Dead stock (items with no sales in 60 days)
+  // Dead stock (items with no sales in 60 days AND have been in system for at least 60 days)
   const sixtyDaysAgo = new Date()
   sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
 
+  // Get variants that have been sold in the last 60 days
   const { data: recentSales } = await supabase
     .from("sale_items")
     .select("variant_id")
@@ -63,11 +64,13 @@ export default async function ReportsPage() {
 
   const soldVariantIds = new Set(recentSales?.map((s) => s.variant_id) || [])
 
+  // Get all stock with their first receiving transaction date
   const { data: allStock } = await supabase
     .from("stock_levels")
     .select(`
       variant_id,
       quantity,
+      updated_at,
       product_variants!inner(
         id,
         size_ml,
@@ -78,9 +81,45 @@ export default async function ReportsPage() {
     `)
     .gt("quantity", 0)
 
-  // Filter to only items that have stock and haven't been sold in 60 days
+  // Get first receiving transaction for each variant to determine when it was first added
+  const variantIds = allStock?.map((s) => s.variant_id) || []
+  const { data: firstReceivings } = variantIds.length > 0
+    ? await supabase
+        .from("inventory_transactions")
+        .select("variant_id, created_at")
+        .eq("transaction_type", "receiving")
+        .in("variant_id", variantIds)
+        .order("created_at", { ascending: true })
+    : { data: null }
+
+  // Create a map of variant_id to first receiving date
+  const firstReceivingMap = new Map<string, Date>()
+  if (firstReceivings) {
+    firstReceivings.forEach((tr: { variant_id: string; created_at: string }) => {
+      if (!firstReceivingMap.has(tr.variant_id)) {
+        firstReceivingMap.set(tr.variant_id, new Date(tr.created_at))
+      }
+    })
+  }
+
+  // Filter to only items that:
+  // 1. Have stock > 0
+  // 2. Haven't been sold in the last 60 days
+  // 3. Have been in the system for at least 60 days (first receiving was 60+ days ago)
   const deadStock = allStock?.filter((s) => {
-    return s.quantity > 0 && !soldVariantIds.has(s.variant_id)
+    if (s.quantity <= 0 || soldVariantIds.has(s.variant_id)) {
+      return false
+    }
+    
+    // Check if item has been in system for at least 60 days
+    const firstReceiving = firstReceivingMap.get(s.variant_id)
+    if (!firstReceiving) {
+      // If no receiving transaction found, use updated_at as fallback
+      const stockDate = new Date(s.updated_at)
+      return stockDate < sixtyDaysAgo
+    }
+    
+    return firstReceiving < sixtyDaysAgo
   }) || []
 
   return (
