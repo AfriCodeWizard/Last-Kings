@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CashPaymentDialog } from "@/components/pos/cash-payment-dialog"
 
 interface CartItem {
   variant_id: string
@@ -29,6 +30,7 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash")
   const [isScanning, setIsScanning] = useState(false)
+  const [showCashDialog, setShowCashDialog] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
 
@@ -217,9 +219,15 @@ export default function POSPage() {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const total = subtotal
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (receivedAmount?: number, change?: number) => {
     if (cart.length === 0) {
       toast.error("Cart is empty")
+      return
+    }
+
+    // If cash payment, show dialog first
+    if (paymentMethod === "cash" && receivedAmount === undefined) {
+      setShowCashDialog(true)
       return
     }
 
@@ -282,17 +290,25 @@ export default function POSPage() {
       // Generate sale number
       const saleNumber = `SALE-${Date.now()}`
 
-      // Create sale
+      // Create sale with cash payment details
+      const saleData: any = {
+        sale_number: saleNumber,
+        total_amount: total,
+        tax_amount: 0,
+        excise_tax: 0,
+        payment_method: paymentMethod,
+        sold_by: user.id,
+        age_verified: true, // Auto-verified, no requirement
+      }
+
+      // Add cash payment details if cash payment
+      if (paymentMethod === "cash" && receivedAmount !== undefined) {
+        saleData.received_amount = receivedAmount
+        saleData.change_given = change || 0
+      }
+
       const { data: sale, error: saleError } = await ((supabase.from("sales") as any)
-        .insert({
-          sale_number: saleNumber,
-          total_amount: total,
-          tax_amount: 0,
-          excise_tax: 0,
-          payment_method: paymentMethod,
-          sold_by: user.id,
-          age_verified: true, // Auto-verified, no requirement
-        })
+        .insert(saleData)
         .select()
         .single())
 
@@ -317,13 +333,18 @@ export default function POSPage() {
         throw new Error(`Failed to create sale items: ${itemsError.message}`)
       }
 
-      toast.success(`Sale completed! ${saleNumber}`, {
+      const successMessage = paymentMethod === "cash" && change && change > 0
+        ? `Sale completed! ${saleNumber} - Change: ${formatCurrency(change)}`
+        : `Sale completed! ${saleNumber}`
+
+      toast.success(successMessage, {
         description: `${cart.length} item(s) sold successfully.`,
         duration: 5000,
       })
       
       // Clear cart and refocus input
       setCart([])
+      setShowCashDialog(false)
       if (inputRef.current) {
         inputRef.current.focus()
       }
@@ -457,7 +478,11 @@ export default function POSPage() {
                     </Select>
                   </div>
 
-                  <Button onClick={handleCheckout} className="w-full" size="lg">
+                  <Button 
+                    onClick={() => handleCheckout()} 
+                    className="w-full" 
+                    size="lg"
+                  >
                     <CreditCard className="mr-2 h-4 w-4" />
                     Complete Sale
                   </Button>
@@ -483,6 +508,16 @@ export default function POSPage() {
         }}
         title="Scan Barcode"
         description="Position the barcode on the liquor bottle within the frame"
+      />
+
+      <CashPaymentDialog
+        isOpen={showCashDialog}
+        onClose={() => setShowCashDialog(false)}
+        total={total}
+        onConfirm={(receivedAmount, change) => {
+          setShowCashDialog(false)
+          handleCheckout(receivedAmount, change)
+        }}
       />
 
     </div>
