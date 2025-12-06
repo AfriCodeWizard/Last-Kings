@@ -52,14 +52,14 @@ export default async function ReportsPage() {
   //   `)
   //   .gte("created_at", thirtyDaysAgo.toISOString())
 
-  // Dead stock (items with no sales in 90 days)
-  const ninetyDaysAgo = new Date()
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  // Dead stock (items with no sales in 60 days)
+  const sixtyDaysAgo = new Date()
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
 
   const { data: recentSales } = await supabase
     .from("sale_items")
     .select("variant_id")
-    .gte("created_at", ninetyDaysAgo.toISOString())
+    .gte("created_at", sixtyDaysAgo.toISOString())
 
   const soldVariantIds = new Set(recentSales?.map((s) => s.variant_id) || [])
 
@@ -69,11 +69,19 @@ export default async function ReportsPage() {
       variant_id,
       quantity,
       product_variants!inner(
-        products!inner(name)
+        id,
+        size_ml,
+        products!inner(
+          brands(name)
+        )
       )
     `)
+    .gt("quantity", 0)
 
-  const deadStock = allStock?.filter((s) => !soldVariantIds.has(s.variant_id)) || []
+  // Filter to only items that have stock and haven't been sold in 60 days
+  const deadStock = allStock?.filter((s) => {
+    return s.quantity > 0 && !soldVariantIds.has(s.variant_id)
+  }) || []
 
   return (
     <div className="space-y-6">
@@ -89,7 +97,7 @@ export default async function ReportsPage() {
             <TrendingUp className="h-4 w-4 text-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gold">{formatCurrency(totalSales)}</div>
+            <div className="text-xl sm:text-2xl font-bold text-gold break-words overflow-hidden text-ellipsis">{formatCurrency(totalSales)}</div>
             <p className="text-xs text-muted-foreground">{sales?.length || 0} transactions</p>
           </CardContent>
         </Card>
@@ -100,7 +108,7 @@ export default async function ReportsPage() {
             <FileText className="h-4 w-4 text-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalTax)}</div>
+            <div className="text-xl sm:text-2xl font-bold break-words overflow-hidden text-ellipsis">{formatCurrency(totalTax)}</div>
             <p className="text-xs text-muted-foreground">Collected</p>
           </CardContent>
         </Card>
@@ -111,7 +119,7 @@ export default async function ReportsPage() {
             <FileText className="h-4 w-4 text-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalExcise)}</div>
+            <div className="text-xl sm:text-2xl font-bold break-words overflow-hidden text-ellipsis">{formatCurrency(totalExcise)}</div>
             <p className="text-xs text-muted-foreground">TTB reporting</p>
           </CardContent>
         </Card>
@@ -123,7 +131,7 @@ export default async function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{deadStock.length}</div>
-            <p className="text-xs text-muted-foreground">No sales in 90d</p>
+            <p className="text-xs text-muted-foreground">No sales in 60d</p>
           </CardContent>
         </Card>
       </div>
@@ -169,7 +177,7 @@ export default async function ReportsPage() {
         <Card className="w-full overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">Dead Stock Alert</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Items with no sales in 90 days</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Items with no sales in 60 days</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {deadStock.length > 0 ? (
@@ -178,22 +186,35 @@ export default async function ReportsPage() {
                   const variant = Array.isArray(stock.product_variants) 
                     ? stock.product_variants[0] 
                     : stock.product_variants
-                  const productName = variant?.products 
-                    ? (Array.isArray(variant.products) ? variant.products[0]?.brands?.name : (variant.products as any)?.brands?.name)
+                  const products = variant?.products
+                  const brandName = products 
+                    ? (Array.isArray(products) 
+                        ? (products[0]?.brands 
+                            ? (Array.isArray(products[0].brands) 
+                                ? products[0].brands[0]?.name 
+                                : products[0].brands?.name)
+                            : 'Unknown Product')
+                        : (products?.brands
+                            ? (Array.isArray(products.brands)
+                                ? products.brands[0]?.name
+                                : products.brands?.name)
+                            : 'Unknown Product'))
                     : 'Unknown Product'
+                  const sizeMl = variant?.size_ml || 0
                   
                   return (
-                  <div
-                    key={stock.variant_id}
-                    className="flex justify-between items-center p-2 rounded border border-destructive/20 text-xs sm:text-sm"
-                  >
-                    <div className="flex-1 truncate mr-2">
-                      {productName}
+                    <div
+                      key={stock.variant_id}
+                      className="flex justify-between items-center p-2 rounded border border-destructive/20 text-xs sm:text-sm"
+                    >
+                      <div className="flex-1 truncate mr-2">
+                        <div className="font-medium">{brandName}</div>
+                        <div className="text-muted-foreground text-xs">{sizeMl}ml</div>
+                      </div>
+                      <div className="text-destructive font-bold whitespace-nowrap">
+                        Qty: {stock.quantity}
+                      </div>
                     </div>
-                    <div className="text-destructive font-bold whitespace-nowrap">
-                      Qty: {stock.quantity}
-                    </div>
-                  </div>
                   )
                 })}
               </div>
@@ -212,16 +233,16 @@ export default async function ReportsPage() {
           <CardDescription>Export-ready reports for TTB and state compliance</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
-            <Button variant="outline">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Download className="mr-2 h-4 w-4" />
               Export Sales Tax Report
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Download className="mr-2 h-4 w-4" />
               Export Excise Tax Report
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Download className="mr-2 h-4 w-4" />
               Export TTB Report
             </Button>
