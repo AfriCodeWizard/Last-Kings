@@ -169,12 +169,12 @@ export default function POSPage() {
     ))
   }
 
-  // Calculate subtotal
+  // Calculate subtotal (prices are inclusive of VAT)
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   
   // Calculate KRA-compliant taxes
   const exciseDuty = calculateTotalExciseDuty(cart)
-  const { vat, total } = calculateKRATaxes(subtotal, exciseDuty)
+  const { vat, total, basePrice } = calculateKRATaxes(subtotal, exciseDuty)
   
   // For display purposes
   const tax = vat // VAT is the main tax shown

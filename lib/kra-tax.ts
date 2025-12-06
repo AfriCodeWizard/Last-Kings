@@ -59,21 +59,30 @@ export function calculateTotalExciseDuty(items: Array<{ category_name?: string; 
 
 /**
  * Calculate KRA-compliant taxes for a sale
- * @param subtotal Subtotal before taxes
+ * Prices are inclusive of VAT, so we need to extract VAT from the price first
+ * Then add excise duty and recalculate VAT on the total
+ * @param subtotal Subtotal (prices are inclusive of VAT)
  * @param exciseDuty Total excise duty amount
  * @returns Object with VAT amount and total
  */
 export function calculateKRATaxes(subtotal: number, exciseDuty: number) {
-  // VAT is calculated on subtotal + excise duty
-  const vatBase = subtotal + exciseDuty
+  // Since prices are inclusive of VAT, extract the base price (excluding VAT)
+  // If price is 1000 and VAT is 16%, base = 1000 / (1 + 0.16) = 862.07
+  const basePrice = subtotal / (1 + KRA_VAT_RATE)
+  
+  // VAT is calculated on (base price + excise duty)
+  const vatBase = basePrice + exciseDuty
   const vat = vatBase * KRA_VAT_RATE
-  const total = subtotal + exciseDuty + vat
+  
+  // Total is base price + excise duty + VAT
+  const total = basePrice + exciseDuty + vat
   
   return {
     vat,
     exciseDuty,
     total,
     vatRate: KRA_VAT_RATE,
+    basePrice,
   }
 }
 
