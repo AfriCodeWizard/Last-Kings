@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { playScanBeep } from "@/lib/sound"
 
 interface BarcodeScannerProps {
   isOpen: boolean
@@ -119,8 +118,9 @@ export function BarcodeScanner({
             return
           }
           try {
-            // Play sound immediately when barcode is successfully scanned
-            playScanBeep()
+            // Play sound and vibration immediately when barcode is successfully scanned
+            const { playScanBeepWithVibration } = await import('@/lib/sound')
+            playScanBeepWithVibration()
             
             // Stop scanning immediately
             await stopScanning()
