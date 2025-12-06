@@ -199,36 +199,42 @@ export default function TransferPage() {
 
           if (transferQty > 0) {
             // Reduce from source location
-            const { error: reduceError } = await supabase
-              .from("stock_levels")
+            const { error: reduceError } = await (supabase
+              .from("stock_levels") as any)
               .update({ quantity: (stock.quantity || 0) - transferQty })
               .eq("id", stock.id)
 
             if (reduceError) throw reduceError
 
             // Add to destination location
-            const { data: destStock, error: destError } = await supabase
-              .from("stock_levels")
-              .select("id")
+            const destStockQuery = (supabase
+              .from("stock_levels") as any)
+              .select("id, quantity")
               .eq("variant_id", item.variant_id)
               .eq("location_id", destinationLocationId)
-              .eq("lot_number", stock.lot_number)
-              .single()
+            
+            if (stock.lot_number) {
+              destStockQuery.eq("lot_number", stock.lot_number)
+            } else {
+              destStockQuery.is("lot_number", null)
+            }
+            
+            const { data: destStock, error: destError } = await destStockQuery.single()
 
             if (destError && destError.code !== 'PGRST116') throw destError
 
             if (destStock) {
               // Update existing stock
-              const { error: updateError } = await supabase
-                .from("stock_levels")
+              const { error: updateError } = await (supabase
+                .from("stock_levels") as any)
                 .update({ quantity: (destStock as any).quantity + transferQty })
                 .eq("id", destStock.id)
 
               if (updateError) throw updateError
             } else {
               // Create new stock entry
-              const { error: insertError } = await supabase
-                .from("stock_levels")
+              const { error: insertError } = await (supabase
+                .from("stock_levels") as any)
                 .insert({
                   variant_id: item.variant_id,
                   location_id: destinationLocationId,

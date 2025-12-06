@@ -29,13 +29,14 @@ export default async function InventoryPage() {
     .from("stock_levels")
     .select(`
       *,
+      location_id,
       product_variants!inner(
         id,
         size_ml,
         sku,
         products!inner(brand_id, brands(name))
       ),
-      inventory_locations(name, type)
+      inventory_locations(id, name, type)
     `)
     .order("quantity", { ascending: true })
 
@@ -79,8 +80,8 @@ export default async function InventoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {stockLevels?.filter((s: { inventory_locations: { id: string } }) => 
-                  s.inventory_locations.id === location.id
+                {stockLevels?.filter((s: { location_id: string }) => 
+                  s.location_id === location.id
                 ).reduce((sum: number, s: { quantity: number }) => sum + s.quantity, 0) || 0}
               </div>
               <p className="text-sm text-muted-foreground">Total items</p>

@@ -73,7 +73,7 @@ export default async function DashboardPage() {
         id,
         sku,
         products!inner(
-          name,
+          brands(name),
           categories(name)
         )
       )
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
         quantity,
         product_variants!inner(
           products!inner(
-            name,
+            brands(name),
             categories(name)
           )
         )
@@ -300,9 +300,19 @@ export default async function DashboardPage() {
                       ? item.product_variants[0] 
                       : item.product_variants
                     const products = variant?.products
-                    const productName = products 
-                      ? (Array.isArray(products) ? products[0]?.brands?.name : (products as any)?.brands?.name)
-                      : 'Unknown Product'
+                    const brandName = products 
+                      ? (Array.isArray(products) 
+                          ? (products[0]?.brands 
+                              ? (Array.isArray(products[0].brands) 
+                                  ? products[0].brands[0]?.name 
+                                  : products[0].brands?.name)
+                              : 'Unknown Brand')
+                          : (products?.brands
+                              ? (Array.isArray(products.brands)
+                                  ? products.brands[0]?.name
+                                  : products.brands?.name)
+                              : 'Unknown Brand'))
+                      : 'Unknown Brand'
                     const category = products 
                       ? (Array.isArray(products) 
                           ? (products[0]?.categories 
@@ -321,7 +331,7 @@ export default async function DashboardPage() {
                     
                     return (
                       <TableRow key={idx}>
-                        <TableCell className="font-sans">{productName}</TableCell>
+                        <TableCell className="font-sans">{brandName}</TableCell>
                         <TableCell className="font-sans">{category}</TableCell>
                         <TableCell className="text-right font-sans">{quantity}</TableCell>
                         <TableCell className="text-right">
@@ -361,9 +371,19 @@ export default async function DashboardPage() {
                 <TableBody>
                   {pendingPOItems.map((item: any) => {
                     const products = item.product_variants?.products
-                    const productName = products 
-                      ? (Array.isArray(products) ? products[0]?.name : products?.name)
-                      : 'Unknown Product'
+                    const brandName = products 
+                      ? (Array.isArray(products) 
+                          ? (products[0]?.brands 
+                              ? (Array.isArray(products[0].brands) 
+                                  ? products[0].brands[0]?.name 
+                                  : products[0].brands?.name)
+                              : 'Unknown Brand')
+                          : (products?.brands
+                              ? (Array.isArray(products.brands)
+                                  ? products.brands[0]?.name
+                                  : products.brands?.name)
+                              : 'Unknown Brand'))
+                      : 'Unknown Brand'
                     const category = products 
                       ? (Array.isArray(products) 
                           ? (products[0]?.categories 
@@ -380,7 +400,7 @@ export default async function DashboardPage() {
                     
                     return (
                       <TableRow key={item.id}>
-                        <TableCell className="font-sans">{productName}</TableCell>
+                        <TableCell className="font-sans">{brandName}</TableCell>
                         <TableCell className="font-sans">{category}</TableCell>
                         <TableCell className="text-right font-sans">{item.remainingQty}</TableCell>
                         <TableCell className="text-right">

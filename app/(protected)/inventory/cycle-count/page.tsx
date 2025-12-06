@@ -235,9 +235,9 @@ export default function CycleCountPage() {
         if (item.difference === 0) continue // No adjustment needed
 
         // Update stock level
-        const { error: updateError } = await supabase
-          .from("stock_levels")
-          .update({ quantity: item.physical_quantity } as any)
+        const { error: updateError } = await (supabase
+          .from("stock_levels") as any)
+          .update({ quantity: item.physical_quantity })
           .eq("id", item.stock_level_id)
 
         if (updateError) throw updateError
