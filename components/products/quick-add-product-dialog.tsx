@@ -241,10 +241,10 @@ export function QuickAddProductDialog({
           .select("id, size_ml, products!inner(brands!inner(name))")
           .eq("upc", formData.upc.trim())
           .limit(1)
-          .maybeSingle()
+          .maybeSingle() as { id: string; size_ml: number; products: { brands: { name: string } } } | null
 
         if (existingVariant) {
-          const productName = (existingVariant.products as any)?.brands?.name || 'Product'
+          const productName = existingVariant.products?.brands?.name || 'Product'
           const productSize = existingVariant.size_ml === 1000 ? '1L' : `${existingVariant.size_ml}ml`
           toast.error(`Duplicate UPC detected! ${productName} ${productSize} already exists in the system with this UPC.`, {
             description: "Please use a different UPC or update the existing product.",
