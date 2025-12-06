@@ -64,22 +64,36 @@ export default async function DashboardPage() {
     salesPercentageChange = 100 // 100% increase if no sales yesterday
   }
 
-  // Get low stock items with categories
-  const { data: lowStock } = await supabase
-    .from("stock_levels")
-    .select(`
-      quantity,
-      product_variants!inner(
-        id,
-        sku,
-        products!inner(
-          brands(name),
-          categories(name)
-        )
-      )
-    `)
-    .lt("quantity", 10)
-    .limit(10)
+  // Get low stock items from main floor only
+  const { data: floorLocation } = await supabase
+    .from("inventory_locations")
+    .select("id")
+    .eq("type", "floor")
+    .limit(1)
+    .single()
+
+  const floorLocationId = floorLocation?.id
+
+  // Get low stock items with size (only from main floor)
+  const { data: lowStock } = floorLocationId
+    ? await supabase
+        .from("stock_levels")
+        .select(`
+          quantity,
+          location_id,
+          product_variants!inner(
+            id,
+            sku,
+            size_ml,
+            products!inner(
+              brands(name)
+            )
+          )
+        `)
+        .eq("location_id", floorLocationId)
+        .lt("quantity", 10)
+        .limit(10)
+    : { data: null }
 
   // Get pending receivables - PO items from purchase orders with status 'sent'
   const { data: pendingPOs } = await supabase
@@ -231,7 +245,7 @@ export default async function DashboardPage() {
             <DollarSign className="h-4 w-4 text-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold font-sans text-gold break-words overflow-hidden">{formatCurrency(salesTotal)}</div>
+            <div className="text-xl sm:text-2xl font-bold font-sans text-gold break-words overflow-hidden text-ellipsis">{formatCurrency(salesTotal)}</div>
             <p className={`text-xs font-sans flex items-center gap-1 mt-1 ${salesPercentageChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {salesPercentageChange >= 0 ? (
                 <TrendingUp className="h-3 w-3 flex-shrink-0" />
@@ -290,7 +304,7 @@ export default async function DashboardPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="font-sans whitespace-nowrap">Brand Name</TableHead>
-                      <TableHead className="font-sans whitespace-nowrap">Category</TableHead>
+                      <TableHead className="font-sans whitespace-nowrap">Size</TableHead>
                       <TableHead className="text-right font-sans whitespace-nowrap">Stock</TableHead>
                       <TableHead className="text-right font-sans whitespace-nowrap">Status</TableHead>
                     </TableRow>
@@ -314,26 +328,14 @@ export default async function DashboardPage() {
                                     : products.brands?.name)
                                 : 'Unknown Brand'))
                         : 'Unknown Brand'
-                      const category = products 
-                        ? (Array.isArray(products) 
-                            ? (products[0]?.categories 
-                                ? (Array.isArray(products[0].categories) 
-                                    ? products[0].categories[0]?.name 
-                                    : products[0].categories?.name)
-                                : 'N/A')
-                            : (products?.categories
-                                ? (Array.isArray(products.categories)
-                                    ? products.categories[0]?.name
-                                    : products.categories?.name)
-                                : 'N/A'))
-                        : 'N/A'
+                      const sizeMl = variant?.size_ml || 0
                       
                       const quantity = item.quantity
                       
                       return (
                         <TableRow key={idx}>
                           <TableCell className="font-sans whitespace-nowrap">{brandName}</TableCell>
-                          <TableCell className="font-sans whitespace-nowrap">{category}</TableCell>
+                          <TableCell className="font-sans whitespace-nowrap">{sizeMl}ml</TableCell>
                           <TableCell className="text-right font-sans whitespace-nowrap">{quantity}</TableCell>
                           <TableCell className="text-right whitespace-nowrap">
                             {quantity < 5 ? (
