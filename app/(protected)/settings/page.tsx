@@ -37,13 +37,13 @@ export default async function SettingsPage() {
   const taxRates = taxRatesResult?.data || null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div>
         <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Settings</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Manage system configuration</p>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 sm:gap-6">
         {canAddDistributors(user?.role || 'staff') && (
           <Card>
             <CardHeader>
@@ -63,15 +63,15 @@ export default async function SettingsPage() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-6">
               <div className="min-w-full">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Contact</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Email</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Phone</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Contact</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Phone</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -157,15 +157,15 @@ export default async function SettingsPage() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-6">
               <div className="min-w-full">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Email</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Role</TableHead>
-                      <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Role</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -228,15 +228,15 @@ export default async function SettingsPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-6">
             <div className="min-w-full">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs sm:text-sm">Name</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Type</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Rate</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Type</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Rate</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
