@@ -128,12 +128,14 @@ export function BarcodeScanner({
             // Close scanner immediately after sound
             onClose()
             
-            // Process the scan asynchronously (don't wait for it)
-            // This allows the scanner to close immediately while processing happens in background
+            // Process the scan and await it to ensure errors are caught
             const trimmedBarcode = decodedText.trim()
-            Promise.resolve(onScan(trimmedBarcode)).catch((error) => {
+            try {
+              await onScan(trimmedBarcode)
+            } catch (error) {
               console.error("Error processing scan:", error)
-            })
+              throw error // Re-throw to be caught by outer try-catch
+            }
           } catch (error) {
             console.error("Error in scan handler:", error)
             // Still close the scanner even if there's an error

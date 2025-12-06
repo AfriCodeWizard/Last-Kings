@@ -29,6 +29,7 @@ export default function POSPage() {
   const [showScanner, setShowScanner] = useState(false)
   const [cart, setCart] = useState<CartItem[]>([])
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash")
+  const [isScanning, setIsScanning] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
 
@@ -39,6 +40,14 @@ export default function POSPage() {
       toast.error("Invalid barcode")
       return
     }
+
+    // Prevent multiple simultaneous scans
+    if (isScanning) {
+      console.log("Scan already in progress, ignoring")
+      return
+    }
+
+    setIsScanning(true)
     try {
       console.log("Querying database for UPC:", value.trim())
       // Query without .single() to avoid error when no results
@@ -137,7 +146,10 @@ export default function POSPage() {
       console.log("Item added to cart")
     } catch (error) {
       console.error("Error scanning barcode:", error)
-      toast.error("Error processing barcode")
+      const errorMessage = error instanceof Error ? error.message : "Error processing barcode"
+      toast.error(errorMessage)
+    } finally {
+      setIsScanning(false)
     }
   }
 
@@ -283,15 +295,13 @@ export default function POSPage() {
                     value={barcode}
                     onChange={(e) => {
                       setBarcode(e.target.value)
-                      if (e.target.value.length > 8) {
-                        handleBarcodeScan(e.target.value)
-                        setBarcode("")
-                      }
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && barcode.trim().length > 8) {
-                        handleBarcodeScan(barcode.trim())
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter" && barcode.trim().length >= 8) {
+                        e.preventDefault()
+                        const trimmedBarcode = barcode.trim()
                         setBarcode("")
+                        await handleBarcodeScan(trimmedBarcode)
                       }
                     }}
                     className="pl-10"
@@ -411,9 +421,14 @@ export default function POSPage() {
       <BarcodeScanner
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
-        onScan={async (barcode) => {
-          await handleBarcodeScan(barcode)
-          setBarcode("")
+        onScan={async (scannedBarcode) => {
+          try {
+            await handleBarcodeScan(scannedBarcode)
+            setBarcode("")
+          } catch (error) {
+            console.error("Error in scanner callback:", error)
+            toast.error("Error processing scanned barcode")
+          }
         }}
         title="Scan Barcode"
         description="Position the barcode on the liquor bottle within the frame"

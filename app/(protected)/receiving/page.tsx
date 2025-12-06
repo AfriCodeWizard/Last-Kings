@@ -243,17 +243,39 @@ export default function ReceivingPage() {
 
       if (sessionError) throw sessionError
 
-      // Get default location
-      const { data: location } = await ((supabase
+      // Get warehouse location (create if it doesn't exist)
+      let { data: location, error: locationError } = await supabase
         .from("inventory_locations")
         .select("id")
         .eq("type", "warehouse")
         .limit(1)
-        .single() as any))
+        .maybeSingle()
 
-      if (!location) {
-        toast.error("No warehouse location found")
+      if (locationError && locationError.code !== 'PGRST116') {
+        console.error("Error fetching warehouse location:", locationError)
+        toast.error("Error finding warehouse location")
         return
+      }
+
+      // If no warehouse exists, create one
+      if (!location) {
+        console.log("No warehouse location found, creating one...")
+        const { data: newLocation, error: createError } = await supabase
+          .from("inventory_locations")
+          .insert({
+            name: "Warehouse",
+            type: "warehouse"
+          })
+          .select("id")
+          .single()
+
+        if (createError || !newLocation) {
+          console.error("Error creating warehouse location:", createError)
+          toast.error("Error creating warehouse location")
+          return
+        }
+        location = newLocation
+        toast.success("Warehouse location created")
       }
 
       // Insert received items
@@ -266,28 +288,93 @@ export default function ReceivingPage() {
         expiry_date: item.expiry_date,
       }))
 
-      const { error: itemsError } = await ((supabase.from("received_items") as any).insert(receivedItems))
+      const { error: itemsError, data: insertedItems } = await ((supabase.from("received_items") as any).insert(receivedItems).select())
 
-      if (itemsError) throw itemsError
+      if (itemsError) {
+        console.error("Error inserting received items:", itemsError)
+        throw itemsError
+      }
+
+      // Verify stock was created/updated by checking stock_levels
+      // Wait a moment for trigger to execute
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Verify stock was created for each item
+      let stockIssues = 0
+      for (const item of receivedItems) {
+        // Check for stock with matching variant and location
+        // Handle NULL lot_number case
+        let stockQuery = supabase
+          .from("stock_levels")
+          .select("quantity, lot_number")
+          .eq("variant_id", item.variant_id)
+          .eq("location_id", item.location_id)
+
+        // If lot_number is provided, match it; otherwise match NULL
+        if (item.lot_number) {
+          stockQuery = stockQuery.eq("lot_number", item.lot_number)
+        } else {
+          stockQuery = stockQuery.is("lot_number", null)
+        }
+
+        const { data: stockCheck, error: stockError } = await stockQuery.limit(1).maybeSingle()
+
+        if (stockError) {
+          console.error(`Error verifying stock for variant ${item.variant_id}:`, stockError)
+          stockIssues++
+        } else if (!stockCheck || stockCheck.quantity < item.quantity) {
+          console.warn(`Stock issue for variant ${item.variant_id} - Expected: ${item.quantity}, Found: ${stockCheck?.quantity || 0}`)
+          // Manually create/update stock entry if trigger failed
+          const stockData: any = {
+            variant_id: item.variant_id,
+            location_id: item.location_id,
+            quantity: item.quantity,
+          }
+          if (item.lot_number) stockData.lot_number = item.lot_number
+          if (item.expiry_date) stockData.expiry_date = item.expiry_date
+
+          const { error: manualStockError } = await supabase
+            .from("stock_levels")
+            .upsert(stockData, {
+              onConflict: 'variant_id,location_id,lot_number',
+            })
+          
+          if (manualStockError) {
+            console.error("Error manually creating stock:", manualStockError)
+            stockIssues++
+          } else {
+            console.log(`Manually created/updated stock for variant ${item.variant_id}`)
+          }
+        }
+      }
+
+      if (stockIssues > 0) {
+        console.warn(`${stockIssues} stock verification issue(s) detected and attempted to fix`)
+      }
 
       // Complete session
-      await ((supabase.from("receiving_sessions") as any)
+      const { error: sessionError } = await ((supabase.from("receiving_sessions") as any)
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", session.id))
+
+      if (sessionError) {
+        console.error("Error completing session:", sessionError)
+        throw sessionError
+      }
 
       // If PO is linked, check if it's fully received and update status
       if (selectedPOId) {
         await checkAndUpdatePOStatus(selectedPOId)
       }
 
-      toast.success("Receiving session completed!")
+      toast.success(`Receiving session completed! ${receivedItems.length} item(s) added to warehouse inventory.`)
       setScannedItems([])
       setSelectedPOId(undefined)
       setSelectedPO(null)
       await loadPendingPOs() // Refresh pending POs list
     } catch (error) {
-      toast.error("Error completing receiving session")
-      console.error(error)
+      console.error("Error completing receiving session:", error)
+      toast.error(error instanceof Error ? error.message : "Error completing receiving session")
     }
   }
 
