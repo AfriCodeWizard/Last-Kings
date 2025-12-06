@@ -103,41 +103,57 @@ export default function POSPage() {
       }
 
       // Check available stock at floor location
-      const { data: floorLocation } = await supabase
+      const { data: floorLocation, error: locationError } = await supabase
         .from("inventory_locations")
         .select("id")
         .eq("type", "floor")
         .limit(1)
-        .single()
+        .maybeSingle()
 
-      if (floorLocation) {
-        const { data: stockLevels } = await supabase
-          .from("stock_levels")
-          .select("quantity")
-          .eq("variant_id", variant.id)
-          .eq("location_id", (floorLocation as { id: string }).id)
+      if (locationError) {
+        console.error("Error fetching floor location:", locationError)
+        toast.error("Error checking inventory location. Please contact administrator.")
+        return
+      }
 
-        const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+      if (!floorLocation) {
+        console.error("No floor location found")
+        toast.error("No floor location configured. Please set up inventory locations.")
+        return
+      }
 
-        // Check if item is already in cart
-        const existingInCart = cart.find((item) => item.variant_id === variant.id)
-        const cartQuantity = existingInCart ? existingInCart.quantity : 0
+      const { data: stockLevels, error: stockError } = await supabase
+        .from("stock_levels")
+        .select("quantity")
+        .eq("variant_id", variant.id)
+        .eq("location_id", floorLocation.id)
 
-        // If no stock available and item has been sold, show error
-        if (totalStock <= 0 && totalSold > 0) {
-          toast.error("⚠️ Item already sold - This item has been sold and is no longer available")
-          return
-        }
+      if (stockError) {
+        console.error("Error checking stock:", stockError)
+        toast.error("Error checking stock availability")
+        return
+      }
 
-        if (totalStock <= 0) {
-          toast.error("No stock available for this item")
-          return
-        }
+      const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
 
-        if (cartQuantity >= totalStock) {
-          toast.error("Insufficient stock available - Cannot add more items")
-          return
-        }
+      // Check if item is already in cart
+      const existingInCart = cart.find((item) => item.variant_id === variant.id)
+      const cartQuantity = existingInCart ? existingInCart.quantity : 0
+
+      // If no stock available and item has been sold, show error
+      if (totalStock <= 0 && totalSold > 0) {
+        toast.error("⚠️ Item already sold - This item has been sold and is no longer available")
+        return
+      }
+
+      if (totalStock <= 0) {
+        toast.error("No stock available for this item")
+        return
+      }
+
+      if (cartQuantity >= totalStock) {
+        toast.error("Insufficient stock available - Cannot add more items")
+        return
       }
 
       console.log("Variant found:", variant)
@@ -216,27 +232,44 @@ export default function POSPage() {
       }
 
       // Check stock availability before checkout
-      const { data: floorLocation } = await supabase
+      const { data: floorLocation, error: locationError } = await supabase
         .from("inventory_locations")
         .select("id")
         .eq("type", "floor")
         .limit(1)
-        .single()
+        .maybeSingle()
 
-      if (floorLocation) {
-        for (const item of cart) {
-          const { data: stockLevels } = await supabase
-            .from("stock_levels")
-            .select("quantity")
-            .eq("variant_id", item.variant_id)
-            .eq("location_id", (floorLocation as { id: string }).id)
+      if (locationError) {
+        console.error("Error fetching floor location:", locationError)
+        toast.error("Error checking inventory location. Please contact administrator.")
+        return
+      }
 
-          const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+      if (!floorLocation) {
+        console.error("No floor location found")
+        toast.error("No floor location configured. Cannot complete sale.")
+        return
+      }
 
-          if (totalStock < item.quantity) {
-            toast.error(`Insufficient stock for ${item.brand_name}. Available: ${totalStock}, Requested: ${item.quantity}`)
-            return
-          }
+      // Verify stock for each item in cart
+      for (const item of cart) {
+        const { data: stockLevels, error: stockError } = await supabase
+          .from("stock_levels")
+          .select("quantity")
+          .eq("variant_id", item.variant_id)
+          .eq("location_id", floorLocation.id)
+
+        if (stockError) {
+          console.error("Error checking stock:", stockError)
+          toast.error(`Error checking stock for ${item.brand_name}`)
+          return
+        }
+
+        const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+
+        if (totalStock < item.quantity) {
+          toast.error(`Insufficient stock for ${item.brand_name}. Available: ${totalStock}, Requested: ${item.quantity}`)
+          return
         }
       }
 
@@ -259,21 +292,35 @@ export default function POSPage() {
 
       if (saleError) throw saleError
 
-      // Create sale items
+      // Create sale items (lot_number is NULL for POS sales)
       const saleItems = cart.map((item) => ({
         sale_id: sale.id,
         variant_id: item.variant_id,
         quantity: item.quantity,
         unit_price: item.price,
+        lot_number: null, // POS sales don't track lot numbers
       }))
 
       const { error: itemsError } = await ((supabase.from("sale_items") as any)
         .insert(saleItems))
 
-      if (itemsError) throw itemsError
+      if (itemsError) {
+        console.error("Error creating sale items:", itemsError)
+        // Try to delete the sale record if items failed
+        await supabase.from("sales").delete().eq("id", sale.id)
+        throw new Error(`Failed to create sale items: ${itemsError.message}`)
+      }
 
-      toast.success(`Sale completed! ${saleNumber}`)
+      toast.success(`Sale completed! ${saleNumber}`, {
+        description: `${cart.length} item(s) sold successfully.`,
+        duration: 5000,
+      })
+      
+      // Clear cart and refocus input
       setCart([])
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
     } catch (error) {
       toast.error("Error processing sale")
       console.error(error)
