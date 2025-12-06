@@ -232,7 +232,7 @@ export default function ReceivingPage() {
       }
 
       // Create receiving session with optional PO link
-      const { data: session, error: sessionError } = await ((supabase.from("receiving_sessions") as any)
+      const { data: session, error: createSessionError } = await ((supabase.from("receiving_sessions") as any)
         .insert({
           received_by: user.id,
           po_id: selectedPOId || null,
@@ -241,7 +241,7 @@ export default function ReceivingPage() {
         .select()
         .single())
 
-      if (sessionError) throw sessionError
+      if (createSessionError) throw createSessionError
 
       // Get warehouse location (create if it doesn't exist)
       let { data: location, error: locationError } = await supabase
@@ -260,17 +260,17 @@ export default function ReceivingPage() {
       // If no warehouse exists, create one
       if (!location) {
         console.log("No warehouse location found, creating one...")
-        const { data: newLocation, error: createError } = await supabase
-          .from("inventory_locations")
+        const { data: newLocation, error: createLocationError } = await ((supabase
+          .from("inventory_locations") as any)
           .insert({
             name: "Warehouse",
             type: "warehouse"
           })
           .select("id")
-          .single()
+          .single())
 
-        if (createError || !newLocation) {
-          console.error("Error creating warehouse location:", createError)
+        if (createLocationError || !newLocation) {
+          console.error("Error creating warehouse location:", createLocationError)
           toast.error("Error creating warehouse location")
           return
         }
@@ -288,7 +288,7 @@ export default function ReceivingPage() {
         expiry_date: item.expiry_date,
       }))
 
-      const { error: itemsError, data: insertedItems } = await ((supabase.from("received_items") as any).insert(receivedItems).select())
+      const { error: itemsError } = await ((supabase.from("received_items") as any).insert(receivedItems))
 
       if (itemsError) {
         console.error("Error inserting received items:", itemsError)
@@ -304,7 +304,7 @@ export default function ReceivingPage() {
       for (const item of receivedItems) {
         // Check for stock with matching variant and location
         // Handle NULL lot_number case
-        let stockQuery = supabase
+        let stockQuery: any = supabase
           .from("stock_levels")
           .select("quantity, lot_number")
           .eq("variant_id", item.variant_id)
@@ -317,7 +317,7 @@ export default function ReceivingPage() {
           stockQuery = stockQuery.is("lot_number", null)
         }
 
-        const { data: stockCheck, error: stockError } = await stockQuery.limit(1).maybeSingle()
+        const { data: stockCheck, error: stockError } = await stockQuery.limit(1).maybeSingle() as { data: { quantity: number; lot_number: string | null } | null; error: any }
 
         if (stockError) {
           console.error(`Error verifying stock for variant ${item.variant_id}:`, stockError)
@@ -333,11 +333,11 @@ export default function ReceivingPage() {
           if (item.lot_number) stockData.lot_number = item.lot_number
           if (item.expiry_date) stockData.expiry_date = item.expiry_date
 
-          const { error: manualStockError } = await supabase
-            .from("stock_levels")
+          const { error: manualStockError } = await ((supabase
+            .from("stock_levels") as any)
             .upsert(stockData, {
               onConflict: 'variant_id,location_id,lot_number',
-            })
+            }))
           
           if (manualStockError) {
             console.error("Error manually creating stock:", manualStockError)
@@ -353,13 +353,13 @@ export default function ReceivingPage() {
       }
 
       // Complete session
-      const { error: sessionError } = await ((supabase.from("receiving_sessions") as any)
+      const { error: completeSessionError } = await ((supabase.from("receiving_sessions") as any)
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", session.id))
 
-      if (sessionError) {
-        console.error("Error completing session:", sessionError)
-        throw sessionError
+      if (completeSessionError) {
+        console.error("Error completing session:", completeSessionError)
+        throw completeSessionError
       }
 
       // If PO is linked, check if it's fully received and update status
