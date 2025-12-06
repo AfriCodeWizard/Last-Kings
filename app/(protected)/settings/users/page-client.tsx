@@ -93,10 +93,10 @@ export default function UsersManagementPageClient() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-4 sm:p-0 w-full min-w-0 overflow-x-hidden">
         <div>
-          <h1 className="text-4xl font-sans font-bold text-white mb-2">User Management</h1>
-          <p className="text-muted-foreground">Loading...</p>
+          <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">User Management</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -105,130 +105,138 @@ export default function UsersManagementPageClient() {
   const pendingUsers = users.filter((u) => !u.is_approved)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0 w-full min-w-0 overflow-x-hidden">
       <div>
-        <h1 className="text-4xl font-sans font-bold text-white mb-2">User Management</h1>
-        <p className="text-muted-foreground">Approve and manage system users</p>
+        <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">User Management</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Approve and manage system users</p>
       </div>
 
       {pendingUsers.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               Pending Approval ({pendingUsers.length})
             </CardTitle>
-            <CardDescription>Users waiting for admin approval</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Users waiting for admin approval</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      {user.full_name || "-"}
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{user.role}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleApprove(user.id)}
-                          className="h-8"
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleRemove(user.id, user.email)}
-                          className="h-8"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Remove
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className="min-w-[600px] sm:min-w-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Role</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
+                          {user.full_name || "-"}
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm whitespace-nowrap truncate max-w-[150px]">{user.email}</TableCell>
+                        <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                          <Badge variant="outline" className="text-xs">{user.role}</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleApprove(user.id)}
+                              className="h-8 text-xs"
+                            >
+                              <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              <span className="hidden sm:inline">Approve</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRemove(user.id, user.email)}
+                              className="h-8 text-xs"
+                            >
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              <span className="hidden sm:inline">Remove</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>All Users ({users.length})</CardTitle>
-          <CardDescription>Manage all system users</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">All Users ({users.length})</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Manage all system users</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    {user.full_name || "-"}
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{user.role}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.is_approved ? (
-                      <Badge variant="default">Approved</Badge>
-                    ) : (
-                      <Badge variant="secondary">Pending</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {!user.is_approved ? (
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => handleApprove(user.id)}
-                        className="h-8"
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Approve
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleRemove(user.id, user.email)}
-                        className="h-8"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Remove
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <div className="min-w-[700px] sm:min-w-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Role</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
+                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
+                        {user.full_name || "-"}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm whitespace-nowrap truncate max-w-[150px]">{user.email}</TableCell>
+                      <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                        <Badge variant="outline" className="text-xs">{user.role}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                        {user.is_approved ? (
+                          <Badge variant="default" className="text-xs">Approved</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">Pending</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                        {!user.is_approved ? (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => handleApprove(user.id)}
+                            className="h-8 text-xs"
+                          >
+                            <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">Approve</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleRemove(user.id, user.email)}
+                            className="h-8 text-xs"
+                          >
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="hidden sm:inline">Remove</span>
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

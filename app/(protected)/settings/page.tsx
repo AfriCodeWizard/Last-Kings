@@ -37,13 +37,13 @@ export default async function SettingsPage() {
   const taxRates = taxRatesResult?.data || null
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0 w-full min-w-0 overflow-x-hidden">
       <div>
         <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Settings</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Manage system configuration</p>
       </div>
 
-      <div className="grid gap-4 sm:gap-6">
+      <div className="grid gap-4 sm:gap-6 w-full min-w-0">
         {canAddDistributors(user?.role || 'staff') && (
           <Card>
             <CardHeader>
@@ -63,42 +63,44 @@ export default async function SettingsPage() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-6">
-              <div className="min-w-full">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Contact</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Phone</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {distributors && distributors.length > 0 ? (
-                      distributors.map((dist: {
-                        id: string
-                        name: string
-                        contact_name: string | null
-                        email: string | null
-                        phone: string | null
-                      }) => (
-                        <TableRow key={dist.id}>
-                          <TableCell className="font-medium text-xs sm:text-sm">{dist.name}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">{dist.contact_name || "-"}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">{dist.email || "-"}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">{dist.phone || "-"}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
+            <CardContent className="p-0 sm:p-6 sm:pt-0">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                <div className="min-w-[600px] sm:min-w-0">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
-                          No distributors found
-                        </TableCell>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Contact</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Phone</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {distributors && distributors.length > 0 ? (
+                        distributors.map((dist: {
+                          id: string
+                          name: string
+                          contact_name: string | null
+                          email: string | null
+                          phone: string | null
+                        }) => (
+                          <TableRow key={dist.id}>
+                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">{dist.name}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">{dist.contact_name || "-"}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap truncate max-w-[150px]">{dist.email || "-"}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">{dist.phone || "-"}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                            No distributors found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -157,52 +159,54 @@ export default async function SettingsPage() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-6">
-              <div className="min-w-full">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Role</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users && users.length > 0 ? (
-                      users.map((u: {
-                        id: string
-                        full_name: string | null
-                        email: string
-                        role: string
-                        is_approved?: boolean
-                      }) => (
-                        <TableRow key={u.id}>
-                          <TableCell className="font-medium text-xs sm:text-sm">
-                            {u.full_name || "-"}
-                          </TableCell>
-                          <TableCell className="text-xs sm:text-sm">{u.email}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">
-                            <Badge variant="outline" className="text-xs">{u.role}</Badge>
-                          </TableCell>
-                          <TableCell className="text-xs sm:text-sm">
-                            {u.is_approved ? (
-                              <Badge variant="default" className="text-xs">Approved</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-xs">Pending</Badge>
-                            )}
+            <CardContent className="p-0 sm:p-6 sm:pt-0">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                <div className="min-w-[600px] sm:min-w-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Role</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users && users.length > 0 ? (
+                        users.map((u: {
+                          id: string
+                          full_name: string | null
+                          email: string
+                          role: string
+                          is_approved?: boolean
+                        }) => (
+                          <TableRow key={u.id}>
+                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
+                              {u.full_name || "-"}
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap truncate max-w-[150px]">{u.email}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                              <Badge variant="outline" className="text-xs">{u.role}</Badge>
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                              {u.is_approved ? (
+                                <Badge variant="default" className="text-xs">Approved</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">Pending</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                            No users found
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
-                          No users found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -228,48 +232,50 @@ export default async function SettingsPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-6">
-            <div className="min-w-full">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
-                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Type</TableHead>
-                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Rate</TableHead>
-                    <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {taxRates && taxRates.length > 0 ? (
-                    taxRates.map((rate: {
-                      id: string
-                      name: string
-                      type: string
-                      rate: number
-                      active: boolean
-                    }) => (
-                      <TableRow key={rate.id}>
-                        <TableCell className="font-medium text-xs sm:text-sm">{rate.name}</TableCell>
-                        <TableCell className="text-xs sm:text-sm">{rate.type}</TableCell>
-                        <TableCell className="text-xs sm:text-sm">{(rate.rate * 100).toFixed(2)}%</TableCell>
-                        <TableCell className="text-xs sm:text-sm">
-                          {rate.active ? (
-                            <Badge variant="default" className="text-xs">Active</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs">Inactive</Badge>
-                          )}
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className="min-w-[600px] sm:min-w-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Type</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Rate</TableHead>
+                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {taxRates && taxRates.length > 0 ? (
+                      taxRates.map((rate: {
+                        id: string
+                        name: string
+                        type: string
+                        rate: number
+                        active: boolean
+                      }) => (
+                        <TableRow key={rate.id}>
+                          <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">{rate.name}</TableCell>
+                          <TableCell className="text-xs sm:text-sm whitespace-nowrap">{rate.type}</TableCell>
+                          <TableCell className="text-xs sm:text-sm whitespace-nowrap">{(rate.rate * 100).toFixed(2)}%</TableCell>
+                          <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                            {rate.active ? (
+                              <Badge variant="default" className="text-xs">Active</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">Inactive</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                          No tax rates found
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
-                        No tax rates found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
