@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { StockLevelsClient } from "./stock-levels-client"
 
 export default async function InventoryPage() {
   const user = await getCurrentUser()
@@ -34,7 +35,7 @@ export default async function InventoryPage() {
         id,
         size_ml,
         sku,
-        products!inner(brand_id, brands(name))
+        products!inner(brand_id, product_type, brands(name))
       ),
       inventory_locations(id, name, type)
     `)
@@ -44,6 +45,12 @@ export default async function InventoryPage() {
     .from("inventory_locations")
     .select("*")
     .order("name")
+
+  // Get location IDs for filtering
+  const floorLocation = locations?.find((loc: { type: string }) => loc.type === "floor")
+  const backroomLocation = locations?.find((loc: { type: string }) => loc.type === "backroom")
+  const warehouseLocation = locations?.find((loc: { type: string }) => loc.type === "warehouse")
+
 
   return (
     <div className="space-y-6">
@@ -93,67 +100,15 @@ export default async function InventoryPage() {
       <Card>
         <CardHeader>
           <CardTitle>Stock Levels</CardTitle>
-          <CardDescription>Current inventory across all locations</CardDescription>
+          <CardDescription>Current inventory by location and product type</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Lot Number</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {stockLevels && stockLevels.length > 0 ? (
-                stockLevels.map((stock: {
-                  id: string
-                  quantity: number
-                  lot_number: string | null
-                  product_variants: {
-                    sku: string
-                    size_ml: number
-                    products: { brands: { name: string } }
-                  }
-                  inventory_locations: { name: string }
-                }) => (
-                  <TableRow key={stock.id}>
-                    <TableCell className="font-medium">
-                      {stock.product_variants.products.brands.name}
-                    </TableCell>
-                    <TableCell>{stock.product_variants.sku}</TableCell>
-                    <TableCell>{stock.product_variants.size_ml}ml</TableCell>
-                    <TableCell>{stock.inventory_locations.name}</TableCell>
-                    <TableCell>
-                      <span className={stock.quantity < 10 ? "text-destructive font-bold" : ""}>
-                        {stock.quantity}
-                      </span>
-                    </TableCell>
-                    <TableCell>{stock.lot_number || "-"}</TableCell>
-                    <TableCell>
-                      {stock.quantity < 10 ? (
-                        <Badge variant="destructive">Low Stock</Badge>
-                      ) : stock.quantity < 25 ? (
-                        <Badge variant="secondary">Medium</Badge>
-                      ) : (
-                        <Badge variant="default">In Stock</Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    No stock levels found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <StockLevelsClient
+            stockLevels={stockLevels || []}
+            floorLocationId={floorLocation?.id}
+            backroomLocationId={backroomLocation?.id}
+            warehouseLocationId={warehouseLocation?.id}
+          />
         </CardContent>
       </Card>
     </div>
