@@ -84,7 +84,7 @@ export default async function ProductDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Variants</CardTitle>
+            <CardTitle>Size</CardTitle>
             <CardDescription>Available sizes and pricing</CardDescription>
           </CardHeader>
           <CardContent>

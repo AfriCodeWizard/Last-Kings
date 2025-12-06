@@ -67,7 +67,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
               <TableHead>Product</TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Variants</TableHead>
+              <TableHead>Size</TableHead>
               <TableHead>Price Range</TableHead>
             </TableRow>
           </TableHeader>
