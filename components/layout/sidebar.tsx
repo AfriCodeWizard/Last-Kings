@@ -14,6 +14,7 @@ import {
   FileText,
   Settings,
   X,
+  History,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -28,6 +29,7 @@ const allNavItems = [
   { href: "/pos", label: "POS / Quick Sale", icon: CreditCard, roles: ["admin", "manager", "staff"] as UserRole[] },
   { href: "/customers", label: "Customers", icon: Users, roles: ["admin", "manager", "staff"] as UserRole[] },
   { href: "/reports", label: "Reports", icon: FileText, roles: ["admin", "manager"] as UserRole[] },
+  { href: "/transactions", label: "Transactions", icon: History, roles: ["admin", "manager"] as UserRole[] },
   { href: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager", "staff"] as UserRole[] },
 ]
 
