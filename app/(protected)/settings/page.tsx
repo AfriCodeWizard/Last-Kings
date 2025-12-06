@@ -35,16 +35,16 @@ export default async function SettingsPage() {
   const users = usersResult?.data || null
 
   return (
-    <div className="space-y-6 w-full min-w-0">
-      <div>
+    <div className="space-y-6 w-full min-w-0 max-w-full overflow-x-hidden">
+      <div className="w-full min-w-0">
         <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Settings</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Manage system configuration</p>
       </div>
 
-      <div className="grid gap-6 w-full min-w-0">
+      <div className="grid gap-6 w-full min-w-0 max-w-full">
         {canAddDistributors(user?.role || 'staff') && (
-          <Card>
-            <CardHeader>
+          <Card className="w-full min-w-0 max-w-full overflow-hidden">
+            <CardHeader className="w-full min-w-0">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
@@ -53,26 +53,26 @@ export default async function SettingsPage() {
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">Manage supplier relationships</CardDescription>
                 </div>
-                <div className="w-full sm:w-auto flex-shrink-0">
+                <div className="w-full sm:w-auto flex-shrink-0 sm:flex-shrink">
                   <Link href="/settings/distributors/new" prefetch={true} className="block w-full sm:w-auto">
-                    <Button size="sm" className="w-full sm:w-auto">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Distributor
+                    <Button size="sm" className="w-full sm:w-auto whitespace-nowrap">
+                      <Plus className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Add Distributor</span>
                     </Button>
                   </Link>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="w-full min-w-0 p-0 sm:p-6 sm:pt-0">
               <div className="overflow-x-auto">
-                <div className="min-w-[600px] sm:min-w-full">
+                <div className="min-w-[500px] sm:min-w-full">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Contact</TableHead>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Phone</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Name</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Contact</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Email</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Phone</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -85,15 +85,15 @@ export default async function SettingsPage() {
                           phone: string | null
                         }) => (
                           <TableRow key={dist.id}>
-                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">{dist.name}</TableCell>
-                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">{dist.contact_name || "-"}</TableCell>
-                            <TableCell className="text-xs sm:text-sm whitespace-nowrap truncate max-w-[150px]">{dist.email || "-"}</TableCell>
-                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">{dist.phone || "-"}</TableCell>
+                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[120px] truncate">{dist.name}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[120px] truncate">{dist.contact_name || "-"}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[150px] truncate">{dist.email || "-"}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[120px] truncate">{dist.phone || "-"}</TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                          <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm px-3 sm:px-4">
                             No distributors found
                           </TableCell>
                         </TableRow>
@@ -106,8 +106,8 @@ export default async function SettingsPage() {
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
+        <Card className="w-full min-w-0 max-w-full overflow-hidden">
+          <CardHeader className="w-full min-w-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
               <div className="flex-1 min-w-0">
                 <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
@@ -117,26 +117,26 @@ export default async function SettingsPage() {
                 <CardDescription className="text-xs sm:text-sm">Manage storage locations</CardDescription>
               </div>
               {canAddDistributors(user?.role || 'staff') && (
-                <div className="w-full sm:w-auto flex-shrink-0">
+                <div className="w-full sm:w-auto flex-shrink-0 sm:flex-shrink">
                   <Link href="/settings/locations/new" prefetch={true} className="block w-full sm:w-auto">
-                    <Button size="sm" className="w-full sm:w-auto">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Location
+                    <Button size="sm" className="w-full sm:w-auto whitespace-nowrap">
+                      <Plus className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Add Location</span>
                     </Button>
                   </Link>
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full min-w-0">
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 w-full min-w-0">
               {locations?.map((loc: { id: string; name: string; type: string }) => (
                 <div
                   key={loc.id}
-                  className="p-4 rounded-lg border border-gold/10 w-full min-w-0 overflow-hidden"
+                  className="p-4 rounded-lg border border-gold/10 w-full min-w-0 max-w-full overflow-hidden"
                 >
-                  <div className="font-medium text-sm sm:text-base truncate">{loc.name}</div>
-                  <div className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">{loc.type}</div>
+                  <div className="font-medium text-sm sm:text-base truncate w-full">{loc.name}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1 truncate w-full">{loc.type}</div>
                 </div>
               ))}
             </div>
@@ -144,8 +144,8 @@ export default async function SettingsPage() {
         </Card>
 
         {canManageUsers(user?.role || 'staff') && (
-          <Card>
-            <CardHeader>
+          <Card className="w-full min-w-0 max-w-full overflow-hidden">
+            <CardHeader className="w-full min-w-0">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
@@ -154,25 +154,25 @@ export default async function SettingsPage() {
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">Manage system users and roles</CardDescription>
                 </div>
-                <div className="w-full sm:w-auto flex-shrink-0">
+                <div className="w-full sm:w-auto flex-shrink-0 sm:flex-shrink">
                   <Link href="/settings/users" prefetch={true} className="block w-full sm:w-auto">
-                    <Button size="sm" variant="outline" className="w-full sm:w-auto">
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto whitespace-nowrap">
                       Manage Users
                     </Button>
                   </Link>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="w-full min-w-0 p-0 sm:p-6 sm:pt-0">
               <div className="overflow-x-auto">
-                <div className="min-w-[600px] sm:min-w-full">
+                <div className="min-w-[500px] sm:min-w-full">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Email</TableHead>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Role</TableHead>
-                        <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Name</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Email</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Role</TableHead>
+                        <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -185,14 +185,14 @@ export default async function SettingsPage() {
                           is_approved?: boolean
                         }) => (
                           <TableRow key={u.id}>
-                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
+                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[120px] truncate">
                               {u.full_name || "-"}
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm whitespace-nowrap truncate max-w-[150px]">{u.email}</TableCell>
-                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[150px] truncate">{u.email}</TableCell>
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
                               <Badge variant="outline" className="text-xs">{u.role}</Badge>
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                            <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
                               {u.is_approved ? (
                                 <Badge variant="default" className="text-xs">Approved</Badge>
                               ) : (
@@ -203,7 +203,7 @@ export default async function SettingsPage() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
+                          <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm px-3 sm:px-4">
                             No users found
                           </TableCell>
                         </TableRow>
