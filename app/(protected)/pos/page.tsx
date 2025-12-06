@@ -116,9 +116,16 @@ export default function POSPage() {
         return
       }
 
-      if (!floorLocation || !floorLocation.id) {
+      if (!floorLocation) {
         console.error("No floor location found")
         toast.error("No floor location configured. Please set up inventory locations.")
+        return
+      }
+
+      const floorLocationId = (floorLocation as { id: string }).id
+      if (!floorLocationId) {
+        console.error("Floor location missing ID")
+        toast.error("Invalid floor location configuration")
         return
       }
 
@@ -126,7 +133,7 @@ export default function POSPage() {
         .from("stock_levels")
         .select("quantity")
         .eq("variant_id", variant.id)
-        .eq("location_id", (floorLocation as { id: string }).id)
+        .eq("location_id", floorLocationId)
 
       if (stockError) {
         console.error("Error checking stock:", stockError)
@@ -245,9 +252,16 @@ export default function POSPage() {
         return
       }
 
-      if (!floorLocation || !floorLocation.id) {
+      if (!floorLocation) {
         console.error("No floor location found")
         toast.error("No floor location configured. Cannot complete sale.")
+        return
+      }
+
+      const floorLocationId = (floorLocation as { id: string }).id
+      if (!floorLocationId) {
+        console.error("Floor location missing ID")
+        toast.error("Invalid floor location configuration")
         return
       }
 
@@ -257,7 +271,7 @@ export default function POSPage() {
           .from("stock_levels")
           .select("quantity")
           .eq("variant_id", item.variant_id)
-          .eq("location_id", (floorLocation as { id: string }).id)
+          .eq("location_id", floorLocationId)
 
         if (stockError) {
           console.error("Error checking stock:", stockError)
