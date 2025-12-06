@@ -54,17 +54,6 @@ export function StockLevelsClient({
     return filtered
   }
 
-  const getCurrentStock = () => {
-    if (locationTab === floorLocationId) {
-      return filterStockByLocationAndType(floorLocationId, productTypeTab)
-    } else if (locationTab === backroomLocationId) {
-      return filterStockByLocationAndType(backroomLocationId, productTypeTab)
-    } else if (locationTab === warehouseLocationId) {
-      return filterStockByLocationAndType(warehouseLocationId, productTypeTab)
-    }
-    return []
-  }
-
   return (
     <div className="space-y-4">
       <Tabs value={locationTab} onValueChange={setLocationTab} className="w-full">
