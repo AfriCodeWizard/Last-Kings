@@ -68,8 +68,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           </Button>
           
           <Link href="/dashboard" prefetch={true} className="flex items-center gap-2">
-            <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-gold" />
-            <div className="flex flex-col">
+            <Crown className="h-7 w-7 sm:h-9 sm:w-9 text-gold flex-shrink-0" />
+            <div className="flex flex-col leading-tight">
               <span className="text-lg sm:text-xl font-serif font-bold text-gold">Last Kings</span>
               <span className="text-xs sm:text-sm font-serif text-white -mt-1">liquor store</span>
             </div>

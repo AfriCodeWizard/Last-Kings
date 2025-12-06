@@ -69,12 +69,12 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <Card className="w-full max-w-md glass">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Crown className="h-14 w-14 text-gold" />
-          </div>
-          <div className="flex flex-col items-center">
-            <CardTitle className="text-3xl font-serif text-gold">Last Kings</CardTitle>
-            <span className="text-sm font-serif text-white -mt-1">liquor store</span>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Crown className="h-10 w-10 text-gold flex-shrink-0" />
+            <div className="flex flex-col items-start leading-tight">
+              <CardTitle className="text-3xl font-serif text-gold">Last Kings</CardTitle>
+              <span className="text-sm font-serif text-white -mt-1">liquor store</span>
+            </div>
           </div>
           <CardDescription className="text-muted-foreground mt-2">
             Create a new account
