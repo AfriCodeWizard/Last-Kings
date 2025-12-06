@@ -49,3 +49,16 @@ export function playScanBeep() {
   }
 }
 
+/**
+ * Play scan beep with vibration feedback
+ */
+export function playScanBeepWithVibration() {
+  playScanBeep()
+  // Import dynamically to avoid SSR issues
+  if (typeof window !== 'undefined') {
+    import('./vibration').then(({ vibrateScanSuccess }) => {
+      vibrateScanSuccess()
+    })
+  }
+}
+
