@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [loginError, setLoginError] = useState<string | null>(null)
 
 
 
@@ -120,12 +121,15 @@ export default function LoginPage() {
       console.error("Login failed:", error)
       const errorMessage = error instanceof Error ? error.message : "Failed to sign in"
       
-      // Provide more helpful error messages
-      if (errorMessage.includes("Invalid login credentials")) {
+      // Set error state for display
+      if (errorMessage.includes("Invalid login credentials") || errorMessage.includes("Invalid email or password")) {
+        setLoginError("Incorrect credentials. Please check your email and password and try again.")
         toast.error("Invalid email or password")
       } else if (errorMessage.includes("Email not confirmed")) {
+        setLoginError("Please check your email and confirm your account before logging in.")
         toast.error("Please check your email and confirm your account")
       } else {
+        setLoginError(errorMessage)
         toast.error(errorMessage)
       }
     } finally {
@@ -149,6 +153,11 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {loginError && (
+            <div className="mb-4 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              <div className="font-medium">⚠️ {loginError}</div>
+            </div>
+          )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -157,7 +166,10 @@ export default function LoginPage() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setLoginError(null) // Clear error when user starts typing
+                }}
                 required
               />
             </div>
@@ -168,7 +180,10 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setLoginError(null) // Clear error when user starts typing
+                  }}
                   required
                   className="pr-10"
                 />
