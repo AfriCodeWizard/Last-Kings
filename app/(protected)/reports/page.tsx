@@ -35,8 +35,6 @@ export default async function ReportsPage() {
     .order("created_at", { ascending: false })
 
   const totalSales = sales?.reduce((sum, s) => sum + s.total_amount, 0) || 0
-  const totalTax = sales?.reduce((sum, s) => sum + s.tax_amount, 0) || 0
-  const totalExcise = sales?.reduce((sum, s) => sum + s.excise_tax, 0) || 0
 
   // Sales by category (unused for now)
   // const { data: salesByCategory } = await supabase
@@ -126,10 +124,10 @@ export default async function ReportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Reports</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Sales analytics and tax reporting</p>
+        <p className="text-sm sm:text-base text-muted-foreground">Sales analytics and reporting</p>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales (30d)</CardTitle>
@@ -138,28 +136,6 @@ export default async function ReportsPage() {
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-gold break-words overflow-hidden text-ellipsis">{formatCurrency(totalSales)}</div>
             <p className="text-xs text-muted-foreground">{sales?.length || 0} transactions</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales Tax</CardTitle>
-            <FileText className="h-4 w-4 text-gold" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold break-words overflow-hidden text-ellipsis">{formatCurrency(totalTax)}</div>
-            <p className="text-xs text-muted-foreground">Collected</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Excise Tax</CardTitle>
-            <FileText className="h-4 w-4 text-gold" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl font-bold break-words overflow-hidden text-ellipsis">{formatCurrency(totalExcise)}</div>
-            <p className="text-xs text-muted-foreground">TTB reporting</p>
           </CardContent>
         </Card>
 
@@ -266,28 +242,6 @@ export default async function ReportsPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tax Reports</CardTitle>
-          <CardDescription>Export-ready reports for TTB and state compliance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Download className="mr-2 h-4 w-4" />
-              Export Sales Tax Report
-            </Button>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Download className="mr-2 h-4 w-4" />
-              Export Excise Tax Report
-            </Button>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Download className="mr-2 h-4 w-4" />
-              Export TTB Report
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

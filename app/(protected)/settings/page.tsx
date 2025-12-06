@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getCurrentUser, canManageUsers, canAddDistributors } from "@/lib/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Building2, MapPin, Users, Percent } from "lucide-react"
+import { Plus, Building2, MapPin, Users } from "lucide-react"
 import Link from "next/link"
 import {
   Table,
@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   const userRole = user?.role || 'staff'
 
   // Only fetch data that the user has permission to see
-  const [distributorsResult, locationsResult, usersResult, taxRatesResult] = await Promise.all([
+  const [distributorsResult, locationsResult, usersResult] = await Promise.all([
     canAddDistributors(userRole)
       ? supabase.from("distributors").select("*").order("name")
       : Promise.resolve({ data: null }),
@@ -28,13 +28,11 @@ export default async function SettingsPage() {
     canManageUsers(userRole)
       ? supabase.from("users").select("id, email, full_name, role, is_approved, created_at").order("created_at", { ascending: false })
       : Promise.resolve({ data: null }),
-    supabase.from("tax_rates").select("*").order("name"),
   ])
 
   const distributors = distributorsResult?.data || null
   const locations = locationsResult?.data || null
   const users = usersResult?.data || null
-  const taxRates = taxRatesResult?.data || null
 
   return (
     <div className="space-y-6 w-full min-w-0">
@@ -212,73 +210,6 @@ export default async function SettingsPage() {
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <Percent className="h-5 w-5 text-gold" />
-                  Tax Rates
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Configure sales and excise tax rates</CardDescription>
-              </div>
-              {canAddDistributors(user?.role || 'staff') && (
-                <Link href="/settings/tax-rates/new" prefetch={true} className="w-full sm:w-auto">
-                  <Button size="sm" className="w-full sm:w-auto">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Tax Rate
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <div className="min-w-[600px] sm:min-w-full">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Name</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Type</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Rate</TableHead>
-                      <TableHead className="text-xs sm:text-sm whitespace-nowrap">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {taxRates && taxRates.length > 0 ? (
-                      taxRates.map((rate: {
-                        id: string
-                        name: string
-                        type: string
-                        rate: number
-                        active: boolean
-                      }) => (
-                        <TableRow key={rate.id}>
-                          <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">{rate.name}</TableCell>
-                          <TableCell className="text-xs sm:text-sm whitespace-nowrap">{rate.type}</TableCell>
-                          <TableCell className="text-xs sm:text-sm whitespace-nowrap">{(rate.rate * 100).toFixed(2)}%</TableCell>
-                          <TableCell className="text-xs sm:text-sm whitespace-nowrap">
-                            {rate.active ? (
-                              <Badge variant="default" className="text-xs">Active</Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs">Inactive</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm">
-                          No tax rates found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

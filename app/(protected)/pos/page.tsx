@@ -10,7 +10,6 @@ import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
-import { calculateTotalExciseDuty, calculateKRATaxes } from "@/lib/kra-tax"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -214,16 +213,9 @@ export default function POSPage() {
     ))
   }
 
-  // Calculate subtotal (prices are inclusive of VAT)
+  // Calculate total (simple sum of item prices)
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  
-  // Calculate KRA-compliant taxes
-  const exciseDuty = calculateTotalExciseDuty(cart)
-  const { vat, total } = calculateKRATaxes(subtotal, exciseDuty)
-  
-  // For display purposes
-  const tax = vat // VAT is the main tax shown
-  const exciseTax = exciseDuty
+  const total = subtotal
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
@@ -295,8 +287,8 @@ export default function POSPage() {
         .insert({
           sale_number: saleNumber,
           total_amount: total,
-          tax_amount: tax,
-          excise_tax: exciseTax,
+          tax_amount: 0,
+          excise_tax: 0,
           payment_method: paymentMethod,
           sold_by: user.id,
           age_verified: true, // Auto-verified, no requirement
@@ -447,19 +439,7 @@ export default function POSPage() {
                 </div>
 
                 <div className="space-y-2 pt-4 border-t border-gold/20">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal</span>
-                    <span>{formatCurrency(subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>VAT (16%)</span>
-                    <span>{formatCurrency(tax)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Excise Duty (KRA)</span>
-                    <span>{formatCurrency(exciseTax)}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-lg text-gold pt-2 border-t border-gold/20">
+                  <div className="flex justify-between font-bold text-lg text-gold">
                     <span>Total</span>
                     <span>{formatCurrency(total)}</span>
                   </div>
