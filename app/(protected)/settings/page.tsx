@@ -44,19 +44,19 @@ export default async function SettingsPage() {
       <div className="grid gap-6 w-full min-w-0 max-w-full">
         {canAddDistributors(user?.role || 'staff') && (
           <Card className="w-full min-w-0 max-w-full overflow-hidden">
-            <CardHeader className="w-full min-w-0">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Building2 className="h-5 w-5 text-gold flex-shrink-0" />
+            <CardHeader className="w-full min-w-0 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full min-w-0">
+                <div className="flex-1 min-w-0 pr-2 sm:pr-0">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
+                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-gold flex-shrink-0" />
                     <span className="truncate">Distributors</span>
                   </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Manage supplier relationships</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm mt-0.5">Manage supplier relationships</CardDescription>
                 </div>
-                <div className="w-full sm:w-auto flex-shrink-0 sm:flex-shrink">
-                  <Link href="/settings/distributors/new" prefetch={true} className="block w-full sm:w-auto">
-                    <Button size="sm" className="w-full sm:w-auto whitespace-nowrap">
-                      <Plus className="mr-2 h-4 w-4 flex-shrink-0" />
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <Link href="/settings/distributors/new" prefetch={true} className="inline-block w-full sm:w-auto max-w-full">
+                    <Button size="sm" className="w-full sm:w-auto max-w-full whitespace-nowrap text-xs sm:text-sm">
+                      <Plus className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                       <span className="truncate">Add Distributor</span>
                     </Button>
                   </Link>
@@ -107,20 +107,20 @@ export default async function SettingsPage() {
         )}
 
         <Card className="w-full min-w-0 max-w-full overflow-hidden">
-          <CardHeader className="w-full min-w-0">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <MapPin className="h-5 w-5 text-gold flex-shrink-0" />
+          <CardHeader className="w-full min-w-0 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full min-w-0">
+              <div className="flex-1 min-w-0 pr-2 sm:pr-0">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-gold flex-shrink-0" />
                   <span className="truncate">Inventory Locations</span>
                 </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Manage storage locations</CardDescription>
+                <CardDescription className="text-xs sm:text-sm mt-0.5">Manage storage locations</CardDescription>
               </div>
               {canAddDistributors(user?.role || 'staff') && (
-                <div className="w-full sm:w-auto flex-shrink-0 sm:flex-shrink">
-                  <Link href="/settings/locations/new" prefetch={true} className="block w-full sm:w-auto">
-                    <Button size="sm" className="w-full sm:w-auto whitespace-nowrap">
-                      <Plus className="mr-2 h-4 w-4 flex-shrink-0" />
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <Link href="/settings/locations/new" prefetch={true} className="inline-block w-full sm:w-auto max-w-full">
+                    <Button size="sm" className="w-full sm:w-auto max-w-full whitespace-nowrap text-xs sm:text-sm">
+                      <Plus className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                       <span className="truncate">Add Location</span>
                     </Button>
                   </Link>
@@ -145,18 +145,18 @@ export default async function SettingsPage() {
 
         {canManageUsers(user?.role || 'staff') && (
           <Card className="w-full min-w-0 max-w-full overflow-hidden">
-            <CardHeader className="w-full min-w-0">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Users className="h-5 w-5 text-gold flex-shrink-0" />
+            <CardHeader className="w-full min-w-0 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 w-full min-w-0">
+                <div className="flex-1 min-w-0 pr-2 sm:pr-0">
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-gold flex-shrink-0" />
                     <span className="truncate">Users</span>
                   </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Manage system users and roles</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm mt-0.5">Manage system users and roles</CardDescription>
                 </div>
-                <div className="w-full sm:w-auto flex-shrink-0 sm:flex-shrink">
-                  <Link href="/settings/users" prefetch={true} className="block w-full sm:w-auto">
-                    <Button size="sm" variant="outline" className="w-full sm:w-auto whitespace-nowrap">
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <Link href="/settings/users" prefetch={true} className="inline-block w-full sm:w-auto max-w-full">
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto max-w-full whitespace-nowrap text-xs sm:text-sm">
                       Manage Users
                     </Button>
                   </Link>
