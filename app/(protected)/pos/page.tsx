@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useRef } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,15 +12,7 @@ import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
 import { calculateTotalExciseDuty, calculateKRATaxes } from "@/lib/kra-tax"
 import { BarcodeScanner } from "@/components/barcode-scanner"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 
 interface CartItem {
   variant_id: string
@@ -89,7 +81,7 @@ export default function POSPage() {
         .select("quantity")
         .eq("variant_id", variant.id)
 
-      const totalSold = soldItems?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+      const totalSold = (soldItems as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
 
       // Check available stock at floor location
       const { data: floorLocation } = await supabase
@@ -104,9 +96,9 @@ export default function POSPage() {
           .from("stock_levels")
           .select("quantity")
           .eq("variant_id", variant.id)
-          .eq("location_id", floorLocation.id)
+          .eq("location_id", (floorLocation as { id: string }).id)
 
-        const totalStock = stockLevels?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+        const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
 
         // Check if item is already in cart
         const existingInCart = cart.find((item) => item.variant_id === variant.id)
@@ -215,9 +207,9 @@ export default function POSPage() {
             .from("stock_levels")
             .select("quantity")
             .eq("variant_id", item.variant_id)
-            .eq("location_id", floorLocation.id)
+            .eq("location_id", (floorLocation as { id: string }).id)
 
-          const totalStock = stockLevels?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+          const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
 
           if (totalStock < item.quantity) {
             toast.error(`Insufficient stock for ${item.brand_name}. Available: ${totalStock}, Requested: ${item.quantity}`)
