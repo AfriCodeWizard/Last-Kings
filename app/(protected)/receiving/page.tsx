@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScanLine, CheckCircle2, X } from "lucide-react"
-import { playScanBeep } from "@/lib/sound"
+import { playScanBeepWithVibration } from "@/lib/sound"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase/client"
@@ -151,7 +151,7 @@ export default function ReceivingPage() {
       console.log("Variant found:", variant)
 
       console.log("Variant found:", variant)
-      playScanBeep()
+      playScanBeepWithVibration()
 
       const variantTyped = variant as any
       console.log("Variant typed:", variantTyped)
@@ -673,7 +673,7 @@ export default function ReceivingPage() {
             .single() as any))
 
           if (variant) {
-            playScanBeep()
+            playScanBeepWithVibration()
             const newItem: ScannedItem = {
               variant_id: variant.id,
               brand_name: variant.products.brands?.name || '',
