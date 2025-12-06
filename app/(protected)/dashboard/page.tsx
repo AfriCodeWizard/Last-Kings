@@ -231,14 +231,14 @@ export default async function DashboardPage() {
             <DollarSign className="h-4 w-4 text-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-sans text-gold">{formatCurrency(salesTotal)}</div>
-            <p className={`text-xs font-sans flex items-center gap-1 ${salesPercentageChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <div className="text-xl sm:text-2xl font-bold font-sans text-gold break-words overflow-hidden">{formatCurrency(salesTotal)}</div>
+            <p className={`text-xs font-sans flex items-center gap-1 mt-1 ${salesPercentageChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {salesPercentageChange >= 0 ? (
-                <TrendingUp className="h-3 w-3" />
+                <TrendingUp className="h-3 w-3 flex-shrink-0" />
               ) : (
-                <TrendingDown className="h-3 w-3" />
+                <TrendingDown className="h-3 w-3 flex-shrink-0" />
               )}
-              {salesPercentageChange >= 0 ? '+' : ''}{salesPercentageChange.toFixed(1)}% from yesterday
+              <span className="truncate">{salesPercentageChange >= 0 ? '+' : ''}{salesPercentageChange.toFixed(1)}% from yesterday</span>
             </p>
           </CardContent>
         </Card>
@@ -278,139 +278,143 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="font-sans">Low Stock Items</CardTitle>
             <CardDescription className="font-sans">Items that need immediate attention</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             {lowStock && lowStock.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-sans">Product Name</TableHead>
-                    <TableHead className="font-sans">Category</TableHead>
-                    <TableHead className="text-right font-sans">Current Stock</TableHead>
-                    <TableHead className="text-right font-sans">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lowStock.map((item: any, idx: number) => {
-                    const variant = Array.isArray(item.product_variants) 
-                      ? item.product_variants[0] 
-                      : item.product_variants
-                    const products = variant?.products
-                    const brandName = products 
-                      ? (Array.isArray(products) 
-                          ? (products[0]?.brands 
-                              ? (Array.isArray(products[0].brands) 
-                                  ? products[0].brands[0]?.name 
-                                  : products[0].brands?.name)
-                              : 'Unknown Brand')
-                          : (products?.brands
-                              ? (Array.isArray(products.brands)
-                                  ? products.brands[0]?.name
-                                  : products.brands?.name)
-                              : 'Unknown Brand'))
-                      : 'Unknown Brand'
-                    const category = products 
-                      ? (Array.isArray(products) 
-                          ? (products[0]?.categories 
-                              ? (Array.isArray(products[0].categories) 
-                                  ? products[0].categories[0]?.name 
-                                  : products[0].categories?.name)
-                              : 'N/A')
-                          : (products?.categories
-                              ? (Array.isArray(products.categories)
-                                  ? products.categories[0]?.name
-                                  : products.categories?.name)
-                              : 'N/A'))
-                      : 'N/A'
-                    
-                    const quantity = item.quantity
-                    
-                    return (
-                      <TableRow key={idx}>
-                        <TableCell className="font-sans">{brandName}</TableCell>
-                        <TableCell className="font-sans">{category}</TableCell>
-                        <TableCell className="text-right font-sans">{quantity}</TableCell>
-                        <TableCell className="text-right">
-                          {quantity < 5 ? (
-                            <Badge variant="destructive" className="font-sans">Low Stock</Badge>
-                          ) : (
-                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-sans">Medium Stock</Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <div className="min-w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="font-sans whitespace-nowrap">Brand Name</TableHead>
+                      <TableHead className="font-sans whitespace-nowrap">Category</TableHead>
+                      <TableHead className="text-right font-sans whitespace-nowrap">Stock</TableHead>
+                      <TableHead className="text-right font-sans whitespace-nowrap">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lowStock.map((item: any, idx: number) => {
+                      const variant = Array.isArray(item.product_variants) 
+                        ? item.product_variants[0] 
+                        : item.product_variants
+                      const products = variant?.products
+                      const brandName = products 
+                        ? (Array.isArray(products) 
+                            ? (products[0]?.brands 
+                                ? (Array.isArray(products[0].brands) 
+                                    ? products[0].brands[0]?.name 
+                                    : products[0].brands?.name)
+                                : 'Unknown Brand')
+                            : (products?.brands
+                                ? (Array.isArray(products.brands)
+                                    ? products.brands[0]?.name
+                                    : products.brands?.name)
+                                : 'Unknown Brand'))
+                        : 'Unknown Brand'
+                      const category = products 
+                        ? (Array.isArray(products) 
+                            ? (products[0]?.categories 
+                                ? (Array.isArray(products[0].categories) 
+                                    ? products[0].categories[0]?.name 
+                                    : products[0].categories?.name)
+                                : 'N/A')
+                            : (products?.categories
+                                ? (Array.isArray(products.categories)
+                                    ? products.categories[0]?.name
+                                    : products.categories?.name)
+                                : 'N/A'))
+                        : 'N/A'
+                      
+                      const quantity = item.quantity
+                      
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell className="font-sans whitespace-nowrap">{brandName}</TableCell>
+                          <TableCell className="font-sans whitespace-nowrap">{category}</TableCell>
+                          <TableCell className="text-right font-sans whitespace-nowrap">{quantity}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            {quantity < 5 ? (
+                              <Badge variant="destructive" className="font-sans">Low Stock</Badge>
+                            ) : (
+                              <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-sans">Medium Stock</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground font-sans">All items are well stocked</p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="font-sans">Pending Receivables Queue</CardTitle>
             <CardDescription className="font-sans">Items awaiting receipt from purchase orders</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             {pendingPOItems && pendingPOItems.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-sans">Product Name</TableHead>
-                    <TableHead className="font-sans">Category</TableHead>
-                    <TableHead className="text-right font-sans">Quantity Expected</TableHead>
-                    <TableHead className="text-right font-sans">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingPOItems.map((item: any) => {
-                    const products = item.product_variants?.products
-                    const brandName = products 
-                      ? (Array.isArray(products) 
-                          ? (products[0]?.brands 
-                              ? (Array.isArray(products[0].brands) 
-                                  ? products[0].brands[0]?.name 
-                                  : products[0].brands?.name)
-                              : 'Unknown Brand')
-                          : (products?.brands
-                              ? (Array.isArray(products.brands)
-                                  ? products.brands[0]?.name
-                                  : products.brands?.name)
-                              : 'Unknown Brand'))
-                      : 'Unknown Brand'
-                    const category = products 
-                      ? (Array.isArray(products) 
-                          ? (products[0]?.categories 
-                              ? (Array.isArray(products[0].categories) 
-                                  ? products[0].categories[0]?.name 
-                                  : products[0].categories?.name)
-                              : 'N/A')
-                          : (products?.categories
-                              ? (Array.isArray(products.categories)
-                                  ? products.categories[0]?.name
-                                  : products.categories?.name)
-                              : 'N/A'))
-                      : 'N/A'
-                    
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-sans">{brandName}</TableCell>
-                        <TableCell className="font-sans">{category}</TableCell>
-                        <TableCell className="text-right font-sans">{item.remainingQty}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-sans">Processing</Badge>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <div className="min-w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="font-sans whitespace-nowrap">Brand Name</TableHead>
+                      <TableHead className="font-sans whitespace-nowrap">Category</TableHead>
+                      <TableHead className="text-right font-sans whitespace-nowrap">Qty Expected</TableHead>
+                      <TableHead className="text-right font-sans whitespace-nowrap">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingPOItems.map((item: any) => {
+                      const products = item.product_variants?.products
+                      const brandName = products 
+                        ? (Array.isArray(products) 
+                            ? (products[0]?.brands 
+                                ? (Array.isArray(products[0].brands) 
+                                    ? products[0].brands[0]?.name 
+                                    : products[0].brands?.name)
+                                : 'Unknown Brand')
+                            : (products?.brands
+                                ? (Array.isArray(products.brands)
+                                    ? products.brands[0]?.name
+                                    : products.brands?.name)
+                                : 'Unknown Brand'))
+                        : 'Unknown Brand'
+                      const category = products 
+                        ? (Array.isArray(products) 
+                            ? (products[0]?.categories 
+                                ? (Array.isArray(products[0].categories) 
+                                    ? products[0].categories[0]?.name 
+                                    : products[0].categories?.name)
+                                : 'N/A')
+                            : (products?.categories
+                                ? (Array.isArray(products.categories)
+                                    ? products.categories[0]?.name
+                                    : products.categories?.name)
+                                : 'N/A'))
+                        : 'N/A'
+                      
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-sans whitespace-nowrap">{brandName}</TableCell>
+                          <TableCell className="font-sans whitespace-nowrap">{category}</TableCell>
+                          <TableCell className="text-right font-sans whitespace-nowrap">{item.remainingQty}</TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-sans">Processing</Badge>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground font-sans">No pending receivables</p>
             )}

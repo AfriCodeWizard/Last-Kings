@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowRightLeft, ScanLine, X } from "lucide-react"
+import { ArrowRightLeft, X, Search } from "lucide-react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -16,8 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { BarcodeScanner } from "@/components/barcode-scanner"
-import { playScanBeep } from "@/lib/sound"
 
 interface TransferItem {
   variant_id: string
@@ -40,12 +38,27 @@ export default function TransferPage() {
   const [destinationLocationId, setDestinationLocationId] = useState<string>("")
   const [locations, setLocations] = useState<Location[]>([])
   const [transferItems, setTransferItems] = useState<TransferItem[]>([])
-  const [showScanner, setShowScanner] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [availableProducts, setAvailableProducts] = useState<Array<{
+    variant_id: string
+    brand_name: string
+    size_ml: number
+    quantity: number
+    lot_number: string | null
+  }>>([])
+  const [loadingProducts, setLoadingProducts] = useState(false)
 
   useEffect(() => {
     loadLocations()
   }, [])
+
+  useEffect(() => {
+    if (sourceLocationId) {
+      loadAvailableProducts()
+    } else {
+      setAvailableProducts([])
+    }
+  }, [sourceLocationId])
 
   const loadLocations = async () => {
     const { data, error } = await supabase
@@ -63,80 +76,113 @@ export default function TransferPage() {
     }
   }
 
-  const handleBarcodeScan = async (barcode: string) => {
-    if (!sourceLocationId) {
-      toast.error("Please select source location first")
-      return
-    }
+  const loadAvailableProducts = async () => {
+    if (!sourceLocationId) return
 
+    setLoadingProducts(true)
     try {
-      const { data: variants, error } = await supabase
-        .from("product_variants")
+      const { data: stockLevels, error } = await supabase
+        .from("stock_levels")
         .select(`
-          id,
-          size_ml,
-          products!inner(
-            product_type,
-            brands!inner(name)
+          variant_id,
+          quantity,
+          lot_number,
+          product_variants!inner(
+            id,
+            size_ml,
+            products!inner(
+              brands!inner(name)
+            )
           )
         `)
-        .eq("upc", barcode.trim())
-        .limit(1)
+        .eq("location_id", sourceLocationId)
+        .gt("quantity", 0)
 
       if (error) throw error
 
-      if (!variants || variants.length === 0) {
-        toast.error("Product not found")
-        return
-      }
+      if (stockLevels) {
+        // Group by variant_id and sum quantities
+        const productMap = new Map<string, {
+          variant_id: string
+          brand_name: string
+          size_ml: number
+          quantity: number
+          lot_number: string | null
+        }>()
 
-      const variant = variants[0] as any
-      playScanBeep()
+        stockLevels.forEach((stock: any) => {
+          const variant = Array.isArray(stock.product_variants)
+            ? stock.product_variants[0]
+            : stock.product_variants
+          const products = variant?.products
+          const brandName = products
+            ? (Array.isArray(products)
+                ? (products[0]?.brands
+                    ? (Array.isArray(products[0].brands)
+                        ? products[0].brands[0]?.name
+                        : products[0].brands?.name)
+                    : 'Unknown Brand')
+                : (products?.brands
+                    ? (Array.isArray(products.brands)
+                        ? products.brands[0]?.name
+                        : products.brands?.name)
+                    : 'Unknown Brand'))
+            : 'Unknown Brand'
 
-      // Get current stock at source location
-      const { data: stock, error: stockError } = await supabase
-        .from("stock_levels")
-        .select("quantity, lot_number")
-        .eq("variant_id", variant.id)
-        .eq("location_id", sourceLocationId)
-        .order("lot_number", { ascending: true })
+          const key = stock.variant_id
+          if (productMap.has(key)) {
+            const existing = productMap.get(key)!
+            existing.quantity += stock.quantity || 0
+          } else {
+            productMap.set(key, {
+              variant_id: stock.variant_id,
+              brand_name: brandName,
+              size_ml: variant?.size_ml || 0,
+              quantity: stock.quantity || 0,
+              lot_number: stock.lot_number,
+            })
+          }
+        })
 
-      if (stockError) throw stockError
-
-      const stockData = (stock as Array<{ quantity: number; lot_number: string | null }>) || []
-      const totalStock = stockData.reduce((sum, s) => sum + (s.quantity || 0), 0)
-
-      if (totalStock === 0) {
-        toast.error("No stock available at source location")
-        return
-      }
-
-      const existingItem = transferItems.find((item) => item.variant_id === variant.id)
-
-      if (existingItem) {
-        setTransferItems((prev) =>
-          prev.map((item) =>
-            item.variant_id === variant.id
-              ? { ...item, quantity: Math.min(item.quantity + 1, item.current_stock) }
-              : item
-          )
-        )
-        toast.success("Quantity increased")
-      } else {
-        const newItem: TransferItem = {
-          variant_id: variant.id,
-          brand_name: variant.products.brands?.name || "",
-          size_ml: variant.size_ml,
-          quantity: 1,
-          lot_number: stockData[0]?.lot_number || null,
-          current_stock: totalStock,
-        }
-        setTransferItems((prev) => [...prev, newItem])
-        toast.success("Product added to transfer")
+        setAvailableProducts(Array.from(productMap.values()))
       }
     } catch (error) {
-      toast.error("Error processing barcode")
-      console.error(error)
+      console.error("Error loading products:", error)
+      toast.error("Error loading available products")
+    } finally {
+      setLoadingProducts(false)
+    }
+  }
+
+  const handleAddProduct = (product: {
+    variant_id: string
+    brand_name: string
+    size_ml: number
+    quantity: number
+    lot_number: string | null
+  }) => {
+    const existingItem = transferItems.find((item) => item.variant_id === product.variant_id)
+
+    if (existingItem) {
+      setTransferItems((prev) =>
+        prev.map((item) =>
+          item.variant_id === product.variant_id
+            ? { ...item, quantity: Math.min(item.quantity + 1, item.current_stock) }
+            : item
+        )
+      )
+      toast.success("Quantity increased")
+    } else {
+      const newItem: TransferItem = {
+        variant_id: product.variant_id,
+        brand_name: product.brand_name,
+        size_ml: product.size_ml,
+        quantity: 1,
+        lot_number: product.lot_number,
+        current_stock: product.quantity,
+      }
+      setTransferItems((prev) => [...prev, newItem])
+      toast.success("Product added to transfer")
     }
   }
 
@@ -245,7 +291,10 @@ export default function TransferPage() {
               if (insertError) throw insertError
             }
 
-            // Create transaction records
+            // Create transaction records for transfer trail
+            const sourceLocationName = locations.find(l => l.id === sourceLocationId)?.name || 'Unknown'
+            const destLocationName = locations.find(l => l.id === destinationLocationId)?.name || 'Unknown'
+            
             const { error: outTxError } = await supabase
               .from("inventory_transactions")
               .insert({
@@ -254,7 +303,7 @@ export default function TransferPage() {
                 transaction_type: "transfer" as const,
                 quantity_change: -transferQty,
                 lot_number: stock.lot_number,
-                notes: `Transferred to ${locations.find(l => l.id === destinationLocationId)?.name}`,
+                notes: `Transferred ${transferQty} units to ${destLocationName}`,
                 created_by: user.id,
               } as any)
 
@@ -268,7 +317,7 @@ export default function TransferPage() {
                 transaction_type: "transfer" as const,
                 quantity_change: transferQty,
                 lot_number: stock.lot_number,
-                notes: `Transferred from ${locations.find(l => l.id === sourceLocationId)?.name}`,
+                notes: `Transferred ${transferQty} units from ${sourceLocationName}`,
                 created_by: user.id,
               } as any)
 
@@ -284,8 +333,12 @@ export default function TransferPage() {
         }
       }
 
-      toast.success("Transfer completed successfully!")
-      router.push("/inventory")
+      toast.success("Transfer completed successfully! Transfer trail has been recorded.")
+      // Reset state
+      setTransferItems([])
+      setSourceLocationId("")
+      setDestinationLocationId("")
+      loadAvailableProducts()
     } catch (error) {
       toast.error("Error completing transfer")
       console.error(error)
@@ -360,25 +413,47 @@ export default function TransferPage() {
         <Card>
           <CardHeader>
             <CardTitle>Add Products</CardTitle>
-            <CardDescription>Scan or search for products to transfer</CardDescription>
+            <CardDescription>Select products available at source location to transfer</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search products..."
+                placeholder="Search products by brand name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
+                className="pl-10"
               />
-              <Button
-                variant="outline"
-                onClick={() => setShowScanner(true)}
-                disabled={!sourceLocationId}
-              >
-                <ScanLine className="mr-2 h-4 w-4" />
-                Start Scanning
-              </Button>
             </div>
+            {loadingProducts ? (
+              <p className="text-sm text-muted-foreground">Loading products...</p>
+            ) : availableProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No products available at source location</p>
+            ) : (
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {availableProducts
+                  .filter((p) =>
+                    p.brand_name.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((product) => (
+                    <div
+                      key={product.variant_id}
+                      className="flex justify-between items-center p-3 rounded-lg border border-gold/10 hover:bg-gold/5 cursor-pointer"
+                      onClick={() => handleAddProduct(product)}
+                    >
+                      <div>
+                        <div className="font-medium">{product.brand_name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {product.size_ml}ml • Available: {product.quantity}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        Add
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -444,13 +519,67 @@ export default function TransferPage() {
         </div>
       )}
 
-      {showScanner && (
-        <BarcodeScanner
-          isOpen={showScanner}
-          onClose={() => setShowScanner(false)}
-          onScan={handleBarcodeScan}
-        />
+    </div>
+  )
+}
+
+
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {filteredItems.map((item) => (
+                <div
+                  key={item.variant_id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex-1">
+                    <div className="font-medium">{item.brand_name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {item.size_ml}ml • Available: {item.current_stock}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`qty-${item.variant_id}`} className="sr-only">
+                      Quantity
+                    </Label>
+                    <Input
+                      id={`qty-${item.variant_id}`}
+                      type="number"
+                      min={1}
+                      max={item.current_stock}
+                      value={item.quantity}
+                      onChange={(e) =>
+                        handleQuantityChange(item.variant_id, parseInt(e.target.value) || 1)
+                      }
+                      className="w-20"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveItem(item.variant_id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      {transferItems.length > 0 && (
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => router.back()}>
+            Cancel
+          </Button>
+          <Button onClick={handleCompleteTransfer}>
+            <ArrowRightLeft className="mr-2 h-4 w-4" />
+            Complete Transfer
+          </Button>
+        </div>
+      )}
+
     </div>
   )
 }

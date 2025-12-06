@@ -5,14 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, ScanLine, ShoppingCart, CreditCard, X, UserCheck } from "lucide-react"
+import { ScanLine, ShoppingCart, CreditCard, X } from "lucide-react"
 import { playScanBeep } from "@/lib/sound"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
 import { calculateTotalExciseDuty, calculateKRATaxes } from "@/lib/kra-tax"
 import { BarcodeScanner } from "@/components/barcode-scanner"
-import { QuickAddProductDialog } from "@/components/products/quick-add-product-dialog"
 import {
   Dialog,
   DialogContent,
@@ -34,69 +33,12 @@ interface CartItem {
 }
 
 export default function POSPage() {
-  const [search, setSearch] = useState("")
   const [barcode, setBarcode] = useState("")
   const [showScanner, setShowScanner] = useState(false)
-  const [products, setProducts] = useState<Array<{
-    id: string
-    brand_name: string
-    category_name: string
-    product_type: string
-    size_ml: number
-    price: number
-    sku: string
-  }>>([])
   const [cart, setCart] = useState<CartItem[]>([])
-  const [showAgeVerification, setShowAgeVerification] = useState(false)
-  const [ageVerified, setAgeVerified] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash")
-  const [showQuickAdd, setShowQuickAdd] = useState(false)
-  const [scannedUPC, setScannedUPC] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    loadProducts()
-  }, [])
-
-  const loadProducts = async () => {
-    const { data } = await supabase
-      .from("product_variants")
-      .select(`
-        id,
-        size_ml,
-        price,
-        sku,
-        products!inner(
-          product_type,
-          brands!inner(name),
-          categories!inner(name)
-        )
-      `)
-      .eq("allocation_only", false)
-      .limit(100)
-
-    if (data) {
-      setProducts(data.map((v: {
-        id: string
-        size_ml: number
-        price: number
-        sku: string
-        products: { 
-          product_type: string
-          brands: { name: string }
-          categories: { name: string }
-        }
-      }) => ({
-        id: v.id,
-        brand_name: v.products.brands?.name || '',
-        category_name: v.products.categories?.name || '',
-        product_type: v.products.product_type,
-        size_ml: v.size_ml,
-        price: v.price,
-        sku: v.sku,
-      })))
-    }
-  }
 
   const handleBarcodeScan = async (value: string) => {
     console.log("handleBarcodeScan called with value:", value)
@@ -134,27 +76,57 @@ export default function POSPage() {
 
       if (!variants || variants.length === 0) {
         console.error("No variant found for UPC:", value)
-        // Show quick add dialog instead of just error
-        setScannedUPC(value)
-        setShowQuickAdd(true)
+        toast.error("Product not found. Please ensure the barcode is correct.")
         return
       }
 
       const variant = variants[0]
       console.log("Variant found:", variant)
 
-      console.log("Database query result:", { variant, error })
+      // Check if item is already sold - check sale_items table first
+      const { data: soldItems } = await supabase
+        .from("sale_items")
+        .select("quantity")
+        .eq("variant_id", variant.id)
 
-      if (error) {
-        console.error("Database error:", error)
-        toast.error(`Product not found: ${error.message}`)
-        return
-      }
+      const totalSold = soldItems?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
 
-      if (!variant) {
-        console.error("No variant found for UPC:", value)
-        toast.error("Product not found")
-        return
+      // Check available stock at floor location
+      const { data: floorLocation } = await supabase
+        .from("inventory_locations")
+        .select("id")
+        .eq("type", "floor")
+        .limit(1)
+        .single()
+
+      if (floorLocation) {
+        const { data: stockLevels } = await supabase
+          .from("stock_levels")
+          .select("quantity")
+          .eq("variant_id", variant.id)
+          .eq("location_id", floorLocation.id)
+
+        const totalStock = stockLevels?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+
+        // Check if item is already in cart
+        const existingInCart = cart.find((item) => item.variant_id === variant.id)
+        const cartQuantity = existingInCart ? existingInCart.quantity : 0
+
+        // If no stock available and item has been sold, show warning
+        if (totalStock <= 0 && totalSold > 0) {
+          toast.error("⚠️ Item already sold - This item has been sold and is no longer available")
+          return
+        }
+
+        if (totalStock <= 0) {
+          toast.error("Item already sold - No stock available")
+          return
+        }
+
+        if (cartQuantity >= totalStock) {
+          toast.error("Item already sold - Insufficient stock available")
+          return
+        }
       }
 
       console.log("Variant found:", variant)
@@ -222,16 +194,36 @@ export default function POSPage() {
       return
     }
 
-    if (!ageVerified) {
-      setShowAgeVerification(true)
-      return
-    }
-
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         toast.error("Not authenticated")
         return
+      }
+
+      // Check stock availability before checkout
+      const { data: floorLocation } = await supabase
+        .from("inventory_locations")
+        .select("id")
+        .eq("type", "floor")
+        .limit(1)
+        .single()
+
+      if (floorLocation) {
+        for (const item of cart) {
+          const { data: stockLevels } = await supabase
+            .from("stock_levels")
+            .select("quantity")
+            .eq("variant_id", item.variant_id)
+            .eq("location_id", floorLocation.id)
+
+          const totalStock = stockLevels?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+
+          if (totalStock < item.quantity) {
+            toast.error(`Insufficient stock for ${item.brand_name}. Available: ${totalStock}, Requested: ${item.quantity}`)
+            return
+          }
+        }
       }
 
       // Generate sale number
@@ -246,7 +238,7 @@ export default function POSPage() {
           excise_tax: exciseTax,
           payment_method: paymentMethod,
           sold_by: user.id,
-          age_verified: ageVerified,
+          age_verified: true, // Auto-verified, no requirement
         })
         .select()
         .single())
@@ -268,17 +260,12 @@ export default function POSPage() {
 
       toast.success(`Sale completed! ${saleNumber}`)
       setCart([])
-      setAgeVerified(false)
     } catch (error) {
       toast.error("Error processing sale")
       console.error(error)
     }
   }
 
-  const filteredProducts = products.filter((p) =>
-    p.brand_name.toLowerCase().includes(search.toLowerCase()) ||
-    p.sku.toLowerCase().includes(search.toLowerCase())
-  )
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -291,18 +278,10 @@ export default function POSPage() {
         <div className="md:col-span-2 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Search Products</CardTitle>
+              <CardTitle>Scan Products</CardTitle>
+              <CardDescription>Scan barcode to add items to cart</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or SKU..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <ScanLine className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gold" />
@@ -324,6 +303,7 @@ export default function POSPage() {
                       }
                     }}
                     className="pl-10"
+                    autoFocus
                   />
                 </div>
                 <Button
@@ -334,34 +314,6 @@ export default function POSPage() {
                   <ScanLine className="h-4 w-4 mr-2" />
                   Start Scanning
                 </Button>
-              </div>
-
-              <div className="grid gap-2 max-h-96 overflow-y-auto">
-                {filteredProducts.slice(0, 20).map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex justify-between items-center p-3 rounded-lg border border-gold/10 hover:bg-gold/5 cursor-pointer"
-                    onClick={() => addToCart({
-                      variant_id: product.id,
-                      brand_name: product.brand_name,
-                      product_type: product.product_type,
-                      size_ml: product.size_ml,
-                      price: product.price,
-                      quantity: 1,
-                      category_name: (product as any).category_name,
-                    })}
-                  >
-                    <div>
-                      <div className="font-medium">
-                        {product.brand_name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {product.size_ml}ml • {formatCurrency(product.price)}
-                      </div>
-                    </div>
-                    <Button size="sm">Add</Button>
-                  </div>
-                ))}
               </div>
             </CardContent>
           </Card>
@@ -452,13 +404,6 @@ export default function POSPage() {
                     </Select>
                   </div>
 
-                  {!ageVerified && (
-                    <Badge variant="destructive" className="w-full justify-center py-2">
-                      <UserCheck className="mr-2 h-4 w-4" />
-                      Age Verification Required
-                    </Badge>
-                  )}
-
                   <Button onClick={handleCheckout} className="w-full" size="lg">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Complete Sale
@@ -470,32 +415,6 @@ export default function POSPage() {
         </Card>
       </div>
 
-      <Dialog open={showAgeVerification} onOpenChange={setShowAgeVerification}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Age Verification Required</DialogTitle>
-            <DialogDescription>
-              You must verify the customer's age before completing this alcohol sale.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Scan customer ID or manually verify age (must be 21+)
-            </p>
-            <Button
-              onClick={() => {
-                setAgeVerified(true)
-                setShowAgeVerification(false)
-                toast.success("Age verified")
-              }}
-              className="w-full"
-            >
-              <UserCheck className="mr-2 h-4 w-4" />
-              Verify Age (21+)
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <BarcodeScanner
         isOpen={showScanner}
@@ -508,45 +427,6 @@ export default function POSPage() {
         description="Position the barcode on the liquor bottle within the frame"
       />
 
-      <QuickAddProductDialog
-        scannedUPC={scannedUPC}
-        isOpen={showQuickAdd}
-        onClose={() => {
-          setShowQuickAdd(false)
-          setScannedUPC("")
-        }}
-        onProductCreated={async (variantId) => {
-          // After product is created, add it to cart
-          const { data: variant } = await (supabase
-            .from("product_variants")
-            .select(`
-              id,
-              size_ml,
-              price,
-              sku,
-              products!inner(
-                name,
-                categories!inner(name)
-              )
-            `)
-            .eq("id", variantId)
-            .single() as any)
-
-          if (variant) {
-            playScanBeep()
-            addToCart({
-              variant_id: variant.id,
-              brand_name: variant.products.brands?.name || '',
-              product_type: variant.products.product_type || 'liquor',
-              size_ml: variant.size_ml,
-              price: variant.price,
-              quantity: 1,
-              category_name: variant.products.categories?.name,
-            })
-          }
-        }}
-        context="pos"
-      />
     </div>
   )
 }
