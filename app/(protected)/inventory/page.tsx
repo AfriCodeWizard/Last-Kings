@@ -33,7 +33,7 @@ export default async function InventoryPage() {
         id,
         size_ml,
         sku,
-        products!inner(name, brands(name))
+        products!inner(brand_id, brands(name))
       ),
       inventory_locations(name, type)
     `)
@@ -116,13 +116,13 @@ export default async function InventoryPage() {
                   product_variants: {
                     sku: string
                     size_ml: number
-                    products: { name: string }
+                    products: { brands: { name: string } }
                   }
                   inventory_locations: { name: string }
                 }) => (
                   <TableRow key={stock.id}>
                     <TableCell className="font-medium">
-                      {stock.product_variants.products.name}
+                      {stock.product_variants.products.brands.name}
                     </TableCell>
                     <TableCell>{stock.product_variants.sku}</TableCell>
                     <TableCell>{stock.product_variants.size_ml}ml</TableCell>
