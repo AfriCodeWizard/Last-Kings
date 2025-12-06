@@ -45,20 +45,22 @@ export default async function SettingsPage() {
         {canAddDistributors(user?.role || 'staff') && (
           <Card>
             <CardHeader>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
+                <div className="flex-1 min-w-0">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Building2 className="h-5 w-5 text-gold" />
-                    Distributors
+                    <Building2 className="h-5 w-5 text-gold flex-shrink-0" />
+                    <span className="truncate">Distributors</span>
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">Manage supplier relationships</CardDescription>
                 </div>
-                <Link href="/settings/distributors/new" prefetch={true} className="w-full sm:w-auto">
-                  <Button size="sm" className="w-full sm:w-auto">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Distributor
-                  </Button>
-                </Link>
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <Link href="/settings/distributors/new" prefetch={true} className="block w-full sm:w-auto">
+                    <Button size="sm" className="w-full sm:w-auto">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Distributor
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -106,33 +108,35 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
+              <div className="flex-1 min-w-0">
                 <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <MapPin className="h-5 w-5 text-gold" />
-                  Inventory Locations
+                  <MapPin className="h-5 w-5 text-gold flex-shrink-0" />
+                  <span className="truncate">Inventory Locations</span>
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">Manage storage locations</CardDescription>
               </div>
               {canAddDistributors(user?.role || 'staff') && (
-                <Link href="/settings/locations/new" prefetch={true} className="w-full sm:w-auto">
-                  <Button size="sm" className="w-full sm:w-auto">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Location
-                  </Button>
-                </Link>
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <Link href="/settings/locations/new" prefetch={true} className="block w-full sm:w-auto">
+                    <Button size="sm" className="w-full sm:w-auto">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Location
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 w-full min-w-0">
               {locations?.map((loc: { id: string; name: string; type: string }) => (
                 <div
                   key={loc.id}
-                  className="p-4 rounded-lg border border-gold/10"
+                  className="p-4 rounded-lg border border-gold/10 w-full min-w-0 overflow-hidden"
                 >
-                  <div className="font-medium text-sm sm:text-base">{loc.name}</div>
-                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">{loc.type}</div>
+                  <div className="font-medium text-sm sm:text-base truncate">{loc.name}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">{loc.type}</div>
                 </div>
               ))}
             </div>
@@ -142,19 +146,21 @@ export default async function SettingsPage() {
         {canManageUsers(user?.role || 'staff') && (
           <Card>
             <CardHeader>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full min-w-0">
+                <div className="flex-1 min-w-0">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Users className="h-5 w-5 text-gold" />
-                    Users
+                    <Users className="h-5 w-5 text-gold flex-shrink-0" />
+                    <span className="truncate">Users</span>
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">Manage system users and roles</CardDescription>
                 </div>
-                <Link href="/settings/users" prefetch={true} className="w-full sm:w-auto">
-                  <Button size="sm" variant="outline" className="w-full sm:w-auto">
-                    Manage Users
-                  </Button>
-                </Link>
+                <div className="w-full sm:w-auto flex-shrink-0">
+                  <Link href="/settings/users" prefetch={true} className="block w-full sm:w-auto">
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto">
+                      Manage Users
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

@@ -112,11 +112,11 @@ export default function NewDistributorPage() {
                 className="font-sans"
               />
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={loading} className="font-sans">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <Button type="submit" disabled={loading} className="font-sans w-full sm:w-auto flex-1 sm:flex-initial">
                 {loading ? "Creating..." : "Create Distributor"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => router.back()} className="font-sans">
+              <Button type="button" variant="outline" onClick={() => router.back()} className="font-sans w-full sm:w-auto flex-1 sm:flex-initial">
                 Cancel
               </Button>
             </div>
