@@ -216,6 +216,8 @@ export default function TransferPage() {
       return
     }
 
+    const startTime = performance.now()
+    
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -223,18 +225,87 @@ export default function TransferPage() {
         return
       }
 
-      // Process each transfer item
-      for (const item of transferItems) {
-        // Check available stock
-        const { data: sourceStock, error: stockError } = await supabase
+      const sourceLocationName = locations.find(l => l.id === sourceLocationId)?.name || 'Unknown'
+      const destLocationName = locations.find(l => l.id === destinationLocationId)?.name || 'Unknown'
+
+      // Batch fetch all source stock data in parallel
+      const stockQueries = transferItems.map(item =>
+        supabase
           .from("stock_levels")
           .select("id, quantity, lot_number")
           .eq("variant_id", item.variant_id)
           .eq("location_id", sourceLocationId)
           .order("lot_number", { ascending: true })
+      )
 
+      const stockResults = await Promise.all(stockQueries)
+      
+      // Validate stock availability first
+      for (let i = 0; i < transferItems.length; i++) {
+        const item = transferItems[i]
+        const { data: sourceStock, error: stockError } = stockResults[i]
+        
         if (stockError) throw stockError
+        
+        const totalAvailable = (sourceStock as Array<{ quantity: number }> || [])
+          .reduce((sum, s) => sum + (s.quantity || 0), 0)
+        
+        if (totalAvailable < item.quantity) {
+          toast.error(`Insufficient stock for ${item.brand_name}. Available: ${totalAvailable}, Requested: ${item.quantity}`)
+          return
+        }
+      }
 
+      // Prepare all operations in batches
+      const stockUpdates: Array<{ id: string; quantity: number }> = []
+      const stockInserts: Array<{ variant_id: string; location_id: string; quantity: number; lot_number: string | null }> = []
+      const transactions: Array<any> = []
+      const destStockQueries: Array<Promise<any>> = []
+      const destStockMap = new Map<string, { id: string; quantity: number }>()
+
+      // First, collect all destination stock queries we need
+      for (let i = 0; i < transferItems.length; i++) {
+        const item = transferItems[i]
+        const { data: sourceStock } = stockResults[i]
+        const stockData = (sourceStock as Array<{ lot_number: string | null }>) || []
+        
+        // Get unique lot numbers for this variant
+        const lotNumbers = [...new Set(stockData.map(s => s.lot_number))]
+        
+        for (const lotNumber of lotNumbers) {
+          const key = `${item.variant_id}_${lotNumber || 'null'}`
+          if (!destStockMap.has(key)) {
+            const query = (supabase
+              .from("stock_levels") as any)
+              .select("id, quantity")
+              .eq("variant_id", item.variant_id)
+              .eq("location_id", destinationLocationId)
+            
+            if (lotNumber) {
+              query.eq("lot_number", lotNumber)
+            } else {
+              query.is("lot_number", null)
+            }
+            
+            destStockQueries.push(
+              query.maybeSingle().then((result: any) => {
+                if (result.data) {
+                  destStockMap.set(key, result.data)
+                }
+                return result
+              })
+            )
+          }
+        }
+      }
+
+      // Execute all destination stock queries in parallel
+      await Promise.all(destStockQueries)
+
+      // Process all items and prepare batch operations
+      for (let i = 0; i < transferItems.length; i++) {
+        const item = transferItems[i]
+        const { data: sourceStock } = stockResults[i]
         const stockData = (sourceStock as Array<{ id: string; quantity: number; lot_number: string | null }>) || []
         let remainingToTransfer = item.quantity
 
@@ -244,104 +315,105 @@ export default function TransferPage() {
           const transferQty = Math.min(remainingToTransfer, stock.quantity || 0)
 
           if (transferQty > 0) {
-            // Reduce from source location
-            const { error: reduceError } = await (supabase
-              .from("stock_levels") as any)
-              .update({ quantity: (stock.quantity || 0) - transferQty })
-              .eq("id", stock.id)
+            // Prepare source stock update
+            stockUpdates.push({
+              id: stock.id,
+              quantity: (stock.quantity || 0) - transferQty
+            })
 
-            if (reduceError) throw reduceError
-
-            // Add to destination location
-            const destStockQuery = (supabase
-              .from("stock_levels") as any)
-              .select("id, quantity")
-              .eq("variant_id", item.variant_id)
-              .eq("location_id", destinationLocationId)
-            
-            if (stock.lot_number) {
-              destStockQuery.eq("lot_number", stock.lot_number)
-            } else {
-              destStockQuery.is("lot_number", null)
-            }
-            
-            const { data: destStock, error: destError } = await destStockQuery.single()
-
-            if (destError && destError.code !== 'PGRST116') throw destError
+            // Get destination stock from map
+            const key = `${item.variant_id}_${stock.lot_number || 'null'}`
+            const destStock = destStockMap.get(key)
 
             if (destStock) {
-              // Update existing stock
-              const { error: updateError } = await (supabase
-                .from("stock_levels") as any)
-                .update({ quantity: (destStock as any).quantity + transferQty })
-                .eq("id", destStock.id)
-
-              if (updateError) throw updateError
+              // Prepare destination stock update
+              stockUpdates.push({
+                id: destStock.id,
+                quantity: destStock.quantity + transferQty
+              })
             } else {
-              // Create new stock entry
-              const { error: insertError } = await (supabase
-                .from("stock_levels") as any)
-                .insert({
-                  variant_id: item.variant_id,
-                  location_id: destinationLocationId,
-                  quantity: transferQty,
-                  lot_number: stock.lot_number,
-                })
-
-              if (insertError) throw insertError
-            }
-
-            // Create transaction records for transfer trail
-            const sourceLocationName = locations.find(l => l.id === sourceLocationId)?.name || 'Unknown'
-            const destLocationName = locations.find(l => l.id === destinationLocationId)?.name || 'Unknown'
-            
-            const { error: outTxError } = await supabase
-              .from("inventory_transactions")
-              .insert({
-                variant_id: item.variant_id,
-                location_id: sourceLocationId,
-                transaction_type: "transfer" as const,
-                quantity_change: -transferQty,
-                lot_number: stock.lot_number,
-                notes: `Transferred ${transferQty} units to ${destLocationName}`,
-                created_by: user.id,
-              } as any)
-
-            if (outTxError) throw outTxError
-
-            const { error: inTxError } = await supabase
-              .from("inventory_transactions")
-              .insert({
+              // Prepare destination stock insert
+              stockInserts.push({
                 variant_id: item.variant_id,
                 location_id: destinationLocationId,
-                transaction_type: "transfer" as const,
-                quantity_change: transferQty,
+                quantity: transferQty,
                 lot_number: stock.lot_number,
-                notes: `Transferred ${transferQty} units from ${sourceLocationName}`,
-                created_by: user.id,
-              } as any)
+              })
+            }
 
-            if (inTxError) throw inTxError
+            // Prepare transaction records
+            transactions.push({
+              variant_id: item.variant_id,
+              location_id: sourceLocationId,
+              transaction_type: "transfer" as const,
+              quantity_change: -transferQty,
+              lot_number: stock.lot_number,
+              notes: `Transferred ${transferQty} units to ${destLocationName}`,
+              created_by: user.id,
+            })
+
+            transactions.push({
+              variant_id: item.variant_id,
+              location_id: destinationLocationId,
+              transaction_type: "transfer" as const,
+              quantity_change: transferQty,
+              lot_number: stock.lot_number,
+              notes: `Transferred ${transferQty} units from ${sourceLocationName}`,
+              created_by: user.id,
+            })
 
             remainingToTransfer -= transferQty
           }
         }
-
-        if (remainingToTransfer > 0) {
-          toast.error(`Insufficient stock for ${item.brand_name}`)
-          return
-        }
       }
 
-      toast.success("Transfer completed successfully! Transfer trail has been recorded.")
+      // Execute all operations in parallel batches
+      const updatePromises = stockUpdates.map(update =>
+        (supabase.from("stock_levels") as any)
+          .update({ quantity: update.quantity })
+          .eq("id", update.id)
+      )
+
+      const insertPromises = stockInserts.length > 0
+        ? [(supabase.from("stock_levels") as any).insert(stockInserts)]
+        : []
+
+      const transactionPromises = transactions.length > 0
+        ? [(supabase.from("inventory_transactions") as any).insert(transactions)]
+        : []
+
+      // Execute all batches in parallel
+      const allResults = await Promise.all([
+        ...updatePromises,
+        ...insertPromises,
+        ...transactionPromises
+      ])
+
+      // Check for errors
+      for (const result of allResults) {
+        if (result.error) throw result.error
+      }
+
+      const endTime = performance.now()
+      const duration = ((endTime - startTime) / 1000).toFixed(2)
+
+      // Success notification with vibration
+      const { vibrateComplete } = await import('@/lib/vibration')
+      vibrateComplete()
+      
+      toast.success(`Transfer completed successfully! (${duration}s)`, {
+        description: `${transferItems.length} item(s) transferred from ${sourceLocationName} to ${destLocationName}`,
+        duration: 5000,
+      })
+
       // Reset state
       setTransferItems([])
       setSourceLocationId("")
       setDestinationLocationId("")
       loadAvailableProducts()
     } catch (error) {
-      toast.error("Error completing transfer")
-      console.error(error)
+      console.error("Transfer error:", error)
+      toast.error(error instanceof Error ? error.message : "Error completing transfer")
     }
   }
 
