@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScanLine, ShoppingCart, CreditCard, X } from "lucide-react"
-import { playScanBeep } from "@/lib/sound"
+import { playScanBeepWithVibration } from "@/lib/sound"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
@@ -165,7 +165,7 @@ export default function POSPage() {
       }
 
       console.log("Variant found:", variant)
-      playScanBeep()
+      playScanBeepWithVibration()
       const cartItem = {
         variant_id: variant.id,
         brand_name: variant.products.brands?.name || '',
@@ -337,8 +337,12 @@ export default function POSPage() {
         ? `Sale completed! ${saleNumber} - Change: ${formatCurrency(change)}`
         : `Sale completed! ${saleNumber}`
 
+      // Vibration feedback for successful checkout
+      const { vibrateComplete } = await import('@/lib/vibration')
+      vibrateComplete()
+
       toast.success(successMessage, {
-        description: `${cart.length} item(s) sold successfully.`,
+        description: `${cart.length} item(s) sold successfully. Payment: ${paymentMethod === 'cash' ? 'Cash' : 'M-Pesa'}`,
         duration: 5000,
       })
       
