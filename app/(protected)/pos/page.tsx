@@ -92,6 +92,16 @@ export default function POSPage() {
 
       const totalSold = (soldItems as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
 
+      // Warn if item has been sold before
+      if (totalSold > 0) {
+        const productName = variant.products?.brands?.name || 'Product'
+        const productSize = variant.size_ml === 1000 ? '1L' : `${variant.size_ml}ml`
+        toast.warning(`${productName} ${productSize} has been sold before (${totalSold} units sold).`, {
+          description: "This item has previous sales history.",
+          duration: 5000,
+        })
+      }
+
       // Check available stock at floor location
       const { data: floorLocation } = await supabase
         .from("inventory_locations")
@@ -113,19 +123,19 @@ export default function POSPage() {
         const existingInCart = cart.find((item) => item.variant_id === variant.id)
         const cartQuantity = existingInCart ? existingInCart.quantity : 0
 
-        // If no stock available and item has been sold, show warning
+        // If no stock available and item has been sold, show error
         if (totalStock <= 0 && totalSold > 0) {
           toast.error("⚠️ Item already sold - This item has been sold and is no longer available")
           return
         }
 
         if (totalStock <= 0) {
-          toast.error("Item already sold - No stock available")
+          toast.error("No stock available for this item")
           return
         }
 
         if (cartQuantity >= totalStock) {
-          toast.error("Item already sold - Insufficient stock available")
+          toast.error("Insufficient stock available - Cannot add more items")
           return
         }
       }

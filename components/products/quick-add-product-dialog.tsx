@@ -234,6 +234,27 @@ export function QuickAddProductDialog({
         return
       }
 
+      // Check if UPC already exists before creating
+      if (formData.upc && formData.upc.trim()) {
+        const { data: existingVariant } = await supabase
+          .from("product_variants")
+          .select("id, size_ml, products!inner(brands!inner(name))")
+          .eq("upc", formData.upc.trim())
+          .limit(1)
+          .maybeSingle()
+
+        if (existingVariant) {
+          const productName = (existingVariant.products as any)?.brands?.name || 'Product'
+          const productSize = existingVariant.size_ml === 1000 ? '1L' : `${existingVariant.size_ml}ml`
+          toast.error(`Duplicate UPC detected! ${productName} ${productSize} already exists in the system with this UPC.`, {
+            description: "Please use a different UPC or update the existing product.",
+            duration: 6000,
+          })
+          setLoading(false)
+          return
+        }
+      }
+
       // Create product first
       const { data: product, error: productError } = await ((supabase
         .from("products") as any)

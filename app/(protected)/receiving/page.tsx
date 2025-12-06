@@ -160,6 +160,9 @@ export default function ReceivingPage() {
 
       if (existingItem) {
         console.log("Updating existing item quantity")
+        const productName = variantTyped.products.brands?.name || 'Product'
+        const productSize = variantTyped.size_ml === 1000 ? '1L' : `${variantTyped.size_ml}ml`
+        
         setScannedItems((prev) =>
           prev.map((item) =>
             item.variant_id === variantTyped.id
@@ -167,7 +170,10 @@ export default function ReceivingPage() {
               : item
           )
         )
-        toast.success(`${variantTyped.products.brands?.name || 'Product'} quantity increased`)
+        toast.warning(`${productName} ${productSize} is already in this receiving session. Quantity increased.`, {
+          description: "This item was previously scanned in the current session.",
+          duration: 4000,
+        })
       } else {
         console.log("Adding new item to scanned items")
         const newItem: ScannedItem = {

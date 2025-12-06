@@ -84,10 +84,19 @@ export default function ProductsPage() {
         return
       }
 
+      // Product already exists in system - show warning
+      const variant = variants[0]
+      const productName = variant.products?.brands?.name || 'Product'
+      const productSize = variant.size_ml === 1000 ? '1L' : `${variant.size_ml}ml`
+      
+      toast.warning(`${productName} ${productSize} is already in the system. Product found and displayed in catalog.`, {
+        description: "This product was previously added to the catalog.",
+        duration: 5000,
+      })
+      
       // Product found - reload products to show it in the appropriate section
       // Note: Sound is played by barcode scanner component, no need to play here
       await loadProducts()
-      toast.success("Product found and displayed in catalog")
     } catch (error) {
       toast.error("Error processing barcode")
     }
