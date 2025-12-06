@@ -5,15 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
 import Link from "next/link"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { StockLevelsClient } from "./stock-levels-client"
 
 export default async function InventoryPage() {

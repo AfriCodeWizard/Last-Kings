@@ -65,8 +65,6 @@ export function StockLevelsClient({
     return []
   }
 
-  const currentStock = getCurrentStock()
-
   return (
     <div className="space-y-4">
       <Tabs value={locationTab} onValueChange={setLocationTab} className="w-full">
