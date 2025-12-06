@@ -93,7 +93,7 @@ export default function UsersManagementPageClient() {
 
   if (loading) {
     return (
-      <div className="space-y-4 sm:space-y-6 p-4 sm:p-0 w-full min-w-0 overflow-x-hidden">
+      <div className="space-y-6 w-full min-w-0">
         <div>
           <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">User Management</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Loading...</p>
@@ -105,7 +105,7 @@ export default function UsersManagementPageClient() {
   const pendingUsers = users.filter((u) => !u.is_approved)
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0 w-full min-w-0 overflow-x-hidden">
+    <div className="space-y-6 w-full min-w-0">
       <div>
         <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">User Management</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Approve and manage system users</p>
@@ -119,9 +119,9 @@ export default function UsersManagementPageClient() {
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">Users waiting for admin approval</CardDescription>
           </CardHeader>
-          <CardContent className="p-0 sm:p-6 sm:pt-0">
-            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-              <div className="min-w-[600px] sm:min-w-0">
+          <CardContent>
+            <div className="overflow-x-auto">
+              <div className="min-w-[600px] sm:min-w-full">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -178,9 +178,9 @@ export default function UsersManagementPageClient() {
           <CardTitle className="text-lg sm:text-xl">All Users ({users.length})</CardTitle>
           <CardDescription className="text-xs sm:text-sm">Manage all system users</CardDescription>
         </CardHeader>
-        <CardContent className="p-0 sm:p-6 sm:pt-0">
-          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-            <div className="min-w-[700px] sm:min-w-0">
+        <CardContent>
+          <div className="overflow-x-auto">
+            <div className="min-w-[700px] sm:min-w-full">
               <Table>
                 <TableHeader>
                   <TableRow>
