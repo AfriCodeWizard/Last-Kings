@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { RevenueCharts } from "@/components/reports/revenue-charts"
 
 export default async function ReportsPage() {
   const user = await getCurrentUser()
@@ -23,17 +24,101 @@ export default async function ReportsPage() {
   
   const supabase = await createClient()
 
+  // Get sales data for the last 12 months
+  const twelveMonthsAgo = new Date()
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12)
+
+  const { data: allSales } = await supabase
+    .from("sales")
+    .select(`
+      *,
+      sale_items(
+        quantity,
+        unit_price,
+        product_variants(
+          cost
+        )
+      )
+    `)
+    .gte("created_at", twelveMonthsAgo.toISOString())
+    .order("created_at", { ascending: false })
+
   // Sales report (last 30 days)
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const { data: sales } = await supabase
-    .from("sales")
-    .select("*")
-    .gte("created_at", thirtyDaysAgo.toISOString())
-    .order("created_at", { ascending: false })
-
+  const sales = allSales?.filter(s => new Date(s.created_at) >= thirtyDaysAgo) || []
   const totalSales = sales?.reduce((sum, s) => sum + s.total_amount, 0) || 0
+
+  // Calculate monthly data for charts
+  const monthlyDataMap = new Map<string, { revenue: number; cost: number; transactions: number }>()
+  
+  // Initialize all 12 months
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  for (let i = 0; i < 12; i++) {
+    const date = new Date()
+    date.setMonth(date.getMonth() - (11 - i))
+    const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear()}`
+    monthlyDataMap.set(monthKey, { revenue: 0, cost: 0, transactions: 0 })
+  }
+
+  // Process all sales data
+  let totalRevenue = 0
+  let totalCost = 0
+  let totalTransactions = 0
+  const paymentMethodMap = new Map<string, number>()
+
+  if (allSales) {
+    allSales.forEach((sale: any) => {
+      const saleDate = new Date(sale.created_at)
+      const monthKey = `${monthNames[saleDate.getMonth()]} ${saleDate.getFullYear()}`
+      
+      const monthData = monthlyDataMap.get(monthKey)
+      if (monthData) {
+        monthData.revenue += sale.total_amount || 0
+        monthData.transactions += 1
+        
+        // Calculate cost from sale items
+        let saleCost = 0
+        if (sale.sale_items) {
+          sale.sale_items.forEach((item: any) => {
+            const variant = Array.isArray(item.product_variants) 
+              ? item.product_variants[0] 
+              : item.product_variants
+            const cost = variant?.cost || 0
+            saleCost += cost * (item.quantity || 0)
+          })
+        }
+        monthData.cost += saleCost
+        totalCost += saleCost
+      }
+      
+      totalRevenue += sale.total_amount || 0
+      totalTransactions += 1
+      
+      // Track payment methods
+      const paymentMethod = sale.payment_method || 'unknown'
+      paymentMethodMap.set(paymentMethod, (paymentMethodMap.get(paymentMethod) || 0) + (sale.total_amount || 0))
+    })
+  }
+
+  // Convert to array format
+  const monthlyData = Array.from(monthlyDataMap.entries()).map(([month, data]) => ({
+    month,
+    revenue: data.revenue,
+    cost: data.cost,
+    profit: data.revenue - data.cost,
+    transactions: data.transactions,
+  }))
+
+  // Payment method data
+  const paymentMethodData = [
+    { name: 'Cash', value: paymentMethodMap.get('cash') || 0, color: '#D4AF37' },
+    { name: 'M-Pesa', value: paymentMethodMap.get('mpesa') || 0, color: '#10b981' },
+  ].filter(p => p.value > 0)
+
+  const totalProfit = totalRevenue - totalCost
+  const averageTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0
 
   // Sales by category (unused for now)
   // const { data: salesByCategory } = await supabase
@@ -125,6 +210,17 @@ export default async function ReportsPage() {
         <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">Reports</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Sales analytics and reporting</p>
       </div>
+
+      {/* Revenue Charts Section */}
+      <RevenueCharts
+        monthlyData={monthlyData}
+        paymentMethodData={paymentMethodData}
+        totalRevenue={totalRevenue}
+        totalProfit={totalProfit}
+        totalCost={totalCost}
+        totalTransactions={totalTransactions}
+        averageTransactionValue={averageTransactionValue}
+      />
 
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         <Card>
