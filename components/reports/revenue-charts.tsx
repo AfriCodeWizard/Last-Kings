@@ -70,6 +70,26 @@ export function RevenueCharts({
     return null
   }
 
+  const PieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0]
+      return (
+        <div className="bg-black/90 border border-gold/30 rounded-lg p-3 shadow-lg">
+          <p className="text-gold font-semibold mb-2">{data.name}</p>
+          <p className="text-gold text-sm">
+            Amount: {formatCurrency(data.value)}
+          </p>
+          {data.payload && data.payload.percent !== undefined && (
+            <p className="text-gold/80 text-sm mt-1">
+              Percentage: {(data.payload.percent * 100).toFixed(1)}%
+            </p>
+          )}
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div className="space-y-6">
       {/* Key Metrics Cards */}
@@ -221,10 +241,7 @@ export function RevenueCharts({
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value: number) => formatCurrency(value)}
-                  contentStyle={{ backgroundColor: '#000', border: '1px solid #D4AF37', borderRadius: '8px' }}
-                />
+                <Tooltip content={<PieTooltip />} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
