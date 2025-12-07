@@ -56,9 +56,11 @@ export default function ReceivingPage() {
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [scannedUPC, setScannedUPC] = useState("")
   const [showLotModal, setShowLotModal] = useState(false)
+  const [showQuantityModal, setShowQuantityModal] = useState(false)
   const [currentItem, setCurrentItem] = useState<ScannedItem | null>(null)
   const [lotNumber, setLotNumber] = useState("")
   const [expiryDate, setExpiryDate] = useState("")
+  const [quantity, setQuantity] = useState("1")
   const [selectedPOId, setSelectedPOId] = useState<string | undefined>(undefined)
   const [pendingPOs, setPendingPOs] = useState<PurchaseOrder[]>([])
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null)
@@ -159,21 +161,19 @@ export default function ReceivingPage() {
       console.log("Existing item:", existingItem)
 
       if (existingItem) {
-        console.log("Updating existing item quantity")
-        const productName = variantTyped.products.brands?.name || 'Product'
-        const productSize = variantTyped.size_ml === 1000 ? '1L' : `${variantTyped.size_ml}ml`
-        
-        setScannedItems((prev) =>
-          prev.map((item) =>
-            item.variant_id === variantTyped.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
-        )
-        toast.warning(`${productName} ${productSize} is already in this receiving session. Quantity increased.`, {
-          description: "This item was previously scanned in the current session.",
-          duration: 4000,
-        })
+        console.log("Item already exists, showing quantity modal")
+        const newItem: ScannedItem = {
+          variant_id: variantTyped.id,
+          brand_name: variantTyped.products.brands?.name || '',
+          product_type: variantTyped.products.product_type || 'liquor',
+          size_ml: variantTyped.size_ml,
+          quantity: 1,
+          lot_number: null,
+          expiry_date: null,
+        }
+        setCurrentItem(newItem)
+        setQuantity("1")
+        setShowQuantityModal(true)
       } else {
         console.log("Adding new item to scanned items")
         const newItem: ScannedItem = {
@@ -186,17 +186,51 @@ export default function ReceivingPage() {
           expiry_date: null,
         }
         console.log("New item:", newItem)
-        setScannedItems((prev) => {
-          const updated = [...prev, newItem]
-          console.log("Updated scanned items:", updated)
-          return updated
-        })
         setCurrentItem(newItem)
-        setShowLotModal(true)
-        toast.success(`${variantTyped.products.brands?.name || 'Product'} added`)
+        setQuantity("1")
+        setShowQuantityModal(true)
       }
     } catch (error) {
       toast.error("Error processing barcode")
+    }
+  }
+
+  const handleSaveQuantity = () => {
+    if (!currentItem) return
+
+    const qty = parseInt(quantity) || 1
+    if (qty < 1) {
+      toast.error("Quantity must be at least 1")
+      return
+    }
+
+    const existingItem = scannedItems.find((item) => item.variant_id === currentItem.variant_id)
+    
+    if (existingItem) {
+      // Update existing item quantity
+      setScannedItems((prev) =>
+        prev.map((item) =>
+          item.variant_id === currentItem.variant_id
+            ? { ...item, quantity: item.quantity + qty }
+            : item
+        )
+      )
+      toast.success(`Added ${qty} more ${currentItem.brand_name}`)
+    } else {
+      // Add new item with specified quantity
+      const newItem: ScannedItem = {
+        ...currentItem,
+        quantity: qty,
+      }
+      setScannedItems((prev) => [...prev, newItem])
+      toast.success(`${currentItem.brand_name} added (${qty} units)`)
+    }
+
+    setShowQuantityModal(false)
+    setCurrentItem(null)
+    setQuantity("1")
+    if (inputRef.current) {
+      inputRef.current.focus()
     }
   }
 
@@ -569,6 +603,18 @@ export default function ReceivingPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const itemToEdit = scannedItems[idx]
+                            setCurrentItem(itemToEdit)
+                            setQuantity(itemToEdit.quantity.toString())
+                            setShowQuantityModal(true)
+                          }}
+                        >
+                          Edit Qty
+                        </Button>
                         <span className="font-bold text-gold">Qty: {item.quantity}</span>
                         <Button
                           variant="ghost"
@@ -599,6 +645,46 @@ export default function ReceivingPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showQuantityModal} onOpenChange={setShowQuantityModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Quantity</DialogTitle>
+            <DialogDescription>
+              How many units of {currentItem?.brand_name} {currentItem?.size_ml}ml?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSaveQuantity()
+                  }
+                }}
+                placeholder="Enter quantity"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowQuantityModal(false)
+              setQuantity("1")
+              setCurrentItem(null)
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveQuantity}>Add to List</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showLotModal} onOpenChange={setShowLotModal}>
         <DialogContent>
@@ -683,10 +769,9 @@ export default function ReceivingPage() {
               lot_number: null,
               expiry_date: null,
             }
-            setScannedItems((prev) => [...prev, newItem])
             setCurrentItem(newItem)
-            setShowLotModal(true)
-            toast.success(`${variant.products.brands?.name || 'Product'} added`)
+            setQuantity("1")
+            setShowQuantityModal(true)
           }
         }}
         context="receiving"
