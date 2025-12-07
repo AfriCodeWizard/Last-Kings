@@ -433,6 +433,7 @@ export function QuickAddProductDialog({
                     <SelectItem value="250" className="font-sans">250ml</SelectItem>
                     <SelectItem value="300" className="font-sans">300ml</SelectItem>
                     <SelectItem value="330" className="font-sans">330ml</SelectItem>
+                    <SelectItem value="350" className="font-sans">350ml</SelectItem>
                     <SelectItem value="500" className="font-sans">500ml</SelectItem>
                     <SelectItem value="750" className="font-sans">750ml</SelectItem>
                     <SelectItem value="1000" className="font-sans">1L (1000ml)</SelectItem>
