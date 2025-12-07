@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
 
   if (!supabaseUrl || !supabaseKey) {
     // If env vars are missing, only protect routes but don't use Supabase
-    const protectedPaths = ['/dashboard', '/products', '/purchase-orders', '/receiving', '/inventory', '/pos', '/customers', '/reports', '/settings']
+    const protectedPaths = ['/dashboard', '/products', '/purchase-orders', '/receiving', '/inventory', '/pos', '/open-tab', '/reports', '/settings']
     const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
     
     if (isProtected) {
