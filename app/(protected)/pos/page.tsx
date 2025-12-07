@@ -342,8 +342,8 @@ export default function POSPage() {
       vibrateComplete()
 
       toast.success(successMessage, {
-        description: `${cart.length} item(s) sold successfully. Payment: ${paymentMethod === 'cash' ? 'Cash' : 'M-Pesa'}`,
-        duration: 5000,
+        description: `${cart.length} item(s) sold successfully. Total: ${formatCurrency(total)} • Payment: ${paymentMethod === 'cash' ? 'Cash' : 'M-Pesa'}`,
+        duration: 6000,
       })
       
       // Clear cart and refocus input
