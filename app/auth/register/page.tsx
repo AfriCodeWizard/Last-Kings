@@ -136,7 +136,6 @@ export default function RegisterPage() {
                 <SelectContent>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -144,11 +143,19 @@ export default function RegisterPage() {
               {loading ? "Creating account..." : "Register"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="text-gold hover:underline">
-              Sign in
-            </Link>
+          <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
+            <div>
+              Already have an account?{" "}
+              <Link href="/auth/login" className="text-gold hover:underline">
+                Sign in
+              </Link>
+            </div>
+            <div>
+              Need to create an admin account?{" "}
+              <Link href="/auth/register-admin" className="text-gold hover:underline">
+                Admin Registration
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>
