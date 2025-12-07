@@ -80,7 +80,7 @@ export function RevenueCharts({
             <DollarSign className="h-4 w-4 text-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gold">{formatCurrency(totalRevenue)}</div>
+            <div className="text-2xl font-bold text-gold break-words overflow-hidden text-ellipsis min-w-0">{formatCurrency(totalRevenue)}</div>
             <p className="text-xs text-muted-foreground">Last 12 months</p>
           </CardContent>
         </Card>
@@ -91,7 +91,7 @@ export function RevenueCharts({
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalProfit)}</div>
+            <div className="text-2xl font-bold text-green-500 break-words overflow-hidden text-ellipsis min-w-0">{formatCurrency(totalProfit)}</div>
             <p className="text-xs text-muted-foreground">{profitMargin}% margin</p>
           </CardContent>
         </Card>
@@ -113,7 +113,7 @@ export function RevenueCharts({
             <CreditCard className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageTransactionValue)}</div>
+            <div className="text-2xl font-bold break-words overflow-hidden text-ellipsis min-w-0">{formatCurrency(averageTransactionValue)}</div>
             <p className="text-xs text-muted-foreground">Per sale</p>
           </CardContent>
         </Card>
