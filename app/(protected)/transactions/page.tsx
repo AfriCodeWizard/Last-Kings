@@ -1,6 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import { getCurrentUser } from "@/lib/auth"
-import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import {
@@ -15,13 +13,6 @@ import { Badge } from "@/components/ui/badge"
 import { Receipt, Coins, CreditCard } from "lucide-react"
 
 export default async function TransactionsPage() {
-  const user = await getCurrentUser()
-  
-  // Redirect staff users - they don't have access to transactions
-  if (user?.role === 'staff') {
-    redirect('/dashboard')
-  }
-  
   const supabase = await createClient()
 
   // Get all sales with sale items and product details
