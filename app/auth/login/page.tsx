@@ -100,6 +100,28 @@ export default function LoginPage() {
         return
       }
 
+      // Check if user is approved (admins are always approved)
+      const finalUserData = (userData || await supabase
+        .from("users")
+        .select("*")
+        .eq("id", data.user.id)
+        .single()
+        .then(({ data }) => data)) as { is_approved: boolean; role: string } | null
+
+      if (!finalUserData) {
+        toast.error("User account not found. Please contact administrator.")
+        await supabase.auth.signOut()
+        return
+      }
+
+      // If user is not approved and not admin, redirect to awaiting approval page
+      if (!finalUserData.is_approved && finalUserData.role !== 'admin') {
+        console.log("User not approved, redirecting to awaiting approval page")
+        await supabase.auth.signOut()
+        window.location.href = "/auth/awaiting-approval"
+        return
+      }
+
       console.log("User authenticated successfully")
       
       // CRITICAL: Sync session to cookies so middleware can read it

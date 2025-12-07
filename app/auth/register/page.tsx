@@ -53,10 +53,12 @@ export default function RegisterPage() {
 
         if (isApproved) {
           toast.success("Account created! Please sign in.")
+          router.push("/auth/login")
         } else {
-          toast.success("Account created! Waiting for admin approval.")
+          // Redirect to awaiting approval page after email confirmation
+          toast.success("Account created! Please check your email to confirm your account.")
+          router.push("/auth/awaiting-approval")
         }
-        router.push("/auth/login")
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create account")

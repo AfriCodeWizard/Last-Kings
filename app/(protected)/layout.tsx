@@ -16,6 +16,11 @@ export default async function ProtectedLayout({
       redirect("/auth/login")
     }
 
+    // Check if user is approved (admins are always approved)
+    if (!user.is_approved && user.role !== 'admin') {
+      redirect("/auth/awaiting-approval")
+    }
+
     return (
       <div className="min-h-screen bg-black">
         <SessionSync />
