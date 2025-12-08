@@ -16,7 +16,6 @@ import {
 import { formatCurrency } from "@/lib/utils"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import {
   Dialog,
   DialogContent,
@@ -37,7 +36,6 @@ interface Tab {
 
 export default function OpenTabPage() {
   const [tabs, setTabs] = useState<Tab[]>([])
-  const [loading, setLoading] = useState(true)
   const [showCloseDialog, setShowCloseDialog] = useState(false)
   const [tabToClose, setTabToClose] = useState<string | null>(null)
 
@@ -53,8 +51,6 @@ export default function OpenTabPage() {
     } catch (error: any) {
       toast.error("Error loading tabs")
       console.error(error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -85,14 +81,6 @@ export default function OpenTabPage() {
   }
 
   const openTabs = tabs.filter((t) => t.status === "open")
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner message="Loading tabs..." />
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-4 md:space-y-6">

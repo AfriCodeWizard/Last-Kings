@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { Check, Trash2 } from "lucide-react"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface User {
   id: string
@@ -28,7 +27,6 @@ interface User {
 
 export default function UsersManagementPageClient() {
   const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadUsers()
@@ -46,8 +44,6 @@ export default function UsersManagementPageClient() {
     } catch (error) {
       console.error("Error loading users:", error)
       toast.error("Failed to load users")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -92,18 +88,6 @@ export default function UsersManagementPageClient() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-6 w-full min-w-0">
-        <div>
-          <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">User Management</h1>
-        </div>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <LoadingSpinner message="Loading users..." />
-        </div>
-      </div>
-    )
-  }
 
   const pendingUsers = users.filter((u) => !u.is_approved)
 

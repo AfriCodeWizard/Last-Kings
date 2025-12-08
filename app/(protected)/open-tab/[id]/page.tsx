@@ -12,7 +12,6 @@ import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { CashPaymentDialog } from "@/components/pos/cash-payment-dialog"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import Link from "next/link"
 
 interface CartItem {
@@ -42,7 +41,6 @@ export default function TabDetailPage() {
     total_amount: number
     status: string
   } | null>(null)
-  const [loading, setLoading] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -62,8 +60,6 @@ export default function TabDetailPage() {
     } catch (error: any) {
       toast.error("Error loading tab")
       console.error(error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -362,14 +358,6 @@ export default function TabDetailPage() {
       toast.error("Error cashing out tab")
       console.error(error)
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner message="Loading tab..." />
-      </div>
-    )
   }
 
   if (!tab) {

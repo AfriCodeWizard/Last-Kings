@@ -7,19 +7,16 @@ import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { StockLevelsClient } from "./stock-levels-client"
 import { supabase } from "@/lib/supabase/client"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 export default function InventoryPage() {
   const [stockLevels, setStockLevels] = useState<any[]>([])
   const [locations, setLocations] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadData()
   }, [])
 
   const loadData = async () => {
-    setLoading(true)
     try {
       // Load locations first (fast, small table)
       const [locationsRes, stockLevelsRes] = await Promise.all([
@@ -57,8 +54,6 @@ export default function InventoryPage() {
       setStockLevels(stockLevelsRes.data || [])
     } catch (error) {
       console.error("Error loading inventory:", error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -66,14 +61,6 @@ export default function InventoryPage() {
   const floorLocation = locations?.find((loc: { type: string }) => loc.type === "floor")
   const backroomLocation = locations?.find((loc: { type: string }) => loc.type === "backroom")
   const warehouseLocation = locations?.find((loc: { type: string }) => loc.type === "warehouse")
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner message="Loading inventory..." />
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6">
