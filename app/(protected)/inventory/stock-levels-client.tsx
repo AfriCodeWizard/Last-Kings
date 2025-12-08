@@ -40,18 +40,6 @@ export function StockLevelsClient({
   const [locationTab, setLocationTab] = useState<"floor" | "backroom" | "warehouse">("floor")
   const [productTypeTab, setProductTypeTab] = useState<"all" | "liquor" | "beverage">("all")
 
-  // Map tab identifiers to location IDs
-  const getLocationIdForTab = (tab: "floor" | "backroom" | "warehouse") => {
-    switch (tab) {
-      case "floor":
-        return floorLocationId
-      case "backroom":
-        return backroomLocationId
-      case "warehouse":
-        return warehouseLocationId
-    }
-  }
-
   const filterStockByLocationAndType = (
     locationId: string | undefined,
     productType: "liquor" | "beverage" | "all"
