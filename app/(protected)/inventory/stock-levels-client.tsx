@@ -36,8 +36,21 @@ export function StockLevelsClient({
   backroomLocationId,
   warehouseLocationId,
 }: StockLevelsClientProps) {
-  const [locationTab, setLocationTab] = useState(floorLocationId || "floor")
+  // Use stable string identifiers for tabs (never change)
+  const [locationTab, setLocationTab] = useState<"floor" | "backroom" | "warehouse">("floor")
   const [productTypeTab, setProductTypeTab] = useState<"all" | "liquor" | "beverage">("all")
+
+  // Map tab identifiers to location IDs
+  const getLocationIdForTab = (tab: "floor" | "backroom" | "warehouse") => {
+    switch (tab) {
+      case "floor":
+        return floorLocationId
+      case "backroom":
+        return backroomLocationId
+      case "warehouse":
+        return warehouseLocationId
+    }
+  }
 
   const filterStockByLocationAndType = (
     locationId: string | undefined,
@@ -56,14 +69,14 @@ export function StockLevelsClient({
 
   return (
     <div className="space-y-4">
-      <Tabs value={locationTab} onValueChange={setLocationTab} className="w-full">
+      <Tabs value={locationTab} onValueChange={(v) => setLocationTab(v as "floor" | "backroom" | "warehouse")} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value={floorLocationId || "floor"}>Main Floor</TabsTrigger>
-          <TabsTrigger value={backroomLocationId || "backroom"}>Backroom</TabsTrigger>
-          <TabsTrigger value={warehouseLocationId || "warehouse"}>Warehouse</TabsTrigger>
+          <TabsTrigger value="floor">Main Floor</TabsTrigger>
+          <TabsTrigger value="backroom">Backroom</TabsTrigger>
+          <TabsTrigger value="warehouse">Warehouse</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={floorLocationId || "floor"} className="mt-4">
+        <TabsContent value="floor" className="mt-4">
           <div className="space-y-4">
             <Tabs value={productTypeTab} onValueChange={(v) => setProductTypeTab(v as "all" | "liquor" | "beverage")}>
               <TabsList className="grid w-full grid-cols-3">
@@ -84,7 +97,7 @@ export function StockLevelsClient({
           </div>
         </TabsContent>
 
-        <TabsContent value={backroomLocationId || "backroom"} className="mt-4">
+        <TabsContent value="backroom" className="mt-4">
           <div className="space-y-4">
             <Tabs value={productTypeTab} onValueChange={(v) => setProductTypeTab(v as "all" | "liquor" | "beverage")}>
               <TabsList className="grid w-full grid-cols-3">
@@ -105,7 +118,7 @@ export function StockLevelsClient({
           </div>
         </TabsContent>
 
-        <TabsContent value={warehouseLocationId || "warehouse"} className="mt-4">
+        <TabsContent value="warehouse" className="mt-4">
           <div className="space-y-4">
             <Tabs value={productTypeTab} onValueChange={(v) => setProductTypeTab(v as "all" | "liquor" | "beverage")}>
               <TabsList className="grid w-full grid-cols-3">
