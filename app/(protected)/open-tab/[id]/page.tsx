@@ -366,10 +366,8 @@ export default function TabDetailPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4 md:space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner message="Loading tab..." />
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner message="Loading tab..." />
       </div>
     )
   }

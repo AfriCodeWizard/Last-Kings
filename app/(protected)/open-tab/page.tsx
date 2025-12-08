@@ -88,10 +88,8 @@ export default function OpenTabPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4 md:space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner message="Loading tabs..." />
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner message="Loading tabs..." />
       </div>
     )
   }

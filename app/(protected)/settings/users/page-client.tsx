@@ -98,7 +98,7 @@ export default function UsersManagementPageClient() {
         <div>
           <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">User Management</h1>
         </div>
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center min-h-[50vh]">
           <LoadingSpinner message="Loading users..." />
         </div>
       </div>
