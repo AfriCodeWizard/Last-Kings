@@ -303,6 +303,9 @@ export default function TransferPage() {
               query.maybeSingle().then((result: any) => {
                 if (result.data) {
                   destStockMap.set(key, result.data)
+                } else if (result.error && result.error.code !== 'PGRST116') {
+                  // PGRST116 is "not found" which is fine, but log other errors
+                  console.error("Error checking destination stock:", result.error)
                 }
                 return result
               })
@@ -344,12 +347,12 @@ export default function TransferPage() {
                 quantity: destStock.quantity + transferQty
               })
             } else {
-              // Prepare destination stock insert
+              // Prepare destination stock insert - use upsert to handle conflicts
               stockInserts.push({
                 variant_id: item.variant_id,
                 location_id: destinationLocationId,
                 quantity: transferQty,
-                lot_number: stock.lot_number,
+                lot_number: stock.lot_number || null, // Ensure NULL is explicit
               })
             }
 
@@ -386,6 +389,8 @@ export default function TransferPage() {
           .eq("id", update.id)
       )
 
+      // Insert new stock entries - if conflict occurs, it means stock already exists and should have been in updates
+      // So we'll handle errors gracefully
       const insertPromises = stockInserts.length > 0
         ? [(supabase.from("stock_levels") as any).insert(stockInserts)]
         : []
@@ -401,9 +406,52 @@ export default function TransferPage() {
         ...transactionPromises
       ])
 
-      // Check for errors
-      for (const result of allResults) {
-        if (result.error) throw result.error
+      // Check for errors and handle insert conflicts
+      for (let i = 0; i < allResults.length; i++) {
+        const result = allResults[i]
+        if (result.error) {
+          // If insert failed due to unique constraint, try to update instead
+          if (result.error.code === '23505' && insertPromises.length > 0 && i >= updatePromises.length) {
+            // This is an insert that failed due to conflict - stock already exists
+            // Find the conflicting stock and update it instead
+            const insertIndex = i - updatePromises.length
+            if (insertIndex >= 0 && insertIndex < stockInserts.length) {
+              const conflictingStock = stockInserts[insertIndex]
+              console.warn("Insert conflict detected, updating existing stock instead:", conflictingStock)
+              
+              // Find and update the existing stock
+              const updateQuery = (supabase.from("stock_levels") as any)
+                .select("id, quantity")
+                .eq("variant_id", conflictingStock.variant_id)
+                .eq("location_id", conflictingStock.location_id)
+              
+              if (conflictingStock.lot_number) {
+                updateQuery.eq("lot_number", conflictingStock.lot_number)
+              } else {
+                updateQuery.is("lot_number", null)
+              }
+              
+              const { data: existingStock } = await updateQuery.maybeSingle()
+              
+              if (existingStock) {
+                const { error: updateError } = await (supabase.from("stock_levels") as any)
+                  .update({ quantity: existingStock.quantity + conflictingStock.quantity })
+                  .eq("id", existingStock.id)
+                
+                if (updateError) {
+                  console.error("Error updating conflicting stock:", updateError)
+                  throw updateError
+                }
+              } else {
+                throw result.error
+              }
+            } else {
+              throw result.error
+            }
+          } else {
+            throw result.error
+          }
+        }
       }
 
       const endTime = performance.now()

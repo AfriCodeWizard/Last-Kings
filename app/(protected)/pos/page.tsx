@@ -103,7 +103,7 @@ export default function POSPage() {
         })
       }
 
-      // Check available stock at floor location
+      // Check available stock at floor location only (POS only sells from floor)
       const { data: floorLocation, error: locationError } = await supabase
         .from("inventory_locations")
         .select("id")
@@ -130,19 +130,26 @@ export default function POSPage() {
         return
       }
 
+      // Check stock at floor location - get all entries regardless of lot_number
       const { data: stockLevels, error: stockError } = await supabase
         .from("stock_levels")
-        .select("quantity")
+        .select("quantity, lot_number")
         .eq("variant_id", variant.id)
         .eq("location_id", floorLocationId)
 
       if (stockError) {
         console.error("Error checking stock:", stockError)
+        console.error("Variant ID:", variant.id, "Floor Location ID:", floorLocationId)
         toast.error("Error checking stock availability")
         return
       }
 
+      console.log("Stock levels found for variant:", variant.id, "at floor:", stockLevels)
+
+      // Sum all stock at floor location (including different lot numbers)
       const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+      
+      console.log("Total stock at floor:", totalStock)
 
       // Check if item is already in cart
       const existingInCart = cart.find((item) => item.variant_id === variant.id)
@@ -154,13 +161,14 @@ export default function POSPage() {
         return
       }
 
+      // Block sale if no stock at floor location
       if (totalStock <= 0) {
-        toast.error("No stock available for this item")
+        toast.error("No stock available at main floor. Please transfer items from warehouse to main floor first.")
         return
       }
 
       if (cartQuantity >= totalStock) {
-        toast.error("Insufficient stock available - Cannot add more items")
+        toast.error(`Insufficient stock available - Only ${totalStock} units available at main floor`)
         return
       }
 
@@ -238,7 +246,7 @@ export default function POSPage() {
         return
       }
 
-      // Check stock availability before checkout
+      // Check stock availability before checkout - only check floor location
       const { data: floorLocation, error: locationError } = await supabase
         .from("inventory_locations")
         .select("id")
@@ -246,15 +254,9 @@ export default function POSPage() {
         .limit(1)
         .maybeSingle()
 
-      if (locationError) {
+      if (locationError || !floorLocation) {
         console.error("Error fetching floor location:", locationError)
         toast.error("Error checking inventory location. Please contact administrator.")
-        return
-      }
-
-      if (!floorLocation) {
-        console.error("No floor location found")
-        toast.error("No floor location configured. Cannot complete sale.")
         return
       }
 
@@ -265,7 +267,7 @@ export default function POSPage() {
         return
       }
 
-      // Verify stock for each item in cart
+      // Verify stock for each item in cart at floor location only
       for (const item of cart) {
         const { data: stockLevels, error: stockError } = await supabase
           .from("stock_levels")
@@ -279,10 +281,12 @@ export default function POSPage() {
           return
         }
 
+        // Calculate total stock at floor location
         const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
 
+        // Block sale if insufficient stock at floor
         if (totalStock < item.quantity) {
-          toast.error(`Insufficient stock for ${item.brand_name}. Available: ${totalStock}, Requested: ${item.quantity}`)
+          toast.error(`Insufficient stock for ${item.brand_name} at main floor. Available: ${totalStock}, Requested: ${item.quantity}. Please transfer more items to main floor.`)
           return
         }
       }

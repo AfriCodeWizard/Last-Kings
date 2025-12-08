@@ -32,17 +32,18 @@ export default function InventoryPage() {
             variant_id,
             location_id,
             quantity,
-            product_variants!inner(
+            lot_number,
+            product_variants(
               id,
               size_ml,
               sku,
-              products!inner(
+              products(
                 brand_id,
                 product_type,
-                brands!inner(name)
+                brands(name)
               )
             ),
-            inventory_locations!inner(id, name, type)
+            inventory_locations(id, name, type)
           `)
           .limit(10000)
       ])
