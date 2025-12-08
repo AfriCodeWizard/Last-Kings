@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { DeleteDistributorAction } from "./distributors/delete-action"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -73,6 +74,9 @@ export default async function SettingsPage() {
                         <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Contact</TableHead>
                         <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Email</TableHead>
                         <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">Phone</TableHead>
+                        {userRole === 'admin' && (
+                          <TableHead className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 w-[60px]">Actions</TableHead>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -89,11 +93,20 @@ export default async function SettingsPage() {
                             <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[120px] truncate">{dist.contact_name || "-"}</TableCell>
                             <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[150px] truncate">{dist.email || "-"}</TableCell>
                             <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4 max-w-[120px] truncate">{dist.phone || "-"}</TableCell>
+                            {userRole === 'admin' && (
+                              <TableCell className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
+                                <DeleteDistributorAction 
+                                  distributorId={dist.id}
+                                  distributorName={dist.name}
+                                  userRole={userRole}
+                                />
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground text-xs sm:text-sm px-3 sm:px-4">
+                          <TableCell colSpan={userRole === 'admin' ? 5 : 4} className="text-center text-muted-foreground text-xs sm:text-sm px-3 sm:px-4">
                             No distributors found
                           </TableCell>
                         </TableRow>
