@@ -245,44 +245,22 @@ export default function TabDetailPage() {
         }
       }
 
-      const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      const saleNumber = `TAB-${Date.now()}`
-
-      // Create sale linked to tab
-      const { data: sale, error: saleError } = await (supabase.from("sales") as any)
-        .insert({
-          sale_number: saleNumber,
-          tab_id: tabId,
-          total_amount: subtotal,
-          tax_amount: 0,
-          excise_tax: 0,
-          payment_method: "cash", // Tab items are marked as cash, but payment happens on cash out
-          sold_by: user.id,
-          age_verified: true,
-        })
-        .select()
-        .single()
-
-      if (saleError) throw saleError
-
-      // Create sale items
-      const saleItems = cart.map((item) => ({
-        sale_id: sale.id,
+      // Store items in tab_items (not sales yet - sales will be created on cash out)
+      const tabItems = cart.map((item) => ({
+        tab_id: tabId,
         variant_id: item.variant_id,
         quantity: item.quantity,
         unit_price: item.price,
-        lot_number: null,
       }))
 
-      const { error: itemsError } = await (supabase.from("sale_items") as any)
-        .insert(saleItems)
+      const { error: itemsError } = await (supabase.from("tab_items") as any)
+        .insert(tabItems)
 
       if (itemsError) {
-        await supabase.from("sales").delete().eq("id", sale.id)
-        throw new Error(`Failed to create sale items: ${itemsError.message}`)
+        throw new Error(`Failed to add items to tab: ${itemsError.message}`)
       }
 
-      toast.success(`Items added to tab! ${saleNumber}`)
+      toast.success(`Items added to tab!`)
       
       // Clear cart and reload tab
       setCart([])
@@ -320,16 +298,120 @@ export default function TabDetailPage() {
         return
       }
 
-      // Update all sales for this tab with payment details
-      const { error: updateError } = await (supabase.from("sales") as any)
-        .update({
+      // Fetch all tab_items for this tab
+      const { data: tabItems, error: tabItemsError } = await supabase
+        .from("tab_items")
+        .select("*")
+        .eq("tab_id", tabId)
+
+      if (tabItemsError) throw tabItemsError
+
+      if (!tabItems || tabItems.length === 0) {
+        toast.error("No items found in tab")
+        return
+      }
+
+      // Type assertion for tab_items
+      type TabItem = {
+        id: string
+        tab_id: string
+        variant_id: string
+        quantity: number
+        unit_price: number
+        created_at: string
+      }
+
+      const typedTabItems = tabItems as TabItem[]
+
+      // Check stock availability before creating sales
+      const { data: floorLocation, error: locationError } = await supabase
+        .from("inventory_locations")
+        .select("id")
+        .eq("type", "floor")
+        .limit(1)
+        .maybeSingle()
+
+      if (locationError || !floorLocation) {
+        toast.error("Error checking inventory location.")
+        return
+      }
+
+      const floorLocationId = (floorLocation as { id: string }).id
+
+      // Verify stock for each item
+      for (const item of typedTabItems) {
+        const { data: stockLevels, error: stockError } = await supabase
+          .from("stock_levels")
+          .select("quantity")
+          .eq("variant_id", item.variant_id)
+          .eq("location_id", floorLocationId)
+
+        if (stockError) {
+          toast.error(`Error checking stock for item`)
+          return
+        }
+
+        const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+
+        if (totalStock < item.quantity) {
+          toast.error(`Insufficient stock. Available: ${totalStock}, Requested: ${item.quantity}`)
+          return
+        }
+      }
+
+      // Calculate total from tab_items
+      const calculatedTotal = typedTabItems.reduce((sum: number, item: TabItem) => 
+        sum + (item.quantity * item.unit_price), 0
+      )
+
+      // Create sale for this tab
+      const saleNumber = `TAB-${Date.now()}`
+      const { data: sale, error: saleError } = await (supabase.from("sales") as any)
+        .insert({
+          sale_number: saleNumber,
+          tab_id: tabId,
+          total_amount: calculatedTotal,
+          tax_amount: 0,
+          excise_tax: 0,
+          payment_method: "cash",
           received_amount: receivedAmount,
           change_given: change || 0,
+          sold_by: user.id,
+          age_verified: true,
         })
-        .eq("tab_id", tabId)
-        .is("received_amount", null) // Only update sales that haven't been paid yet
+        .select()
+        .single()
 
-      if (updateError) throw updateError
+      if (saleError) throw saleError
+
+      // Create sale_items from tab_items
+      const saleItems = typedTabItems.map((item: TabItem) => ({
+        sale_id: sale.id,
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        lot_number: null,
+      }))
+
+      const { error: saleItemsError } = await (supabase.from("sale_items") as any)
+        .insert(saleItems)
+
+      if (saleItemsError) {
+        // Rollback: delete the sale if sale_items creation fails
+        await supabase.from("sales").delete().eq("id", sale.id)
+        throw new Error(`Failed to create sale items: ${saleItemsError.message}`)
+      }
+
+      // Delete tab_items after successfully creating sales
+      const { error: deleteTabItemsError } = await supabase
+        .from("tab_items")
+        .delete()
+        .eq("tab_id", tabId)
+
+      if (deleteTabItemsError) {
+        console.error("Error deleting tab_items:", deleteTabItemsError)
+        // Don't throw - sales are already created, just log the error
+      }
 
       // Close the tab by updating its status
       const { error: tabError } = await (supabase.from("tabs") as any)
@@ -349,7 +431,7 @@ export default function TabDetailPage() {
       vibrateComplete()
 
       toast.success(successMessage, {
-        description: `Total: ${formatCurrency(tab.total_amount)}`,
+        description: `Total: ${formatCurrency(calculatedTotal)}`,
         duration: 5000,
       })
       
