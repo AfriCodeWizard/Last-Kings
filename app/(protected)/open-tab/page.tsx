@@ -1,7 +1,9 @@
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Receipt } from "lucide-react"
+import { Plus, Receipt, X } from "lucide-react"
 import Link from "next/link"
 import {
   Table,
@@ -13,17 +15,88 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
+import { supabase } from "@/lib/supabase/client"
+import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
-export default async function OpenTabPage() {
-  const supabase = await createClient()
+interface Tab {
+  id: string
+  customer_name: string
+  phone: string | null
+  total_amount: number
+  created_at: string
+  status: string
+}
 
-  const { data: tabs } = await supabase
-    .from("tabs")
-    .select("*")
-    .order("created_at", { ascending: false })
+export default function OpenTabPage() {
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showCloseDialog, setShowCloseDialog] = useState(false)
+  const [tabToClose, setTabToClose] = useState<string | null>(null)
 
-  const openTabs = tabs?.filter((t) => t.status === "open") || []
-  const closedTabs = tabs?.filter((t) => t.status === "closed") || []
+  const loadTabs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tabs")
+        .select("*")
+        .order("created_at", { ascending: false })
+
+      if (error) throw error
+      setTabs(data || [])
+    } catch (error: any) {
+      toast.error("Error loading tabs")
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadTabs()
+  }, [])
+
+  const handleCloseTab = async (tabId: string) => {
+    try {
+      // Close the tab by updating its status
+      const { error: tabError } = await supabase
+        .from("tabs")
+        .update({
+          status: "closed",
+          closed_at: new Date().toISOString(),
+        })
+        .eq("id", tabId)
+
+      if (tabError) throw tabError
+
+      toast.success("Tab closed successfully")
+      await loadTabs()
+      setShowCloseDialog(false)
+      setTabToClose(null)
+    } catch (error: any) {
+      toast.error("Error closing tab")
+      console.error(error)
+    }
+  }
+
+  const openTabs = tabs.filter((t) => t.status === "open")
+  const closedTabs = tabs.filter((t) => t.status === "closed")
+
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading tabs...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -61,13 +134,7 @@ export default async function OpenTabPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {openTabs.map((tab: {
-                  id: string
-                  customer_name: string
-                  phone: string | null
-                  total_amount: number
-                  created_at: string
-                }) => (
+                {openTabs.map((tab) => (
                   <TableRow key={tab.id}>
                     <TableCell className="font-medium">
                       {tab.customer_name}
@@ -80,9 +147,21 @@ export default async function OpenTabPage() {
                       {new Date(tab.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Link href={`/open-tab/${tab.id}`}>
-                        <Button variant="ghost" size="sm">View / Cash Out</Button>
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link href={`/open-tab/${tab.id}`}>
+                          <Button variant="ghost" size="sm">View / Cash Out</Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setTabToClose(tab.id)
+                            setShowCloseDialog(true)
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -101,51 +180,30 @@ export default async function OpenTabPage() {
         </Card>
       )}
 
-      {closedTabs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Closed Tabs</CardTitle>
-            <CardDescription>Recently closed customer tabs</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Total Amount</TableHead>
-                  <TableHead>Closed</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {closedTabs.slice(0, 10).map((tab: {
-                  id: string
-                  customer_name: string
-                  phone: string | null
-                  total_amount: number
-                  closed_at: string | null
-                }) => (
-                  <TableRow key={tab.id}>
-                    <TableCell className="font-medium">
-                      {tab.customer_name}
-                    </TableCell>
-                    <TableCell>{tab.phone || "-"}</TableCell>
-                    <TableCell>{formatCurrency(tab.total_amount)}</TableCell>
-                    <TableCell>
-                      {tab.closed_at ? new Date(tab.closed_at).toLocaleDateString() : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">Closed</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close Tab</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to close this tab? The tab will be closed and removed from the open tabs area, but sales records will remain in the system.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowCloseDialog(false)
+              setTabToClose(null)
+            }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => tabToClose && handleCloseTab(tabToClose)}
+            >
+              Close Tab
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-

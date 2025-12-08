@@ -47,6 +47,7 @@ export default function TransferPage() {
     lot_number: string | null
   }>>([])
   const [loadingProducts, setLoadingProducts] = useState(false)
+  const [loadingLocations, setLoadingLocations] = useState(true)
 
   useEffect(() => {
     loadLocations()
@@ -61,18 +62,27 @@ export default function TransferPage() {
   }, [sourceLocationId])
 
   const loadLocations = async () => {
-    const { data, error } = await supabase
-      .from("inventory_locations")
-      .select("*")
-      .order("name")
+    setLoadingLocations(true)
+    try {
+      const { data, error } = await supabase
+        .from("inventory_locations")
+        .select("id, name, type")
+        .order("name")
+        .limit(50) // Add limit for safety
 
-    if (error) {
+      if (error) {
+        toast.error("Error loading locations")
+        return
+      }
+
+      if (data) {
+        setLocations(data as Location[])
+      }
+    } catch (error) {
+      console.error("Error loading locations:", error)
       toast.error("Error loading locations")
-      return
-    }
-
-    if (data) {
-      setLocations(data as Location[])
+    } finally {
+      setLoadingLocations(false)
     }
   }
 
@@ -97,6 +107,7 @@ export default function TransferPage() {
         `)
         .eq("location_id", sourceLocationId)
         .gt("quantity", 0)
+        .limit(1000) // Add limit to prevent huge queries
 
       if (error) throw error
 
@@ -444,9 +455,9 @@ export default function TransferPage() {
             <CardDescription>Where stock is moving from</CardDescription>
           </CardHeader>
           <CardContent>
-            <Select value={sourceLocationId} onValueChange={setSourceLocationId}>
+            <Select value={sourceLocationId} onValueChange={setSourceLocationId} disabled={loadingLocations}>
               <SelectTrigger>
-                <SelectValue placeholder="Select source location" />
+                <SelectValue placeholder={loadingLocations ? "Loading locations..." : "Select source location"} />
               </SelectTrigger>
               <SelectContent>
                 {locations.map((location) => (
@@ -465,9 +476,9 @@ export default function TransferPage() {
             <CardDescription>Where stock is moving to</CardDescription>
           </CardHeader>
           <CardContent>
-            <Select value={destinationLocationId} onValueChange={setDestinationLocationId}>
+            <Select value={destinationLocationId} onValueChange={setDestinationLocationId} disabled={loadingLocations}>
               <SelectTrigger>
-                <SelectValue placeholder="Select destination location" />
+                <SelectValue placeholder={loadingLocations ? "Loading locations..." : "Select destination location"} />
               </SelectTrigger>
               <SelectContent>
                 {locations.map((location) => (
@@ -558,10 +569,33 @@ export default function TransferPage() {
                       type="number"
                       min={1}
                       max={item.current_stock}
-                      value={item.quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(item.variant_id, parseInt(e.target.value) || 1)
-                      }
+                      value={item.quantity.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === '') {
+                          // Allow empty input for editing
+                          setTransferItems((prev) =>
+                            prev.map((i) =>
+                              i.variant_id === item.variant_id
+                                ? { ...i, quantity: 0 }
+                                : i
+                            )
+                          )
+                        } else {
+                          const numValue = parseInt(value)
+                          if (!isNaN(numValue)) {
+                            handleQuantityChange(item.variant_id, numValue)
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseInt(e.target.value)
+                        if (isNaN(value) || value < 1) {
+                          handleQuantityChange(item.variant_id, 1)
+                        } else if (value > item.current_stock) {
+                          handleQuantityChange(item.variant_id, item.current_stock)
+                        }
+                      }}
                       className="w-20"
                     />
                     <Button

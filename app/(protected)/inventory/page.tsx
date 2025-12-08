@@ -1,47 +1,80 @@
-import { createClient } from "@/lib/supabase/server"
-import { getCurrentUser } from "@/lib/auth"
-import { redirect } from "next/navigation"
+"use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { StockLevelsClient } from "./stock-levels-client"
+import { supabase } from "@/lib/supabase/client"
 
-export default async function InventoryPage() {
-  const user = await getCurrentUser()
-  
-  // Redirect staff users - they don't have access to inventory
-  if (user?.role === 'staff') {
-    redirect('/dashboard')
+export default function InventoryPage() {
+  const [stockLevels, setStockLevels] = useState<any[]>([])
+  const [locations, setLocations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      // Load locations first (fast, small table)
+      const [locationsRes, stockLevelsRes] = await Promise.all([
+        supabase
+          .from("inventory_locations")
+          .select("id, name, type")
+          .order("name")
+          .limit(50),
+        supabase
+          .from("stock_levels")
+          .select(`
+            id,
+            variant_id,
+            location_id,
+            quantity,
+            product_variants!inner(
+              id,
+              size_ml,
+              sku,
+              products!inner(
+                brand_id,
+                product_type,
+                brands!inner(name)
+              )
+            ),
+            inventory_locations!inner(id, name, type)
+          `)
+          .limit(10000)
+      ])
+
+      if (locationsRes.error) throw locationsRes.error
+      if (stockLevelsRes.error) throw stockLevelsRes.error
+
+      setLocations(locationsRes.data || [])
+      setStockLevels(stockLevelsRes.data || [])
+    } catch (error) {
+      console.error("Error loading inventory:", error)
+    } finally {
+      setLoading(false)
+    }
   }
-  
-  const supabase = await createClient()
-
-  const { data: stockLevels } = await supabase
-    .from("stock_levels")
-    .select(`
-      *,
-      location_id,
-      product_variants!inner(
-        id,
-        size_ml,
-        sku,
-        products!inner(brand_id, product_type, brands(name))
-      ),
-      inventory_locations(id, name, type)
-    `)
-    .order("quantity", { ascending: true })
-
-  const { data: locations } = await supabase
-    .from("inventory_locations")
-    .select("*")
-    .order("name")
 
   // Get location IDs for filtering
   const floorLocation = locations?.find((loc: { type: string }) => loc.type === "floor")
   const backroomLocation = locations?.find((loc: { type: string }) => loc.type === "backroom")
   const warehouseLocation = locations?.find((loc: { type: string }) => loc.type === "warehouse")
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading inventory...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -105,4 +138,3 @@ export default async function InventoryPage() {
     </div>
   )
 }
-

@@ -323,16 +323,6 @@ export default function TabDetailPage() {
         return
       }
 
-      // Close the tab
-      const { error: closeError } = await (supabase.from("tabs") as any)
-        .update({
-          status: "closed",
-          closed_at: new Date().toISOString(),
-        })
-        .eq("id", tabId)
-
-      if (closeError) throw closeError
-
       // Update all sales for this tab with payment details
       const { error: updateError } = await (supabase.from("sales") as any)
         .update({
@@ -343,6 +333,17 @@ export default function TabDetailPage() {
         .is("received_amount", null) // Only update sales that haven't been paid yet
 
       if (updateError) throw updateError
+
+      // Close the tab by updating its status
+      const { error: tabError } = await supabase
+        .from("tabs")
+        .update({
+          status: "closed",
+          closed_at: new Date().toISOString(),
+        })
+        .eq("id", tabId)
+
+      if (tabError) throw tabError
 
       const successMessage = change && change > 0
         ? `Tab closed! Change: ${formatCurrency(change)}`
