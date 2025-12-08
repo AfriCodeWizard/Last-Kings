@@ -64,6 +64,7 @@ export default function ReceivingPage() {
   const [selectedPOId, setSelectedPOId] = useState<string | undefined>(undefined)
   const [pendingPOs, setPendingPOs] = useState<PurchaseOrder[]>([])
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null)
+  const [loadingPOItems, setLoadingPOItems] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -418,6 +419,88 @@ export default function ReceivingPage() {
     }
   }
 
+  const handleAddPOItems = async () => {
+    if (!selectedPOId) {
+      toast.error("Please select a purchase order first")
+      return
+    }
+
+    setLoadingPOItems(true)
+    try {
+      // Fetch all items from the selected purchase order
+      const { data: poItems, error: poItemsError } = await supabase
+        .from("po_items")
+        .select(`
+          variant_id,
+          quantity,
+          product_variants!inner(
+            id,
+            size_ml,
+            products!inner(
+              product_type,
+              brands!inner(name)
+            )
+          )
+        `)
+        .eq("po_id", selectedPOId)
+
+      if (poItemsError) {
+        throw poItemsError
+      }
+
+      if (!poItems || poItems.length === 0) {
+        toast.error("No items found in this purchase order")
+        return
+      }
+
+      // Convert PO items to ScannedItem format
+      const newItems: ScannedItem[] = poItems.map((item: any) => {
+        const variant = item.product_variants
+        const products = variant?.products
+        const brandName = products?.brands?.name || 'Unknown Brand'
+        const productType = products?.product_type || 'liquor'
+
+        return {
+          variant_id: item.variant_id,
+          brand_name: brandName,
+          product_type: productType,
+          size_ml: variant?.size_ml || 0,
+          quantity: item.quantity,
+          lot_number: null,
+          expiry_date: null,
+        }
+      })
+
+      // Merge with existing scanned items (add quantities if variant already exists)
+      setScannedItems((prev) => {
+        const updated = [...prev]
+        newItems.forEach((newItem) => {
+          const existingIndex = updated.findIndex(
+            (item) => item.variant_id === newItem.variant_id
+          )
+          if (existingIndex >= 0) {
+            // Update quantity if item already exists
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              quantity: updated[existingIndex].quantity + newItem.quantity,
+            }
+          } else {
+            // Add new item
+            updated.push(newItem)
+          }
+        })
+        return updated
+      })
+
+      toast.success(`Added ${newItems.length} item(s) from purchase order to receiving list`)
+    } catch (error: any) {
+      console.error("Error loading PO items:", error)
+      toast.error("Error loading purchase order items")
+    } finally {
+      setLoadingPOItems(false)
+    }
+  }
+
   const checkAndUpdatePOStatus = async (poId: string) => {
     try {
       // Get all PO items with their expected quantities
@@ -529,9 +612,27 @@ export default function ReceivingPage() {
                 )}
               </div>
               {selectedPO && (
-                <p className="text-xs text-muted-foreground font-sans">
-                  Receiving items for {selectedPO.po_number}
-                </p>
+                <>
+                  <p className="text-xs text-muted-foreground font-sans">
+                    Receiving items for {selectedPO.po_number}
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleAddPOItems}
+                    disabled={loadingPOItems}
+                    className="w-full mt-2 font-sans"
+                    variant="outline"
+                  >
+                    {loadingPOItems ? (
+                      "Loading items..."
+                    ) : (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Add Purchase Order Items
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
             </div>
             <div className="space-y-2">
