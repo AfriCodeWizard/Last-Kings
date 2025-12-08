@@ -13,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -65,8 +64,7 @@ export default function OpenTabPage() {
   const handleCloseTab = async (tabId: string) => {
     try {
       // Close the tab by updating its status
-      const { error: tabError } = await supabase
-        .from("tabs")
+      const { error: tabError } = await (supabase.from("tabs") as any)
         .update({
           status: "closed",
           closed_at: new Date().toISOString(),
@@ -86,7 +84,6 @@ export default function OpenTabPage() {
   }
 
   const openTabs = tabs.filter((t) => t.status === "open")
-  const closedTabs = tabs.filter((t) => t.status === "closed")
 
   if (loading) {
     return (

@@ -335,8 +335,7 @@ export default function TabDetailPage() {
       if (updateError) throw updateError
 
       // Close the tab by updating its status
-      const { error: tabError } = await supabase
-        .from("tabs")
+      const { error: tabError } = await (supabase.from("tabs") as any)
         .update({
           status: "closed",
           closed_at: new Date().toISOString(),
