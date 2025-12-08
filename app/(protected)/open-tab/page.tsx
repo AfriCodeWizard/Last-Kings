@@ -16,6 +16,7 @@ import {
 import { formatCurrency } from "@/lib/utils"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import {
   Dialog,
   DialogContent,
@@ -88,8 +89,8 @@ export default function OpenTabPage() {
   if (loading) {
     return (
       <div className="space-y-4 md:space-y-6">
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading tabs...</p>
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner message="Loading tabs..." />
         </div>
       </div>
     )

@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase/client"
 import { formatCurrency } from "@/lib/utils"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { CashPaymentDialog } from "@/components/pos/cash-payment-dialog"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import Link from "next/link"
 
 interface CartItem {
@@ -366,8 +367,8 @@ export default function TabDetailPage() {
   if (loading) {
     return (
       <div className="space-y-4 md:space-y-6">
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading tab...</p>
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner message="Loading tab..." />
         </div>
       </div>
     )

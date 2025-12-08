@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { Check, Trash2 } from "lucide-react"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface User {
   id: string
@@ -96,7 +97,9 @@ export default function UsersManagementPageClient() {
       <div className="space-y-6 w-full min-w-0">
         <div>
           <h1 className="text-2xl sm:text-4xl font-sans font-bold text-white mb-2">User Management</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Loading...</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner message="Loading users..." />
         </div>
       </div>
     )

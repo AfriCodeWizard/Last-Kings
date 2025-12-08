@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScanLine, CheckCircle2, X } from "lucide-react"
+import { ScanLine, CheckCircle2, X, Crown } from "lucide-react"
 import { playScanBeepWithVibration } from "@/lib/sound"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
@@ -624,7 +624,10 @@ export default function ReceivingPage() {
                     variant="outline"
                   >
                     {loadingPOItems ? (
-                      "Loading items..."
+                      <div className="flex items-center gap-2">
+                        <Crown className="h-4 w-4 text-gold animate-flip" />
+                        <span>Loading items...</span>
+                      </div>
                     ) : (
                       <>
                         <CheckCircle2 className="mr-2 h-4 w-4" />

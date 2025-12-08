@@ -7,6 +7,7 @@ import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { StockLevelsClient } from "./stock-levels-client"
 import { supabase } from "@/lib/supabase/client"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 export default function InventoryPage() {
   const [stockLevels, setStockLevels] = useState<any[]>([])
@@ -69,8 +70,8 @@ export default function InventoryPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading inventory...</p>
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner message="Loading inventory..." />
         </div>
       </div>
     )

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface TransferItem {
   variant_id: string
@@ -509,7 +510,9 @@ export default function TransferPage() {
               />
             </div>
             {loadingProducts ? (
-              <p className="text-sm text-muted-foreground">Loading products...</p>
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner size="sm" message="Loading products..." />
+              </div>
             ) : availableProducts.length === 0 ? (
               <p className="text-sm text-muted-foreground">No products available at source location</p>
             ) : (
