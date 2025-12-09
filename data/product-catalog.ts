@@ -1,45 +1,42 @@
 // Product catalog data organized by category
+// Updated with official brand list
 export const productCatalog = {
   liquor: [
     {
       category: "Beers/Lagers/Stouts",
-      brands: ["Tusker", "Lite", "Smooth", "Guinness", "Pilsner", "White Cap", "Manyatta", "Balozi", "Heineken"]
+      brands: ["Tusker", "Tusker Lite", "Tusker Smooth", "Guinness", "Pilsner", "White Cap", "Manyatta", "Balozi", "Heineken"]
     },
     {
       category: "Ciders/RTDs",
-      brands: ["Hunters", "Savanna", "Black Ice", "Pineapple Punch", "Guarana"]
+      brands: ["Hunters", "Savanna", "Pineapple Punch", "Black Ice", "Guarana"]
+    },
+    {
+      category: "Wines",
+      brands: ["4th Street", "Four Cousins", "Drostdy-Hof", "Caprice", "Casabuena"]
     },
     {
       category: "Whisky",
-      brands: ["J. Walker Red Label", "J. Walker Black Label", "Vat 69", "Bond 7", "County", "Napoleon", "Kenya Kane", "Kenya King", "Black & White", "Singleton"]
+      brands: ["Johnnie Walker Red Label", "Johnnie Walker Black Label", "Black & White", "Vat 69", "Bond 7", "County", "Napoleon", "Kenya Kane", "Kenya King", "Singleton"]
     },
     {
       category: "Vodka",
-      brands: ["Chrome", "Best Vodka", "Regular Vodka"]
+      brands: ["Chrome", "Best Vodka", "Generic Vodka"]
     },
     {
       category: "Gin",
-      brands: ["Gilbey's", "Gordon's", "Best Gin Blue", "Gin/Vodka mix"]
+      brands: ["Gilbey's", "Gordon's", "Best Gin", "Best Gin/Vodka"]
     },
     {
       category: "Brandy",
-      brands: ["Viceroy", "Richot", "Meakins", "Mr Dowell"]
+      brands: ["Viceroy", "Richot", "General Meakins", "Mr Dowells"]
     },
     {
       category: "Rum",
       brands: ["Captain Morgan", "Muckpit"]
     },
     {
-      category: "Wines",
-      brands: ["4th Street", "Four Cousins", "Drostdyhof", "Caprice", "Casabuena"]
-    },
-    {
       category: "Local Spirits",
-      brands: ["Kibao", "KC Pineapple", "KC Ginger", "Triple Ace"]
-    },
-    {
-      category: "Other Spirits",
-      brands: ["Bond", "County", "Best Gin/Vodka"]
+      brands: ["Kibao", "KC Pineapple", "KC Ginger", "KC smooth", "Triple Ace"]
     }
   ],
   beverage: [
@@ -49,15 +46,15 @@ export const productCatalog = {
     },
     {
       category: "Soft Drinks",
-      brands: ["Coca-Cola", "Sprite", "Pepsi", "Minute Maid", "Soda"]
+      brands: ["Coca-Cola", "Sprite", "Pepsi", "Minute Maid"]
     },
     {
       category: "Juices",
-      brands: ["Delmonte 1L"]
+      brands: ["Delmonte"]
     },
     {
       category: "Water",
-      brands: ["Water 1L"]
+      brands: ["Drinking Water"]
     }
   ]
 }

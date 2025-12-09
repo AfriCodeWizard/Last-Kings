@@ -399,12 +399,12 @@ function StockRow({
 
   return (
     <TableRow>
-      <TableCell className="font-medium">
-        {variant?.products?.brands?.name || "Unknown"}
-      </TableCell>
-      <TableCell>{variant?.sku || "-"}</TableCell>
-      <TableCell>{variant?.size_ml || 0}ml</TableCell>
-      <TableCell>
+                  <TableCell className="font-medium">
+                    {variant?.products?.brands?.name || "Unknown"}
+                  </TableCell>
+                  <TableCell>{variant?.sku || "-"}</TableCell>
+                  <TableCell>{variant?.size_ml || 0}ml</TableCell>
+                  <TableCell>
         {isEditingCost ? (
           <div className="flex items-center gap-2">
             <Input
@@ -553,7 +553,7 @@ function StockRow({
           <div className="flex items-center gap-2">
             <span className={currentQuantity < 10 ? "text-destructive font-bold" : ""}>
               {currentQuantity}
-            </span>
+                    </span>
             {isAdmin && (
               <Button
                 size="sm"
@@ -566,17 +566,17 @@ function StockRow({
             )}
           </div>
         )}
-      </TableCell>
-      <TableCell>{stock.lot_number || "-"}</TableCell>
-      <TableCell>
-        {stock.quantity < 10 ? (
-          <Badge variant="destructive">Low Stock</Badge>
-        ) : stock.quantity < 25 ? (
-          <Badge variant="secondary">Medium</Badge>
-        ) : (
-          <Badge variant="default">In Stock</Badge>
-        )}
-      </TableCell>
+                  </TableCell>
+                  <TableCell>{stock.lot_number || "-"}</TableCell>
+                  <TableCell>
+                    {stock.quantity < 10 ? (
+                      <Badge variant="destructive">Low Stock</Badge>
+                    ) : stock.quantity < 25 ? (
+                      <Badge variant="secondary">Medium</Badge>
+                    ) : (
+                      <Badge variant="default">In Stock</Badge>
+                    )}
+                  </TableCell>
       {isAdmin && variant?.id && (
         <TableCell>
           <ProductDeleteAction variantId={variant.id} productName={variant?.products?.brands?.name || "Product"} onDeleted={onStockUpdated} />
@@ -585,8 +585,8 @@ function StockRow({
       {isAdmin && !variant?.id && (
         <TableCell>-</TableCell>
       )}
-    </TableRow>
-  )
+                </TableRow>
+              )
 }
 
 function ProductDeleteAction({ variantId, productName, onDeleted }: { variantId?: string, productName: string, onDeleted?: () => void }) {

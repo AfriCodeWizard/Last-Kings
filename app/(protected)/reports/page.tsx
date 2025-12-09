@@ -246,42 +246,42 @@ export default async function ReportsPage() {
         </Card>
       </div>
 
-      <Card className="w-full overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Recent Sales</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Last 30 days</CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <div className="min-w-full">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs sm:text-sm">Sale #</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Date</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Amount</TableHead>
-                  <TableHead className="text-xs sm:text-sm">Method</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales && sales.slice(0, 10).map((sale: {
-                  id: string
-                  sale_number: string
-                  created_at: string
-                  total_amount: number
-                  payment_method: string
-                }) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium text-xs sm:text-sm">{sale.sale_number}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">{formatDate(sale.created_at)}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">{formatCurrency(sale.total_amount)}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">{sale.payment_method}</TableCell>
+        <Card className="w-full overflow-hidden">
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">Recent Sales</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Last 30 days</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Sale #</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Amount</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Method</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {sales && sales.slice(0, 10).map((sale: {
+                    id: string
+                    sale_number: string
+                    created_at: string
+                    total_amount: number
+                    payment_method: string
+                  }) => (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-medium text-xs sm:text-sm">{sale.sale_number}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{formatDate(sale.created_at)}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{formatCurrency(sale.total_amount)}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{sale.payment_method}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
 
     </div>
   )
