@@ -224,9 +224,10 @@ function StockRow({
   }
 
   const handleCancel = () => {
+    // Reset to original quantity and exit edit mode
+    // No server interactions, just local state updates
     setIsEditing(false)
     setEditedQuantity(currentQuantity.toString())
-    // No router calls, just reset local state
   }
 
   const handleSave = async () => {
@@ -252,12 +253,16 @@ function StockRow({
       setIsEditing(false)
       setCurrentQuantity(newQuantity)
       
-      // Call the callback to refresh data if provided (this is async and safe)
+      // Call the callback to refresh data if provided
+      // Use a microtask to ensure it runs after React's state updates
       if (onStockUpdated) {
-        // Use setTimeout to avoid server component errors
-        setTimeout(() => {
-          onStockUpdated()
-        }, 0)
+        Promise.resolve().then(() => {
+          try {
+            onStockUpdated()
+          } catch (error) {
+            console.error("Error in onStockUpdated callback:", error)
+          }
+        })
       }
     } catch (error: any) {
       console.error("Error updating quantity:", error)

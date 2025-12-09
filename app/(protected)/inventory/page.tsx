@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
@@ -13,31 +13,9 @@ export default function InventoryPage() {
   const [stockLevels, setStockLevels] = useState<any[]>([])
   const [locations, setLocations] = useState<any[]>([])
   const [userRole, setUserRole] = useState<UserRole | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  useEffect(() => {
-    loadData()
-    loadUserRole()
-  }, [])
-
-  const loadUserRole = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: userData } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", user.id)
-          .single()
-        if (userData) {
-          setUserRole((userData as { role: UserRole }).role)
-        }
-      }
-    } catch (error) {
-      console.error("Error loading user role:", error)
-    }
-  }
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // Load locations first (fast, small table)
       const [locationsRes, stockLevelsRes] = await Promise.all([
@@ -74,12 +52,44 @@ export default function InventoryPage() {
       if (locationsRes.error) throw locationsRes.error
       if (stockLevelsRes.error) throw stockLevelsRes.error
 
+      // Update state in a way that doesn't trigger server component errors
       setLocations(locationsRes.data || [])
       setStockLevels(stockLevelsRes.data || [])
     } catch (error) {
       console.error("Error loading inventory:", error)
+      // Don't throw - just log the error to prevent server component errors
+    }
+  }, [])
+
+  const loadUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+        if (userData) {
+          setUserRole((userData as { role: UserRole }).role)
+        }
+      }
+    } catch (error) {
+      console.error("Error loading user role:", error)
     }
   }
+
+  useEffect(() => {
+    loadData()
+    loadUserRole()
+  }, [loadData])
+
+  // Refresh data when trigger changes
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      loadData()
+    }
+  }, [refreshTrigger, loadData])
 
   // Get location IDs for filtering
   const floorLocation = locations?.find((loc: { type: string }) => loc.type === "floor")
@@ -143,7 +153,10 @@ export default function InventoryPage() {
             backroomLocationId={backroomLocation?.id}
             warehouseLocationId={warehouseLocation?.id}
             userRole={userRole}
-            onStockUpdated={loadData}
+            onStockUpdated={() => {
+              // Trigger refresh using state update instead of direct callback
+              setRefreshTrigger(prev => prev + 1)
+            }}
           />
         </CardContent>
       </Card>
