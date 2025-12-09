@@ -230,7 +230,8 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
       }
 
       // Navigate to product detail page
-      window.location.href = `/products/${variant.product_id}`
+      const variantTyped = variant as { product_id: string }
+      window.location.href = `/products/${variantTyped.product_id}`
     } catch (error) {
       console.error("Error loading product:", error)
       toast.error("Failed to load product")
@@ -256,6 +257,8 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
         throw new Error("Failed to find product variant")
       }
 
+      const variantTyped = variant as { product_id: string }
+
       // Delete the variant (cascade will handle related records)
       const { error: deleteError } = await supabase
         .from("product_variants")
@@ -270,7 +273,7 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
       const { data: otherVariants } = await supabase
         .from("product_variants")
         .select("id")
-        .eq("product_id", variant.product_id)
+        .eq("product_id", variantTyped.product_id)
         .limit(1)
 
       // If no other variants, delete the product too
@@ -278,7 +281,7 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
         await supabase
           .from("products")
           .delete()
-          .eq("id", variant.product_id)
+          .eq("id", variantTyped.product_id)
       }
 
       toast.success("Product deleted successfully")

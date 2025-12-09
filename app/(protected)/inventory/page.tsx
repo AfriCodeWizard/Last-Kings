@@ -29,7 +29,7 @@ export default function InventoryPage() {
           .eq("id", user.id)
           .single()
         if (userData) {
-          setUserRole(userData.role as UserRole)
+          setUserRole((userData as { role: UserRole }).role)
         }
       }
     } catch (error) {
