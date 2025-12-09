@@ -127,13 +127,6 @@ export function ProductsTable({ products, onProductDeleted }: ProductsTableProps
                 const variants = Array.isArray(product.product_variants) 
                   ? product.product_variants 
                   : (product.product_variants ? [product.product_variants] : [])
-                
-                const sizes = variants
-                  .sort((a, b) => a.size_ml - b.size_ml)
-                  .map((v) => {
-                    if (v.size_ml === 1000) return '1L'
-                    return `${v.size_ml}ml`
-                  })
 
                 return (
                   <TableRow key={product.id}>
