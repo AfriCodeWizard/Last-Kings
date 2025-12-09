@@ -104,28 +104,28 @@ export function QuickAddProductDialog({
       .select("brand_id, category_id, product_type")
       .limit(10000) // Reasonable limit
 
+    // Build maps of brand_id and category_id to product_types (outside blocks so both can access)
+    const brandProductTypes = new Map<string, Set<'liquor' | 'beverage'>>()
+    const categoryProductTypes = new Map<string, Set<'liquor' | 'beverage'>>()
+    
+    if (productsRes.data) {
+      for (const product of productsRes.data as Array<{ brand_id: string; category_id: string; product_type: 'liquor' | 'beverage' }>) {
+        // Track brand product types
+        if (!brandProductTypes.has(product.brand_id)) {
+          brandProductTypes.set(product.brand_id, new Set())
+        }
+        brandProductTypes.get(product.brand_id)!.add(product.product_type)
+        
+        // Track category product types
+        if (!categoryProductTypes.has(product.category_id)) {
+          categoryProductTypes.set(product.category_id, new Set())
+        }
+        categoryProductTypes.get(product.category_id)!.add(product.product_type)
+      }
+    }
+
     if (brandsRes.data) {
       const allBrands = brandsRes.data as Array<{ id: string; name: string }>
-      
-      // Build maps of brand_id and category_id to product_types
-      const brandProductTypes = new Map<string, Set<'liquor' | 'beverage'>>()
-      const categoryProductTypes = new Map<string, Set<'liquor' | 'beverage'>>()
-      
-      if (productsRes.data) {
-        for (const product of productsRes.data as Array<{ brand_id: string; category_id: string; product_type: 'liquor' | 'beverage' }>) {
-          // Track brand product types
-          if (!brandProductTypes.has(product.brand_id)) {
-            brandProductTypes.set(product.brand_id, new Set())
-          }
-          brandProductTypes.get(product.brand_id)!.add(product.product_type)
-          
-          // Track category product types
-          if (!categoryProductTypes.has(product.category_id)) {
-            categoryProductTypes.set(product.category_id, new Set())
-          }
-          categoryProductTypes.get(product.category_id)!.add(product.product_type)
-        }
-      }
       
       // Filter brands:
       // 1. If brand has products of current type, show it
