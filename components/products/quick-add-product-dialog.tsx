@@ -124,26 +124,31 @@ export function QuickAddProductDialog({
       }
     }
 
+    // Get catalog brands and categories for both product types - use as source of truth
+    const catalogBrands = getBrandsForType(formData.productType)
+    const catalogCategories = getCategoriesForType(formData.productType)
+    const otherTypeCatalogBrands = getBrandsForType(formData.productType === 'liquor' ? 'beverage' : 'liquor')
+    const otherTypeCatalogCategories = getCategoriesForType(formData.productType === 'liquor' ? 'beverage' : 'liquor')
+
     if (brandsRes.data) {
       const allBrands = brandsRes.data as Array<{ id: string; name: string }>
       
-      // Filter brands:
-      // 1. If brand has products of current type, show it
-      // 2. If brand has NO products at all, show it (for new products)
-      // 3. If brand ONLY has products of OTHER type, exclude it
+      // Filter brands using catalog as source of truth:
+      // 1. Show brands that are in the catalog for current product type (primary source)
+      // 2. Also show brands with no products yet AND not in other type's catalog (for newly added brands)
+      // 3. Exclude brands that are in other type's catalog or only have other type products
       const filtered = allBrands.filter(brand => {
         const productTypes = brandProductTypes.get(brand.id)
-        const hasCurrentType = productTypes?.has(formData.productType) || false
+        const isInCurrentCatalog = catalogBrands.includes(brand.name)
+        const isInOtherCatalog = otherTypeCatalogBrands.includes(brand.name)
         const hasOtherType = productTypes?.has(formData.productType === 'liquor' ? 'beverage' : 'liquor') || false
         const hasNoProducts = !productTypes || productTypes.size === 0
         
-        // Show if: has current type products OR has no products at all
-        // Exclude if: only has other type products
-        return hasCurrentType || (hasNoProducts && !hasOtherType)
+        // Show if: in catalog for current type
+        // OR (has no products AND not in other type's catalog)
+        // Exclude if: in other type's catalog OR only has other type products
+        return isInCurrentCatalog || (hasNoProducts && !isInOtherCatalog && !hasOtherType)
       })
-      
-      // Get catalog brands for sorting
-      const catalogBrands = getBrandsForType(formData.productType)
       
       // Sort brands: catalog brands first, then others alphabetically
       const sorted = filtered.sort((a, b) => {
@@ -159,20 +164,24 @@ export function QuickAddProductDialog({
     if (categoriesRes.data) {
       const allCategories = categoriesRes.data as Array<{ id: string; name: string }>
       
-      // Filter categories the same way as brands
+      // Filter categories using catalog as source of truth:
+      // 1. Show categories that are in the catalog for current product type (primary source)
+      // 2. Also show categories with no products yet AND not in other type's catalog (for newly added categories)
+      // 3. Exclude categories that are in other type's catalog or only have other type products
       const filtered = allCategories.filter(category => {
         const productTypes = categoryProductTypes.get(category.id)
-        const hasCurrentType = productTypes?.has(formData.productType) || false
+        const isInCurrentCatalog = catalogCategories.includes(category.name)
+        const isInOtherCatalog = otherTypeCatalogCategories.includes(category.name)
         const hasOtherType = productTypes?.has(formData.productType === 'liquor' ? 'beverage' : 'liquor') || false
         const hasNoProducts = !productTypes || productTypes.size === 0
         
-        return hasCurrentType || (hasNoProducts && !hasOtherType)
+        // Show if: in catalog for current type
+        // OR (has no products AND not in other type's catalog)
+        // Exclude if: in other type's catalog OR only has other type products
+        return isInCurrentCatalog || (hasNoProducts && !isInOtherCatalog && !hasOtherType)
       })
       
-      // Get catalog categories for sorting
-      const catalogCategories = getCategoriesForType(formData.productType)
-      
-      // Sort: catalog categories first, then others alphabetically
+      // Sort categories: catalog categories first, then others alphabetically
       const sorted = filtered.sort((a, b) => {
         const aInCatalog = catalogCategories.includes(a.name)
         const bInCatalog = catalogCategories.includes(b.name)
