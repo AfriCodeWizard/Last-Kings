@@ -11,12 +11,14 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatCurrency } from "@/lib/utils"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { UserRole } from "@/types/supabase"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit, Trash2, Save, X } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface StockLevel {
   id: string
@@ -39,6 +41,7 @@ interface StockLevelsClientProps {
   backroomLocationId?: string
   warehouseLocationId?: string
   userRole?: UserRole | null
+  onStockUpdated?: () => void
 }
 
 export function StockLevelsClient({
@@ -47,6 +50,7 @@ export function StockLevelsClient({
   backroomLocationId,
   warehouseLocationId,
   userRole,
+  onStockUpdated,
 }: StockLevelsClientProps) {
   // Use stable string identifiers for tabs (never change)
   const [locationTab, setLocationTab] = useState<"floor" | "backroom" | "warehouse">("floor")
@@ -85,13 +89,13 @@ export function StockLevelsClient({
                 <TabsTrigger value="beverage">Beverages</TabsTrigger>
               </TabsList>
               <TabsContent value="all" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(floorLocationId, "all")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(floorLocationId, "all")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
               <TabsContent value="liquor" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(floorLocationId, "liquor")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(floorLocationId, "liquor")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
               <TabsContent value="beverage" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(floorLocationId, "beverage")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(floorLocationId, "beverage")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
             </Tabs>
           </div>
@@ -106,13 +110,13 @@ export function StockLevelsClient({
                 <TabsTrigger value="beverage">Beverages</TabsTrigger>
               </TabsList>
               <TabsContent value="all" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(backroomLocationId, "all")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(backroomLocationId, "all")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
               <TabsContent value="liquor" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(backroomLocationId, "liquor")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(backroomLocationId, "liquor")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
               <TabsContent value="beverage" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(backroomLocationId, "beverage")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(backroomLocationId, "beverage")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
             </Tabs>
           </div>
@@ -127,13 +131,13 @@ export function StockLevelsClient({
                 <TabsTrigger value="beverage">Beverages</TabsTrigger>
               </TabsList>
               <TabsContent value="all" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(warehouseLocationId, "all")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(warehouseLocationId, "all")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
               <TabsContent value="liquor" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(warehouseLocationId, "liquor")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(warehouseLocationId, "liquor")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
               <TabsContent value="beverage" className="mt-4">
-                <StockTable stockLevels={filterStockByLocationAndType(warehouseLocationId, "beverage")} userRole={userRole} />
+                <StockTable stockLevels={filterStockByLocationAndType(warehouseLocationId, "beverage")} userRole={userRole} onStockUpdated={onStockUpdated} />
               </TabsContent>
             </Tabs>
           </div>
@@ -143,7 +147,7 @@ export function StockLevelsClient({
   )
 }
 
-function StockTable({ stockLevels, userRole }: { stockLevels: StockLevel[], userRole?: UserRole | null }) {
+function StockTable({ stockLevels, userRole, onStockUpdated }: { stockLevels: StockLevel[], userRole?: UserRole | null, onStockUpdated?: () => void }) {
   const isAdmin = userRole === 'admin'
   
   return (
@@ -169,38 +173,13 @@ function StockTable({ stockLevels, userRole }: { stockLevels: StockLevel[], user
                 ? stock.product_variants[0] 
                 : stock.product_variants
               return (
-                <TableRow key={stock.id}>
-                  <TableCell className="font-medium">
-                    {variant?.products?.brands?.name || "Unknown"}
-                  </TableCell>
-                  <TableCell>{variant?.sku || "-"}</TableCell>
-                  <TableCell>{variant?.size_ml || 0}ml</TableCell>
-                  <TableCell>{variant?.cost ? formatCurrency(variant.cost) : "-"}</TableCell>
-                  <TableCell>{variant?.price ? formatCurrency(variant.price) : "-"}</TableCell>
-                  <TableCell>
-                    <span className={stock.quantity < 10 ? "text-destructive font-bold" : ""}>
-                      {stock.quantity}
-                    </span>
-                  </TableCell>
-                  <TableCell>{stock.lot_number || "-"}</TableCell>
-                  <TableCell>
-                    {stock.quantity < 10 ? (
-                      <Badge variant="destructive">Low Stock</Badge>
-                    ) : stock.quantity < 25 ? (
-                      <Badge variant="secondary">Medium</Badge>
-                    ) : (
-                      <Badge variant="default">In Stock</Badge>
-                    )}
-                  </TableCell>
-                  {isAdmin && variant?.id && (
-                    <TableCell>
-                      <ProductActions variantId={variant.id} productName={variant?.products?.brands?.name || "Product"} />
-                    </TableCell>
-                  )}
-                  {isAdmin && !variant?.id && (
-                    <TableCell>-</TableCell>
-                  )}
-                </TableRow>
+                <StockRow 
+                  key={stock.id} 
+                  stock={stock} 
+                  variant={variant}
+                  isAdmin={isAdmin}
+                  onStockUpdated={onStockUpdated}
+                />
               )
             })
           ) : (
@@ -216,7 +195,160 @@ function StockTable({ stockLevels, userRole }: { stockLevels: StockLevel[], user
   )
 }
 
+function StockRow({ 
+  stock, 
+  variant, 
+  isAdmin,
+  onStockUpdated
+}: { 
+  stock: StockLevel
+  variant: any
+  isAdmin: boolean
+  onStockUpdated?: () => void
+}) {
+  const router = useRouter()
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedQuantity, setEditedQuantity] = useState(stock.quantity.toString())
+  const [saving, setSaving] = useState(false)
+
+  const handleStartEdit = () => {
+    setIsEditing(true)
+    setEditedQuantity(stock.quantity.toString())
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    setEditedQuantity(stock.quantity.toString())
+    // No error, just cancel - stay on same page
+  }
+
+  const handleSave = async () => {
+    const newQuantity = parseInt(editedQuantity)
+    
+    if (isNaN(newQuantity) || newQuantity < 0) {
+      toast.error("Please enter a valid quantity (0 or greater)")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const { error } = await (supabase
+        .from("stock_levels") as any)
+        .update({ quantity: newQuantity })
+        .eq("id", stock.id)
+
+      if (error) {
+        throw error
+      }
+
+      toast.success("Quantity updated successfully")
+      setIsEditing(false)
+      
+      // Call the callback to refresh data if provided
+      if (onStockUpdated) {
+        onStockUpdated()
+      } else {
+        // Fallback to router refresh
+        router.refresh()
+      }
+    } catch (error: any) {
+      console.error("Error updating quantity:", error)
+      toast.error(`Error updating quantity: ${error.message || "Unknown error"}`)
+      // Don't close edit mode on error so user can retry
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">
+        {variant?.products?.brands?.name || "Unknown"}
+      </TableCell>
+      <TableCell>{variant?.sku || "-"}</TableCell>
+      <TableCell>{variant?.size_ml || 0}ml</TableCell>
+      <TableCell>{variant?.cost ? formatCurrency(variant.cost) : "-"}</TableCell>
+      <TableCell>{variant?.price ? formatCurrency(variant.price) : "-"}</TableCell>
+      <TableCell>
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={editedQuantity}
+              onChange={(e) => setEditedQuantity(e.target.value)}
+              className="w-20 h-8"
+              min="0"
+              disabled={saving}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSave()
+                } else if (e.key === "Escape") {
+                  handleCancel()
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleSave}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <Save className="h-4 w-4 text-green-500" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCancel}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className={stock.quantity < 10 ? "text-destructive font-bold" : ""}>
+              {stock.quantity}
+            </span>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleStartEdit}
+                className="h-6 w-6 p-0"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
+      </TableCell>
+      <TableCell>{stock.lot_number || "-"}</TableCell>
+      <TableCell>
+        {stock.quantity < 10 ? (
+          <Badge variant="destructive">Low Stock</Badge>
+        ) : stock.quantity < 25 ? (
+          <Badge variant="secondary">Medium</Badge>
+        ) : (
+          <Badge variant="default">In Stock</Badge>
+        )}
+      </TableCell>
+      {isAdmin && variant?.id && (
+        <TableCell>
+          <ProductActions variantId={variant.id} productName={variant?.products?.brands?.name || "Product"} />
+        </TableCell>
+      )}
+      {isAdmin && !variant?.id && (
+        <TableCell>-</TableCell>
+      )}
+    </TableRow>
+  )
+}
+
 function ProductActions({ variantId, productName }: { variantId?: string, productName: string }) {
+  const router = useRouter()
+  
   const handleEdit = async () => {
     if (!variantId) {
       toast.error("Product variant ID is missing")
@@ -238,8 +370,8 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
       }
 
       const variantTyped = variant as { product_id: string }
-      // Navigate directly to edit page
-      window.location.href = `/products/${variantTyped.product_id}/edit`
+      // Use router.push instead of window.location for better navigation
+      router.push(`/products/${variantTyped.product_id}/edit`)
     } catch (error: any) {
       console.error("Error loading product:", error)
       toast.error("Failed to load product")

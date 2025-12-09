@@ -143,6 +143,7 @@ export default function InventoryPage() {
             backroomLocationId={backroomLocation?.id}
             warehouseLocationId={warehouseLocation?.id}
             userRole={userRole}
+            onStockUpdated={loadData}
           />
         </CardContent>
       </Card>
