@@ -111,16 +111,31 @@ export function ProductsTable({ products, onProductDeleted }: ProductsTableProps
               </TableRow>
             ) : (
               filteredProducts.map((product) => {
-                // Handle empty product_variants array
-                const validVariants = product.product_variants?.filter((v) => v && typeof v.price === 'number' && !isNaN(v.price)) || []
-                const sizes = validVariants
+                // Debug: Log product to see what we're getting
+                if (product.brands?.name?.toLowerCase().includes('kc')) {
+                  console.log('KC Product found:', {
+                    id: product.id,
+                    brand: product.brands?.name,
+                    variants: product.product_variants,
+                    variantsLength: product.product_variants?.length,
+                    variantsType: typeof product.product_variants,
+                    isArray: Array.isArray(product.product_variants)
+                  })
+                }
+                
+                // Handle product_variants - ensure it's an array
+                const variants = Array.isArray(product.product_variants) 
+                  ? product.product_variants 
+                  : (product.product_variants ? [product.product_variants] : [])
+                
+                const sizes = variants
                   .sort((a, b) => a.size_ml - b.size_ml)
                   .map((v) => {
                     if (v.size_ml === 1000) return '1L'
                     return `${v.size_ml}ml`
                   })
                 
-                const prices = validVariants.map((v) => v.price)
+                const prices = variants.map((v) => v.price)
                 const minPrice = prices.length > 0 ? Math.min(...prices) : null
                 const maxPrice = prices.length > 0 ? Math.max(...prices) : null
 

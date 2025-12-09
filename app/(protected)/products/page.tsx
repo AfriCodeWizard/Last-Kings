@@ -31,19 +31,61 @@ export default function ProductsPage() {
   }, [])
 
   const loadProducts = async () => {
-    const { data } = await supabase
-      .from("products")
-      .select(`
-        *,
-        brands(name),
-        categories(name),
-        product_variants(id, size_ml, sku, price, cost)
-      `)
-      .order("product_type")
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          *,
+          brands(name),
+          categories(name),
+          product_variants(
+            id,
+            size_ml,
+            sku,
+            price,
+            cost
+          )
+        `)
+        .order("product_type")
 
-    if (data) {
-      setLiquorProducts(data.filter((p: any) => p.product_type === 'liquor'))
-      setBeverageProducts(data.filter((p: any) => p.product_type === 'beverage'))
+      if (error) {
+        console.error("Error loading products:", error)
+        toast.error("Failed to load products")
+        return
+      }
+
+      if (data) {
+        // Log for debugging - check if variants are being returned, especially for KC products
+        const kcProducts = data.filter((p: any) => p.brands?.name?.toLowerCase().includes('kc'))
+        console.log("KC Products found:", kcProducts.map((p: any) => ({
+          id: p.id,
+          brand: p.brands?.name,
+          hasVariants: !!p.product_variants,
+          variantsCount: Array.isArray(p.product_variants) ? p.product_variants.length : (p.product_variants ? 1 : 0),
+          variants: p.product_variants
+        })))
+        
+        const productsWithVariants = data.filter((p: any) => {
+          const variants = p.product_variants
+          return variants && (Array.isArray(variants) ? variants.length > 0 : true)
+        })
+        const productsWithoutVariants = data.filter((p: any) => {
+          const variants = p.product_variants
+          return !variants || (Array.isArray(variants) && variants.length === 0)
+        })
+        console.log("Products loaded:", {
+          total: data.length,
+          withVariants: productsWithVariants.length,
+          withoutVariants: productsWithoutVariants.length,
+          withoutVariantsNames: productsWithoutVariants.map((p: any) => p.brands?.name || 'Unknown')
+        })
+
+        setLiquorProducts(data.filter((p: any) => p.product_type === 'liquor'))
+        setBeverageProducts(data.filter((p: any) => p.product_type === 'beverage'))
+      }
+    } catch (error) {
+      console.error("Error in loadProducts:", error)
+      toast.error("Failed to load products")
     }
   }
 
