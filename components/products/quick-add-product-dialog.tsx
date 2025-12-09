@@ -306,8 +306,9 @@ export function QuickAddProductDialog({
         setLoading(false)
         return
       }
-      if (scannedUPC && (!formData.upc || !formData.upc.trim())) {
-        toast.error("UPC is required")
+      // STRICT CHECK: UPC is required when scanned or when context is receiving/pos
+      if ((scannedUPC || _context === "receiving" || _context === "pos") && (!formData.upc || !formData.upc.trim())) {
+        toast.error("UPC/Barcode is required. Please enter a valid UPC/barcode.")
         setLoading(false)
         return
       }
@@ -354,6 +355,14 @@ export function QuickAddProductDialog({
         throw new Error("Product was created but no ID was returned")
       }
 
+      // STRICT CHECK: Ensure UPC is provided for receiving/pos context
+      const upcValue = formData.upc?.trim() || null
+      if ((scannedUPC || _context === "receiving" || _context === "pos") && !upcValue) {
+        toast.error("UPC/Barcode is required. Cannot create product without UPC.")
+        setLoading(false)
+        return
+      }
+
       // Create variant with the scanned UPC
       const { data: variant, error: variantError } = await ((supabase
         .from("product_variants") as any)
@@ -361,7 +370,7 @@ export function QuickAddProductDialog({
           product_id: product.id,
           size_ml: parseInt(formData.sizeMl),
           sku: formData.sku.trim() || `SKU-${Date.now()}`,
-          upc: formData.upc.trim() || null,
+          upc: upcValue,
           cost: parseFloat(formData.cost) || 0,
           price: parseFloat(formData.price),
         })
@@ -433,12 +442,12 @@ export function QuickAddProductDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="upc" className="font-sans">UPC / Barcode {scannedUPC ? '*' : '(Optional)'}</Label>
+              <Label htmlFor="upc" className="font-sans">UPC / Barcode {(scannedUPC || _context === "pos") ? '*' : '(Optional)'}</Label>
               <Input
                 id="upc"
                 value={formData.upc}
                 onChange={(e) => setFormData({ ...formData, upc: e.target.value })}
-                required={!!scannedUPC}
+                required={!!scannedUPC || _context === "pos"}
                 className="font-sans"
                 readOnly={!!scannedUPC}
               />

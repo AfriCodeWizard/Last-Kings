@@ -272,6 +272,40 @@ export default function ReceivingPage() {
         return
       }
 
+      // STRICT CHECK 1: Verify all products have UPC/barcode and are logged into the system
+      const variantIds = scannedItems.map(item => item.variant_id)
+      const { data: variants, error: variantsError } = await supabase
+        .from("product_variants")
+        .select("id, upc, products!inner(brands!inner(name))")
+        .in("id", variantIds)
+
+      if (variantsError) {
+        console.error("Error verifying variants:", variantsError)
+        toast.error("Error verifying products. Please try again.")
+        return
+      }
+
+      if (!variants || variants.length !== scannedItems.length) {
+        const missingVariants = scannedItems.filter(item => 
+          !variants?.some(v => v.id === item.variant_id)
+        )
+        const missingNames = missingVariants.map(item => item.brand_name).join(", ")
+        toast.error(`The following products are not logged into the system: ${missingNames}. Please add them first.`)
+        return
+      }
+
+      // STRICT CHECK 2: Verify all variants have UPC/barcode
+      const variantsWithoutUPC = variants.filter(v => !v.upc || v.upc.trim().length === 0)
+      if (variantsWithoutUPC.length > 0) {
+        const variantNames = variantsWithoutUPC.map((v: any) => 
+          v.products?.brands?.name || "Unknown"
+        ).join(", ")
+        toast.error(`The following products are missing UPC/barcode: ${variantNames}. Please add UPC/barcode before receiving.`)
+        return
+      }
+
+      // All checks passed - proceed with receiving
+
       // Create receiving session with optional PO link
       const { data: session, error: createSessionError } = await ((supabase.from("receiving_sessions") as any)
         .insert({

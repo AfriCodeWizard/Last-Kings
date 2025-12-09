@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils"
 import { BarcodeScanner } from "@/components/barcode-scanner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CashPaymentDialog } from "@/components/pos/cash-payment-dialog"
+import { QuickAddProductDialog } from "@/components/products/quick-add-product-dialog"
 
 interface CartItem {
   variant_id: string
@@ -31,6 +32,9 @@ export default function POSPage() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "mpesa">("cash")
   const [isScanning, setIsScanning] = useState(false)
   const [showCashDialog, setShowCashDialog] = useState(false)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [scannedUPC, setScannedUPC] = useState("")
+  const [pendingScanUPC, setPendingScanUPC] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
 
@@ -51,15 +55,18 @@ export default function POSPage() {
     setIsScanning(true)
     try {
       console.log("Querying database for UPC:", value.trim())
-      // Query without .single() to avoid error when no results
-      // Require products, brands, and categories (no nulls allowed)
-      const { data: variants, error } = await (supabase
+      console.log("UPC length:", value.trim().length)
+      console.log("UPC type:", typeof value.trim())
+      
+      // First, try exact match with inner joins
+      let { data: variants, error } = await (supabase
         .from("product_variants")
         .select(`
           id,
           size_ml,
           price,
           sku,
+          upc,
           products!inner(
             product_type,
             brands!inner(name),
@@ -68,6 +75,37 @@ export default function POSPage() {
         `)
         .eq("upc", value.trim())
         .limit(1) as any)
+
+      // If no results, try without inner joins to see if product exists but has null brand/category
+      if ((!variants || variants.length === 0) && !error) {
+        console.log("No results with inner joins, trying without inner joins...")
+        const { data: fallbackVariants, error: fallbackError } = await (supabase
+          .from("product_variants")
+          .select(`
+            id,
+            size_ml,
+            price,
+            sku,
+            upc,
+            products(
+              product_type,
+              brands(name),
+              categories(name)
+            )
+          `)
+          .eq("upc", value.trim())
+          .limit(1) as any)
+        
+        if (fallbackVariants && fallbackVariants.length > 0) {
+          console.warn("Found variant but missing brand/category:", fallbackVariants[0])
+          toast.error("Product found but missing brand or category information. Please update the product.")
+          return
+        }
+        
+        if (fallbackError) {
+          console.error("Fallback query error:", fallbackError)
+        }
+      }
 
       console.log("Database query result:", { variants, error, count: variants?.length })
 
@@ -90,7 +128,15 @@ export default function POSPage() {
           console.warn("Found similar UPCs (case mismatch?):", fallbackVariants.map((v: any) => v.upc))
           toast.error(`Product not found. Found similar UPCs but exact match failed. Scanned: "${value.trim()}"`)
         } else {
-          toast.error("Product not found. Please ensure the barcode is correct.")
+          // New product detected - show dialog to add it
+          console.log("New product detected, showing add product dialog")
+          toast.info("New product detected! Please add it to the system.", {
+            description: `UPC: ${value.trim()}`,
+            duration: 4000,
+          })
+          setScannedUPC(value.trim())
+          setPendingScanUPC(value.trim()) // Store UPC to resume scanning after product is added
+          setShowQuickAdd(true)
         }
         return
       }
@@ -101,6 +147,8 @@ export default function POSPage() {
         id: variant.id,
         size_ml: variant.size_ml,
         price: variant.price,
+        upc: variant.upc,
+        hasUPC: !!variant.upc && variant.upc.trim().length > 0,
         hasProducts: !!variant.products,
         hasBrands: !!variant.products?.brands,
         hasCategories: !!variant.products?.categories,
@@ -108,6 +156,15 @@ export default function POSPage() {
         categoryName: variant.products?.categories?.name,
         productType: variant.products?.product_type
       })
+
+      // STRICT CHECK: Verify variant has UPC
+      if (!variant.upc || variant.upc.trim().length === 0) {
+        console.error("Variant found but UPC is missing:", variant.id)
+        const productName = variant.products?.brands?.name || 'Product'
+        const productSize = variant.size_ml === 1000 ? '1L' : `${variant.size_ml}ml`
+        toast.error(`${productName} ${productSize} is missing UPC/Barcode. Please add UPC before scanning.`)
+        return
+      }
 
       // Check if item is already sold - check sale_items table first
       const { data: soldItems } = await supabase
@@ -250,6 +307,107 @@ export default function POSPage() {
       setCart([...cart, item])
     }
     toast.success(`${item.brand_name} added to cart`)
+  }
+
+  const handleProductCreated = async (variantId: string) => {
+    try {
+      // Get main floor location
+      const { data: floorLocation, error: locationError } = await supabase
+        .from("inventory_locations")
+        .select("id")
+        .eq("type", "floor")
+        .limit(1)
+        .maybeSingle()
+
+      if (locationError) {
+        console.error("Error fetching floor location:", locationError)
+        toast.error("Error finding main floor location")
+        return
+      }
+
+      if (!floorLocation) {
+        // Create floor location if it doesn't exist
+        const { data: newLocation, error: createError } = await supabase
+          .from("inventory_locations")
+          .insert({
+            name: "Main Floor",
+            type: "floor"
+          })
+          .select("id")
+          .single()
+
+        if (createError || !newLocation) {
+          console.error("Error creating floor location:", createError)
+          toast.error("Error creating main floor location")
+          return
+        }
+
+        // Create stock level entry with quantity 0 (don't increase stock)
+        const { error: stockError } = await supabase
+          .from("stock_levels")
+          .insert({
+            variant_id: variantId,
+            location_id: (newLocation as any).id,
+            quantity: 0, // Set to 0, don't increase stock
+          })
+
+        if (stockError) {
+          console.error("Error creating stock level:", stockError)
+          // Don't show error to user, just log it - stock will be created when items are received
+        }
+      } else {
+        // Check if stock level already exists
+        const { data: existingStock, error: checkError } = await supabase
+          .from("stock_levels")
+          .select("id, quantity")
+          .eq("variant_id", variantId)
+          .eq("location_id", (floorLocation as any).id)
+          .limit(1)
+          .maybeSingle()
+
+        if (checkError) {
+          console.error("Error checking stock level:", checkError)
+        }
+
+        // Only create stock level if it doesn't exist (with quantity 0)
+        if (!existingStock) {
+          const { error: stockError } = await supabase
+            .from("stock_levels")
+            .insert({
+              variant_id: variantId,
+              location_id: (floorLocation as any).id,
+              quantity: 0, // Set to 0, don't increase stock
+            })
+
+          if (stockError) {
+            console.error("Error creating stock level:", stockError)
+            // Don't show error to user, just log it
+          }
+        }
+        // If stock level exists, don't modify it (keep quantity as is)
+      }
+
+      toast.success("Product added to system and main floor (quantity remains unchanged)")
+      
+      // Resume the scanning process with the pending UPC
+      if (pendingScanUPC) {
+        // Small delay to ensure product is fully created
+        setTimeout(async () => {
+          await handleBarcodeScan(pendingScanUPC)
+          setPendingScanUPC(null)
+        }, 500)
+      }
+    } catch (error) {
+      console.error("Error handling product creation:", error)
+      toast.error("Error setting up product. You can still scan it now.")
+      // Still try to resume scanning
+      if (pendingScanUPC) {
+        setTimeout(async () => {
+          await handleBarcodeScan(pendingScanUPC)
+          setPendingScanUPC(null)
+        }, 500)
+      }
+    }
   }
 
   const removeFromCart = (variantId: string) => {
@@ -571,6 +729,17 @@ export default function POSPage() {
         }}
       />
 
+      <QuickAddProductDialog
+        scannedUPC={scannedUPC}
+        isOpen={showQuickAdd}
+        onClose={() => {
+          setShowQuickAdd(false)
+          setScannedUPC("")
+          setPendingScanUPC(null) // Clear pending scan if dialog is closed
+        }}
+        onProductCreated={handleProductCreated}
+        context="pos"
+      />
     </div>
   )
 }
