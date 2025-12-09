@@ -205,32 +205,69 @@ function StockRow({
   isAdmin: boolean
   onStockUpdated?: () => void
 }) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false)
+  const [isEditingCost, setIsEditingCost] = useState(false)
+  const [isEditingPrice, setIsEditingPrice] = useState(false)
   const [editedQuantity, setEditedQuantity] = useState(stock.quantity.toString())
+  const [editedCost, setEditedCost] = useState(variant?.cost?.toString() || "0")
+  const [editedPrice, setEditedPrice] = useState(variant?.price?.toString() || "0")
   const [saving, setSaving] = useState(false)
   const [currentQuantity, setCurrentQuantity] = useState(stock.quantity)
+  const [currentCost, setCurrentCost] = useState(variant?.cost || 0)
+  const [currentPrice, setCurrentPrice] = useState(variant?.price || 0)
 
-  // Update local quantity when stock prop changes
+  // Update local values when props change
   useEffect(() => {
     setCurrentQuantity(stock.quantity)
-    if (!isEditing) {
+    if (!isEditingQuantity) {
       setEditedQuantity(stock.quantity.toString())
     }
-  }, [stock.quantity, isEditing])
+  }, [stock.quantity, isEditingQuantity])
 
-  const handleStartEdit = () => {
-    setIsEditing(true)
+  useEffect(() => {
+    const cost = variant?.cost || 0
+    const price = variant?.price || 0
+    setCurrentCost(cost)
+    setCurrentPrice(price)
+    if (!isEditingCost) {
+      setEditedCost(cost.toString())
+    }
+    if (!isEditingPrice) {
+      setEditedPrice(price.toString())
+    }
+  }, [variant?.cost, variant?.price, isEditingCost, isEditingPrice])
+
+  const handleStartEditQuantity = () => {
+    setIsEditingQuantity(true)
     setEditedQuantity(currentQuantity.toString())
   }
 
-  const handleCancel = () => {
-    // Reset to original quantity and exit edit mode
-    // No server interactions, just local state updates
-    setIsEditing(false)
+  const handleStartEditCost = () => {
+    setIsEditingCost(true)
+    setEditedCost(currentCost.toString())
+  }
+
+  const handleStartEditPrice = () => {
+    setIsEditingPrice(true)
+    setEditedPrice(currentPrice.toString())
+  }
+
+  const handleCancelQuantity = () => {
+    setIsEditingQuantity(false)
     setEditedQuantity(currentQuantity.toString())
   }
 
-  const handleSave = async () => {
+  const handleCancelCost = () => {
+    setIsEditingCost(false)
+    setEditedCost(currentCost.toString())
+  }
+
+  const handleCancelPrice = () => {
+    setIsEditingPrice(false)
+    setEditedPrice(currentPrice.toString())
+  }
+
+  const handleSaveQuantity = async () => {
     const newQuantity = parseInt(editedQuantity)
     
     if (isNaN(newQuantity) || newQuantity < 0) {
@@ -250,11 +287,9 @@ function StockRow({
       }
 
       toast.success("Quantity updated successfully")
-      setIsEditing(false)
+      setIsEditingQuantity(false)
       setCurrentQuantity(newQuantity)
       
-      // Call the callback to refresh data if provided
-      // Use a microtask to ensure it runs after React's state updates
       if (onStockUpdated) {
         Promise.resolve().then(() => {
           try {
@@ -267,7 +302,96 @@ function StockRow({
     } catch (error: any) {
       console.error("Error updating quantity:", error)
       toast.error(`Error updating quantity: ${error.message || "Unknown error"}`)
-      // Don't close edit mode on error so user can retry
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveCost = async () => {
+    const newCost = parseFloat(editedCost)
+    
+    if (isNaN(newCost) || newCost < 0) {
+      toast.error("Please enter a valid cost (0 or greater)")
+      return
+    }
+
+    if (!variant?.id) {
+      toast.error("Variant ID is missing")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const { error } = await (supabase
+        .from("product_variants") as any)
+        .update({ cost: newCost })
+        .eq("id", variant.id)
+
+      if (error) {
+        throw error
+      }
+
+      toast.success("Buying price updated successfully")
+      setIsEditingCost(false)
+      setCurrentCost(newCost)
+      
+      if (onStockUpdated) {
+        Promise.resolve().then(() => {
+          try {
+            onStockUpdated()
+          } catch (error) {
+            console.error("Error in onStockUpdated callback:", error)
+          }
+        })
+      }
+    } catch (error: any) {
+      console.error("Error updating cost:", error)
+      toast.error(`Error updating buying price: ${error.message || "Unknown error"}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSavePrice = async () => {
+    const newPrice = parseFloat(editedPrice)
+    
+    if (isNaN(newPrice) || newPrice < 0) {
+      toast.error("Please enter a valid price (0 or greater)")
+      return
+    }
+
+    if (!variant?.id) {
+      toast.error("Variant ID is missing")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const { error } = await (supabase
+        .from("product_variants") as any)
+        .update({ price: newPrice })
+        .eq("id", variant.id)
+
+      if (error) {
+        throw error
+      }
+
+      toast.success("Selling price updated successfully")
+      setIsEditingPrice(false)
+      setCurrentPrice(newPrice)
+      
+      if (onStockUpdated) {
+        Promise.resolve().then(() => {
+          try {
+            onStockUpdated()
+          } catch (error) {
+            console.error("Error in onStockUpdated callback:", error)
+          }
+        })
+      }
+    } catch (error: any) {
+      console.error("Error updating price:", error)
+      toast.error(`Error updating selling price: ${error.message || "Unknown error"}`)
     } finally {
       setSaving(false)
     }
@@ -280,10 +404,116 @@ function StockRow({
       </TableCell>
       <TableCell>{variant?.sku || "-"}</TableCell>
       <TableCell>{variant?.size_ml || 0}ml</TableCell>
-      <TableCell>{variant?.cost ? formatCurrency(variant.cost) : "-"}</TableCell>
-      <TableCell>{variant?.price ? formatCurrency(variant.price) : "-"}</TableCell>
       <TableCell>
-        {isEditing ? (
+        {isEditingCost ? (
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              step="0.01"
+              value={editedCost}
+              onChange={(e) => setEditedCost(e.target.value)}
+              className="w-24 h-8"
+              min="0"
+              disabled={saving}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSaveCost()
+                } else if (e.key === "Escape") {
+                  handleCancelCost()
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleSaveCost}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <Save className="h-4 w-4 text-green-500" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCancelCost}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span>{currentCost > 0 ? formatCurrency(currentCost) : "-"}</span>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleStartEditCost}
+                className="h-6 w-6 p-0"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        {isEditingPrice ? (
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              step="0.01"
+              value={editedPrice}
+              onChange={(e) => setEditedPrice(e.target.value)}
+              className="w-24 h-8"
+              min="0"
+              disabled={saving}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSavePrice()
+                } else if (e.key === "Escape") {
+                  handleCancelPrice()
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleSavePrice}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <Save className="h-4 w-4 text-green-500" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCancelPrice}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span>{currentPrice > 0 ? formatCurrency(currentPrice) : "-"}</span>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleStartEditPrice}
+                className="h-6 w-6 p-0"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        {isEditingQuantity ? (
           <div className="flex items-center gap-2">
             <Input
               type="number"
@@ -294,16 +524,16 @@ function StockRow({
               disabled={saving}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  handleSave()
+                  handleSaveQuantity()
                 } else if (e.key === "Escape") {
-                  handleCancel()
+                  handleCancelQuantity()
                 }
               }}
             />
             <Button
               size="sm"
               variant="ghost"
-              onClick={handleSave}
+              onClick={handleSaveQuantity}
               disabled={saving}
               className="h-8 w-8 p-0"
             >
@@ -312,7 +542,7 @@ function StockRow({
             <Button
               size="sm"
               variant="ghost"
-              onClick={handleCancel}
+              onClick={handleCancelQuantity}
               disabled={saving}
               className="h-8 w-8 p-0"
             >
@@ -328,7 +558,7 @@ function StockRow({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={handleStartEdit}
+                onClick={handleStartEditQuantity}
                 className="h-6 w-6 p-0"
               >
                 <Edit className="h-3 w-3" />
@@ -349,7 +579,7 @@ function StockRow({
       </TableCell>
       {isAdmin && variant?.id && (
         <TableCell>
-          <ProductActions variantId={variant.id} productName={variant?.products?.brands?.name || "Product"} />
+          <ProductDeleteAction variantId={variant.id} productName={variant?.products?.brands?.name || "Product"} onDeleted={onStockUpdated} />
         </TableCell>
       )}
       {isAdmin && !variant?.id && (
@@ -359,36 +589,7 @@ function StockRow({
   )
 }
 
-function ProductActions({ variantId, productName }: { variantId?: string, productName: string }) {
-  const handleEdit = async () => {
-    if (!variantId) {
-      toast.error("Product variant ID is missing")
-      return
-    }
-    
-    try {
-      // Get product_id, then navigate directly to edit page
-      const { data: variant, error: variantError } = await supabase
-        .from("product_variants")
-        .select("product_id")
-        .eq("id", variantId)
-        .single()
-
-      if (variantError || !variant) {
-        toast.error("Failed to find product")
-        console.error("Error fetching variant:", variantError)
-        return
-      }
-
-      const variantTyped = variant as { product_id: string }
-      // Use window.location for navigation to avoid server component errors
-      window.location.href = `/products/${variantTyped.product_id}/edit`
-    } catch (error: any) {
-      console.error("Error loading product:", error)
-      toast.error("Failed to load product")
-    }
-  }
-
+function ProductDeleteAction({ variantId, productName, onDeleted }: { variantId?: string, productName: string, onDeleted?: () => void }) {
   const handleDelete = async () => {
     if (!variantId) return
     
@@ -436,7 +637,17 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
       }
 
       toast.success("Product deleted successfully")
-      window.location.reload()
+      if (onDeleted) {
+        Promise.resolve().then(() => {
+          try {
+            onDeleted()
+          } catch (error) {
+            console.error("Error in onDeleted callback:", error)
+          }
+        })
+      } else {
+        window.location.reload()
+      }
     } catch (error) {
       console.error("Error deleting product:", error)
       toast.error("Failed to delete product")
@@ -444,26 +655,15 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
   }
 
   return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleEdit}
-        className="h-8"
-      >
-        <Edit className="h-4 w-4 mr-1" />
-        Edit
-      </Button>
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={handleDelete}
-        className="h-8"
-      >
-        <Trash2 className="h-4 w-4 mr-1" />
-        Delete
-      </Button>
-    </div>
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={handleDelete}
+      className="h-8"
+    >
+      <Trash2 className="h-4 w-4 mr-1" />
+      Delete
+    </Button>
   )
 }
 
