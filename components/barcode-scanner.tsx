@@ -84,6 +84,8 @@ export function BarcodeScanner({
       lastScannedRef.current = ""
       lastScanTimeRef.current = 0
       
+      // Create scanner instance
+      // html5-qrcode automatically supports common barcode formats
       const html5QrCode = new Html5Qrcode(scannerId)
       scannerRef.current = html5QrCode
 
@@ -132,21 +134,9 @@ export function BarcodeScanner({
         // Allow rotation/flipping for better angle tolerance
         disableFlip: false,
         
-        // Support ALL common barcode formats for maximum compatibility
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.CODE_93,
-          Html5QrcodeSupportedFormats.CODABAR,
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.RSS_14,
-          Html5QrcodeSupportedFormats.RSS_EXPANDED,
-        ] as any,
+        // Note: html5-qrcode library automatically supports all barcode formats
+        // The formatsToSupport option is not available in the config object
+        // The library will attempt to decode all supported formats automatically
         
         // Disable verbose logging for better performance
         verbose: false,
@@ -170,8 +160,6 @@ export function BarcodeScanner({
             { whiteBalanceMode: "continuous" },
             // Enable auto exposure for varying light levels
             { exposureMode: "continuous" },
-            // Enable auto ISO for low light performance
-            { iso: { ideal: 400 } },
           ] as MediaTrackConstraintSet[],
         } as MediaTrackConstraints,
         
