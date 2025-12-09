@@ -16,7 +16,7 @@ import {
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { getBrandsForType, getCategoryForBrand, getCategoriesForType } from "@/data/product-catalog"
-import { Plus } from "lucide-react"
+import { Plus, Trash2, Save } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+interface Variant {
+  id: string
+  size_ml: number
+  sku: string
+  upc: string | null
+  cost: number
+  price: number
+  allocation_only: boolean
+  collectible: boolean
+}
 
 export default function EditProductPage() {
   const router = useRouter()
@@ -34,8 +64,10 @@ export default function EditProductPage() {
   const [saving, setSaving] = useState(false)
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([])
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+  const [variants, setVariants] = useState<Variant[]>([])
   const [showNewBrandDialog, setShowNewBrandDialog] = useState(false)
   const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false)
+  const [showNewVariantDialog, setShowNewVariantDialog] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
   const [newCategoryName, setNewCategoryName] = useState("")
   const [formData, setFormData] = useState({
@@ -43,6 +75,15 @@ export default function EditProductPage() {
     category_id: "",
     product_type: "liquor" as "liquor" | "beverage",
     description: "",
+  })
+  const [newVariant, setNewVariant] = useState({
+    size_ml: 250,
+    sku: "",
+    upc: "",
+    cost: 0,
+    price: 0,
+    allocation_only: false,
+    collectible: false,
   })
 
   useEffect(() => {
@@ -60,7 +101,10 @@ export default function EditProductPage() {
       setLoading(true)
       const { data: product, error } = await supabase
         .from("products")
-        .select("*")
+        .select(`
+          *,
+          product_variants(*)
+        `)
         .eq("id", productId)
         .single()
 
@@ -77,6 +121,7 @@ export default function EditProductPage() {
           category_id: string
           product_type: "liquor" | "beverage"
           description: string | null
+          product_variants: Variant[]
         }
         setFormData({
           brand_id: productTyped.brand_id,
@@ -84,6 +129,7 @@ export default function EditProductPage() {
           product_type: productTyped.product_type,
           description: productTyped.description || "",
         })
+        setVariants(productTyped.product_variants || [])
       }
     } catch (error) {
       console.error("Unexpected error:", error)
@@ -101,10 +147,7 @@ export default function EditProductPage() {
     ])
 
     if (brandsRes.data) {
-      // Get catalog brands for the selected product type
       const catalogBrands = getBrandsForType(formData.product_type)
-      
-      // Filter brands: only show brands that match the product type
       const allBrands = brandsRes.data as Array<{ id: string; name: string }>
       const beverageBrands = getBrandsForType('beverage')
       const liquorBrands = getBrandsForType('liquor')
@@ -120,7 +163,6 @@ export default function EditProductPage() {
         }
       })
       
-      // Sort brands: catalog brands first, then others
       const sorted = filtered.sort((a, b) => {
         const aInCatalog = catalogBrands.includes(a.name)
         const bInCatalog = catalogBrands.includes(b.name)
@@ -131,7 +173,6 @@ export default function EditProductPage() {
       setBrands(sorted)
     }
     if (categoriesRes.data) {
-      // Filter categories by product type
       const catalogCategories = getCategoriesForType(formData.product_type)
       const filtered = (categoriesRes.data as Array<{ id: string; name: string }>).filter(cat => catalogCategories.includes(cat.name))
       setCategories(filtered)
@@ -143,7 +184,6 @@ export default function EditProductPage() {
     if (selectedBrand) {
       const categoryInfo = getCategoryForBrand(selectedBrand.name)
       if (categoryInfo && categoryInfo.productType === formData.product_type) {
-        // Find the category ID
         const category = categories.find(c => c.name === categoryInfo.category)
         if (category) {
           setFormData({ ...formData, brand_id: brandId, category_id: category.id })
@@ -208,12 +248,104 @@ export default function EditProductPage() {
     }
   }
 
+  const handleVariantChange = (variantId: string, field: keyof Variant, value: any) => {
+    setVariants(variants.map(v => 
+      v.id === variantId ? { ...v, [field]: value } : v
+    ))
+  }
+
+  const handleAddVariant = async () => {
+    if (!newVariant.sku.trim()) {
+      toast.error("SKU is required")
+      return
+    }
+    if (newVariant.price <= 0) {
+      toast.error("Price must be greater than 0")
+      return
+    }
+
+    // Check if UPC already exists
+    if (newVariant.upc && newVariant.upc.trim()) {
+      const { data: existing } = await supabase
+        .from("product_variants")
+        .select("id")
+        .eq("upc", newVariant.upc.trim())
+        .limit(1)
+        .maybeSingle()
+
+      if (existing) {
+        toast.error("UPC already exists for another product")
+        return
+      }
+    }
+
+    // Check if SKU already exists
+    const { data: existingSku } = await supabase
+      .from("product_variants")
+      .select("id")
+      .eq("sku", newVariant.sku.trim())
+      .limit(1)
+      .maybeSingle()
+
+    if (existingSku) {
+      toast.error("SKU already exists")
+      return
+    }
+
+    const { data, error } = await (supabase
+      .from("product_variants") as any)
+      .insert({
+        product_id: productId,
+        size_ml: newVariant.size_ml,
+        sku: newVariant.sku.trim(),
+        upc: newVariant.upc.trim() || null,
+        cost: newVariant.cost || 0,
+        price: newVariant.price,
+        allocation_only: newVariant.allocation_only,
+        collectible: newVariant.collectible,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      toast.error(`Error creating variant: ${error.message}`)
+      return
+    }
+
+    setVariants([...variants, data as Variant])
+    setNewVariant({
+      size_ml: 250,
+      sku: "",
+      upc: "",
+      cost: 0,
+      price: 0,
+      allocation_only: false,
+      collectible: false,
+    })
+    setShowNewVariantDialog(false)
+    toast.success("Variant added!")
+  }
+
+  const handleDeleteVariant = async (variantId: string) => {
+    const { error } = await (supabase
+      .from("product_variants") as any)
+      .delete()
+      .eq("id", variantId)
+
+    if (error) {
+      toast.error(`Error deleting variant: ${error.message}`)
+      return
+    }
+
+    setVariants(variants.filter(v => v.id !== variantId))
+    toast.success("Variant deleted!")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
 
     try {
-      // Validate required fields
       if (!formData.brand_id) {
         toast.error("Please select a brand")
         setSaving(false)
@@ -225,7 +357,8 @@ export default function EditProductPage() {
         return
       }
 
-      const { error } = await ((supabase.from("products") as any)
+      // Update product
+      const { error: productError } = await ((supabase.from("products") as any)
         .update({
           brand_id: formData.brand_id,
           category_id: formData.category_id,
@@ -234,10 +367,65 @@ export default function EditProductPage() {
         })
         .eq("id", productId))
 
-      if (error) {
-        console.error("Product update error:", error)
-        toast.error(`Error updating product: ${error.message || "Unknown error"}`)
+      if (productError) {
+        console.error("Product update error:", productError)
+        toast.error(`Error updating product: ${productError.message || "Unknown error"}`)
+        setSaving(false)
         return
+      }
+
+      // Update all variants
+      for (const variant of variants) {
+        // Check for duplicate UPC (excluding current variant)
+        if (variant.upc && variant.upc.trim()) {
+          const { data: existing } = await supabase
+            .from("product_variants")
+            .select("id")
+            .eq("upc", variant.upc.trim())
+            .neq("id", variant.id)
+            .limit(1)
+            .maybeSingle()
+
+          if (existing) {
+            toast.error(`UPC ${variant.upc} already exists for another variant`)
+            setSaving(false)
+            return
+          }
+        }
+
+        // Check for duplicate SKU (excluding current variant)
+        const { data: existingSku } = await supabase
+          .from("product_variants")
+          .select("id")
+          .eq("sku", variant.sku.trim())
+          .neq("id", variant.id)
+          .limit(1)
+          .maybeSingle()
+
+        if (existingSku) {
+          toast.error(`SKU ${variant.sku} already exists for another variant`)
+          setSaving(false)
+          return
+        }
+
+        const { error: variantError } = await ((supabase.from("product_variants") as any)
+          .update({
+            size_ml: variant.size_ml,
+            sku: variant.sku.trim(),
+            upc: variant.upc?.trim() || null,
+            cost: variant.cost || 0,
+            price: variant.price,
+            allocation_only: variant.allocation_only,
+            collectible: variant.collectible,
+          })
+          .eq("id", variant.id))
+
+        if (variantError) {
+          console.error("Variant update error:", variantError)
+          toast.error(`Error updating variant: ${variantError.message || "Unknown error"}`)
+          setSaving(false)
+          return
+        }
       }
 
       toast.success("Product updated successfully!")
@@ -262,114 +450,255 @@ export default function EditProductPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-4xl font-sans font-bold text-white mb-2">Edit Product</h1>
-        <p className="text-muted-foreground">Update product information</p>
+        <p className="text-muted-foreground">Update product information and variants</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Information</CardTitle>
-          <CardDescription>Update the product details</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="product_type" className="font-sans">Product Type *</Label>
-              <Select
-                value={formData.product_type}
-                onValueChange={(value) => setFormData({ ...formData, product_type: value as "liquor" | "beverage" })}
-                required
-              >
-                <SelectTrigger className="font-sans">
-                  <SelectValue placeholder="Select product type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
-                  <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Information</CardTitle>
+              <CardDescription>Update the product details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="product_type" className="font-sans">Product Type *</Label>
+                <Select
+                  value={formData.product_type}
+                  onValueChange={(value) => setFormData({ ...formData, product_type: value as "liquor" | "beverage" })}
+                  required
+                >
+                  <SelectTrigger className="font-sans">
+                    <SelectValue placeholder="Select product type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="liquor" className="font-sans">Liquor</SelectItem>
+                    <SelectItem value="beverage" className="font-sans">Beverage</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="brand" className="font-sans">Brand *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewBrandDialog(true)}
+                    className="h-8 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
+                <Select
+                  value={formData.brand_id}
+                  onValueChange={handleBrandChange}
+                  required
+                >
+                  <SelectTrigger className="font-sans">
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.id} className="font-sans">
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="category" className="font-sans">Category *</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewCategoryDialog(true)}
+                    className="h-8 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
+                <Select
+                  value={formData.category_id}
+                  onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                  required
+                >
+                  <SelectTrigger className="font-sans">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id} className="font-sans">
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="font-sans">Description</Label>
+                <Input
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="font-sans"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <div className="flex items-center justify-between">
-                <Label htmlFor="brand" className="font-sans">Brand *</Label>
+                <div>
+                  <CardTitle>Product Variants</CardTitle>
+                  <CardDescription>Sizes, prices, and UPC codes</CardDescription>
+                </div>
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowNewBrandDialog(true)}
-                  className="h-8 text-xs"
+                  variant="outline"
+                  onClick={() => setShowNewVariantDialog(true)}
                 >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add New
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Variant
                 </Button>
               </div>
-              <Select
-                value={formData.brand_id}
-                onValueChange={handleBrandChange}
-                required
-              >
-                <SelectTrigger className="font-sans">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brands.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id} className="font-sans">
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="category" className="font-sans">Category *</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowNewCategoryDialog(true)}
-                  className="h-8 text-xs"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add New
-                </Button>
-              </div>
-              <Select
-                value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
-                required
-              >
-                <SelectTrigger className="font-sans">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id} className="font-sans">
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description" className="font-sans">Description</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="font-sans"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={saving}>
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => router.push(`/products/${productId}`)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              {variants.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Size (ml)</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>UPC</TableHead>
+                        <TableHead>Cost</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Collectible</TableHead>
+                        <TableHead>Allocation Only</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {variants.map((variant) => (
+                        <TableRow key={variant.id}>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={variant.size_ml}
+                              onChange={(e) => handleVariantChange(variant.id, "size_ml", parseInt(e.target.value) || 0)}
+                              className="w-20"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={variant.sku}
+                              onChange={(e) => handleVariantChange(variant.id, "sku", e.target.value)}
+                              className="w-32"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={variant.upc || ""}
+                              onChange={(e) => handleVariantChange(variant.id, "upc", e.target.value)}
+                              className="w-32"
+                              placeholder="Optional"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={variant.cost}
+                              onChange={(e) => handleVariantChange(variant.id, "cost", parseFloat(e.target.value) || 0)}
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={variant.price}
+                              onChange={(e) => handleVariantChange(variant.id, "price", parseFloat(e.target.value) || 0)}
+                              className="w-24"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={variant.collectible}
+                              onChange={(e) => handleVariantChange(variant.id, "collectible", e.target.checked)}
+                              className="h-4 w-4"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={variant.allocation_only}
+                              onChange={(e) => handleVariantChange(variant.id, "allocation_only", e.target.checked)}
+                              className="h-4 w-4"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Variant</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this variant? This will also delete all associated stock levels and sales. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteVariant(variant.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  No variants found. Add a variant to get started.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-2">
+            <Button type="submit" disabled={saving}>
+              <Save className="mr-2 h-4 w-4" />
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => router.push(`/products/${productId}`)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </form>
 
       <Dialog open={showNewBrandDialog} onOpenChange={setShowNewBrandDialog}>
         <DialogContent>
@@ -440,8 +769,107 @@ export default function EditProductPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showNewVariantDialog} onOpenChange={setShowNewVariantDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Variant</DialogTitle>
+            <DialogDescription>Add a new size/variant for this product</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="variantSize">Size (ml) *</Label>
+              <Input
+                id="variantSize"
+                type="number"
+                value={newVariant.size_ml}
+                onChange={(e) => setNewVariant({ ...newVariant, size_ml: parseInt(e.target.value) || 0 })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="variantSku">SKU *</Label>
+              <Input
+                id="variantSku"
+                value={newVariant.sku}
+                onChange={(e) => setNewVariant({ ...newVariant, sku: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="variantUpc">UPC (Optional)</Label>
+              <Input
+                id="variantUpc"
+                value={newVariant.upc}
+                onChange={(e) => setNewVariant({ ...newVariant, upc: e.target.value })}
+                placeholder="Barcode/UPC code"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="variantCost">Cost</Label>
+                <Input
+                  id="variantCost"
+                  type="number"
+                  step="0.01"
+                  value={newVariant.cost}
+                  onChange={(e) => setNewVariant({ ...newVariant, cost: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="variantPrice">Price *</Label>
+                <Input
+                  id="variantPrice"
+                  type="number"
+                  step="0.01"
+                  value={newVariant.price}
+                  onChange={(e) => setNewVariant({ ...newVariant, price: parseFloat(e.target.value) || 0 })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="variantCollectible"
+                  checked={newVariant.collectible}
+                  onChange={(e) => setNewVariant({ ...newVariant, collectible: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="variantCollectible">Collectible</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="variantAllocation"
+                  checked={newVariant.allocation_only}
+                  onChange={(e) => setNewVariant({ ...newVariant, allocation_only: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="variantAllocation">Allocation Only</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowNewVariantDialog(false)
+              setNewVariant({
+                size_ml: 250,
+                sku: "",
+                upc: "",
+                cost: 0,
+                price: 0,
+                allocation_only: false,
+                collectible: false,
+              })
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddVariant}>Add Variant</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-
-

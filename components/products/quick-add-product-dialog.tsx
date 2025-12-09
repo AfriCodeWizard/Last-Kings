@@ -130,10 +130,20 @@ export function QuickAddProductDialog({
       setBrands(sorted)
     }
     if (categoriesRes.data) {
-      // Filter categories by product type
+      // Show all categories (not just catalog ones) so newly added categories are visible
+      // Catalog categories will be sorted first, but all categories are available
       const catalogCategories = getCategoriesForType(formData.productType)
-      const filtered = (categoriesRes.data as Array<{ id: string; name: string }>).filter(cat => catalogCategories.includes(cat.name))
-      setCategories(filtered)
+      const allCategories = categoriesRes.data as Array<{ id: string; name: string }>
+      
+      // Sort: catalog categories first, then others alphabetically
+      const sorted = allCategories.sort((a, b) => {
+        const aInCatalog = catalogCategories.includes(a.name)
+        const bInCatalog = catalogCategories.includes(b.name)
+        if (aInCatalog && !bInCatalog) return -1
+        if (!aInCatalog && bInCatalog) return 1
+        return a.name.localeCompare(b.name)
+      })
+      setCategories(sorted)
     }
   }
 
@@ -172,11 +182,13 @@ export function QuickAddProductDialog({
 
     if (data) {
       const newBrand = data as { id: string; name: string }
-      setBrands([...brands, newBrand])
+      // Reload brands to ensure proper sorting and filtering
+      await loadBrandsAndCategories()
+      // Set the newly created brand as selected
       setFormData({ ...formData, brandId: newBrand.id })
       setNewBrandName("")
       setShowNewBrandDialog(false)
-      toast.success("Brand created!")
+      toast.success("Brand created and added to dropdown!")
     }
   }
 
@@ -199,11 +211,13 @@ export function QuickAddProductDialog({
 
     if (data) {
       const newCategory = data as { id: string; name: string }
-      setCategories([...categories, newCategory])
+      // Reload categories to ensure proper sorting and filtering
+      await loadBrandsAndCategories()
+      // Set the newly created category as selected
       setFormData({ ...formData, categoryId: newCategory.id })
       setNewCategoryName("")
       setShowNewCategoryDialog(false)
-      toast.success("Category created!")
+      toast.success("Category created and added to dropdown!")
     }
   }
 

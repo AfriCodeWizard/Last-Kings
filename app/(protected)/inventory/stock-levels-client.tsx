@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/utils"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { UserRole } from "@/types/supabase"
+import { Edit, Trash2 } from "lucide-react"
 
 interface StockLevel {
   id: string
@@ -223,7 +224,7 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
     }
     
     try {
-      // Get product_id, then navigate
+      // Get product_id, then navigate directly to edit page
       const { data: variant, error: variantError } = await supabase
         .from("product_variants")
         .select("product_id")
@@ -237,8 +238,8 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
       }
 
       const variantTyped = variant as { product_id: string }
-      // Use window.location for navigation to avoid Next.js router issues
-      window.location.href = `/products/${variantTyped.product_id}`
+      // Navigate directly to edit page
+      window.location.href = `/products/${variantTyped.product_id}/edit`
     } catch (error: any) {
       console.error("Error loading product:", error)
       toast.error("Failed to load product")
@@ -305,14 +306,18 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
         variant="outline"
         size="sm"
         onClick={handleEdit}
+        className="h-8"
       >
+        <Edit className="h-4 w-4 mr-1" />
         Edit
       </Button>
       <Button
         variant="destructive"
         size="sm"
         onClick={handleDelete}
+        className="h-8"
       >
+        <Trash2 className="h-4 w-4 mr-1" />
         Delete
       </Button>
     </div>
