@@ -96,8 +96,6 @@ export default async function ProductDetailPage({
                 upc: string | null
                 price: number
                 cost: number
-                allocation_only: boolean
-                collectible: boolean
               }) => (
                 <div
                   key={variant.id}
@@ -112,12 +110,6 @@ export default async function ProductDetailPage({
                       {variant.upc && ` • UPC: ${variant.upc}`}
                       {!variant.upc && ` • No UPC assigned`}
                     </div>
-                    {variant.collectible && (
-                      <div className="text-xs text-gold mt-1 font-sans">Collectible</div>
-                    )}
-                    {variant.allocation_only && (
-                      <div className="text-xs text-gold-light mt-1 font-sans">Allocation Only</div>
-                    )}
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">

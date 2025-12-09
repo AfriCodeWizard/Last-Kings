@@ -67,7 +67,10 @@ export function DeleteDistributorAction({
       }
 
       toast.success("Distributor deleted successfully")
-      router.refresh()
+      // Use setTimeout to avoid server component errors
+      setTimeout(() => {
+        router.refresh()
+      }, 0)
     } catch (error: any) {
       console.error("Error deleting distributor:", error)
       toast.error(`Error deleting distributor: ${error.message || "Unknown error"}`)

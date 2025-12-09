@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -18,7 +18,6 @@ import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { UserRole } from "@/types/supabase"
 import { Edit, Trash2, Save, X } from "lucide-react"
-import { useRouter } from "next/navigation"
 
 interface StockLevel {
   id: string
@@ -206,20 +205,28 @@ function StockRow({
   isAdmin: boolean
   onStockUpdated?: () => void
 }) {
-  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [editedQuantity, setEditedQuantity] = useState(stock.quantity.toString())
   const [saving, setSaving] = useState(false)
+  const [currentQuantity, setCurrentQuantity] = useState(stock.quantity)
+
+  // Update local quantity when stock prop changes
+  useEffect(() => {
+    setCurrentQuantity(stock.quantity)
+    if (!isEditing) {
+      setEditedQuantity(stock.quantity.toString())
+    }
+  }, [stock.quantity, isEditing])
 
   const handleStartEdit = () => {
     setIsEditing(true)
-    setEditedQuantity(stock.quantity.toString())
+    setEditedQuantity(currentQuantity.toString())
   }
 
   const handleCancel = () => {
     setIsEditing(false)
-    setEditedQuantity(stock.quantity.toString())
-    // No error, just cancel - stay on same page
+    setEditedQuantity(currentQuantity.toString())
+    // No router calls, just reset local state
   }
 
   const handleSave = async () => {
@@ -243,13 +250,14 @@ function StockRow({
 
       toast.success("Quantity updated successfully")
       setIsEditing(false)
+      setCurrentQuantity(newQuantity)
       
-      // Call the callback to refresh data if provided
+      // Call the callback to refresh data if provided (this is async and safe)
       if (onStockUpdated) {
-        onStockUpdated()
-      } else {
-        // Fallback to router refresh
-        router.refresh()
+        // Use setTimeout to avoid server component errors
+        setTimeout(() => {
+          onStockUpdated()
+        }, 0)
       }
     } catch (error: any) {
       console.error("Error updating quantity:", error)
@@ -308,8 +316,8 @@ function StockRow({
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <span className={stock.quantity < 10 ? "text-destructive font-bold" : ""}>
-              {stock.quantity}
+            <span className={currentQuantity < 10 ? "text-destructive font-bold" : ""}>
+              {currentQuantity}
             </span>
             {isAdmin && (
               <Button
@@ -347,8 +355,6 @@ function StockRow({
 }
 
 function ProductActions({ variantId, productName }: { variantId?: string, productName: string }) {
-  const router = useRouter()
-  
   const handleEdit = async () => {
     if (!variantId) {
       toast.error("Product variant ID is missing")
@@ -370,8 +376,8 @@ function ProductActions({ variantId, productName }: { variantId?: string, produc
       }
 
       const variantTyped = variant as { product_id: string }
-      // Use router.push instead of window.location for better navigation
-      router.push(`/products/${variantTyped.product_id}/edit`)
+      // Use window.location for navigation to avoid server component errors
+      window.location.href = `/products/${variantTyped.product_id}/edit`
     } catch (error: any) {
       console.error("Error loading product:", error)
       toast.error("Failed to load product")

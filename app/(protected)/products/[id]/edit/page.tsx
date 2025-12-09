@@ -52,8 +52,6 @@ interface Variant {
   upc: string | null
   cost: number
   price: number
-  allocation_only: boolean
-  collectible: boolean
 }
 
 export default function EditProductPage() {
@@ -82,8 +80,6 @@ export default function EditProductPage() {
     upc: "",
     cost: 0,
     price: 0,
-    allocation_only: false,
-    collectible: false,
   })
 
   useEffect(() => {
@@ -301,8 +297,6 @@ export default function EditProductPage() {
         upc: newVariant.upc.trim() || null,
         cost: newVariant.cost || 0,
         price: newVariant.price,
-        allocation_only: newVariant.allocation_only,
-        collectible: newVariant.collectible,
       })
       .select()
       .single()
@@ -319,8 +313,6 @@ export default function EditProductPage() {
       upc: "",
       cost: 0,
       price: 0,
-      allocation_only: false,
-      collectible: false,
     })
     setShowNewVariantDialog(false)
     toast.success("Variant added!")
@@ -415,8 +407,6 @@ export default function EditProductPage() {
             upc: variant.upc?.trim() || null,
             cost: variant.cost || 0,
             price: variant.price,
-            allocation_only: variant.allocation_only,
-            collectible: variant.collectible,
           })
           .eq("id", variant.id))
 
@@ -579,8 +569,6 @@ export default function EditProductPage() {
                         <TableHead>UPC</TableHead>
                         <TableHead>Cost</TableHead>
                         <TableHead>Price</TableHead>
-                        <TableHead>Collectible</TableHead>
-                        <TableHead>Allocation Only</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -626,22 +614,6 @@ export default function EditProductPage() {
                               value={variant.price}
                               onChange={(e) => handleVariantChange(variant.id, "price", parseFloat(e.target.value) || 0)}
                               className="w-24"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <input
-                              type="checkbox"
-                              checked={variant.collectible}
-                              onChange={(e) => handleVariantChange(variant.id, "collectible", e.target.checked)}
-                              className="h-4 w-4"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <input
-                              type="checkbox"
-                              checked={variant.allocation_only}
-                              onChange={(e) => handleVariantChange(variant.id, "allocation_only", e.target.checked)}
-                              className="h-4 w-4"
                             />
                           </TableCell>
                           <TableCell>
@@ -828,28 +800,6 @@ export default function EditProductPage() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="variantCollectible"
-                  checked={newVariant.collectible}
-                  onChange={(e) => setNewVariant({ ...newVariant, collectible: e.target.checked })}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="variantCollectible">Collectible</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="variantAllocation"
-                  checked={newVariant.allocation_only}
-                  onChange={(e) => setNewVariant({ ...newVariant, allocation_only: e.target.checked })}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="variantAllocation">Allocation Only</Label>
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => {
@@ -860,8 +810,6 @@ export default function EditProductPage() {
                 upc: "",
                 cost: 0,
                 price: 0,
-                allocation_only: false,
-                collectible: false,
               })
             }}>
               Cancel

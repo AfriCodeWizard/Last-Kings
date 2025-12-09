@@ -12,8 +12,6 @@ interface Variant {
   upc: string | null
   price: number
   cost: number
-  allocation_only: boolean
-  collectible: boolean
 }
 
 interface UPCDialogWrapperProps {
