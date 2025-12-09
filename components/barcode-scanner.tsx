@@ -34,12 +34,12 @@ export function BarcodeScanner({
 
   useEffect(() => {
     if (isOpen) {
-      // Small delay to ensure DOM is ready
+      // Reduced delay for faster startup
       const timer = setTimeout(() => {
         if (!scannerRef.current) {
           startScanning()
         }
-      }, 100)
+      }, 50) // Reduced from 100ms to 50ms for faster startup
       return () => {
         clearTimeout(timer)
         if (scannerRef.current) {
@@ -80,11 +80,12 @@ export function BarcodeScanner({
       }
 
       // Start scanning with optimized settings for BARCODES ONLY (not QR codes)
+      // Optimized for speed and sensitivity
       const config = {
-        fps: 10, // Lower FPS for better performance
+        fps: 30, // Higher FPS for faster, more responsive scanning
         qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          // Use 80% of viewfinder for scanning area
-          const minEdgePercentage = 0.8
+          // Use 90% of viewfinder for larger scanning area (better sensitivity)
+          const minEdgePercentage = 0.9
           const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight)
           const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage)
           return {
@@ -93,7 +94,7 @@ export function BarcodeScanner({
           }
         },
         aspectRatio: 1.0,
-        disableFlip: false, // Allow rotation
+        disableFlip: false, // Allow rotation for better angle detection
         // Configure for barcode scanning only - exclude QR codes
         formatsToSupport: [
           Html5QrcodeSupportedFormats.CODE_128,
@@ -105,36 +106,56 @@ export function BarcodeScanner({
           Html5QrcodeSupportedFormats.UPC_E,
           Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
         ] as any,
+        // Verbose mode disabled for better performance
+        verbose: false,
       }
+
+      // Track last scanned barcode to prevent duplicate scans
+      let lastScannedBarcode = ""
+      let lastScanTime = 0
+      const SCAN_DEBOUNCE_MS = 500 // Prevent duplicate scans within 500ms
 
       await html5QrCode.start(
         cameraId,
         config,
         async (decodedText) => {
           // Successfully scanned a barcode
-          console.log("Barcode scanned:", decodedText, "Type:", typeof decodedText, "Length:", decodedText?.length)
-          if (!decodedText || decodedText.trim().length === 0) {
-            console.error("Empty barcode scanned")
+          const now = Date.now()
+          const trimmedBarcode = decodedText?.trim() || ""
+          
+          // Validate barcode
+          if (!trimmedBarcode || trimmedBarcode.length === 0) {
+            return // Ignore empty scans
+          }
+          
+          // Debounce: ignore duplicate scans within debounce period
+          if (trimmedBarcode === lastScannedBarcode && (now - lastScanTime) < SCAN_DEBOUNCE_MS) {
             return
           }
+          
+          // Update last scan info
+          lastScannedBarcode = trimmedBarcode
+          lastScanTime = now
+          
+          console.log("Barcode scanned:", trimmedBarcode)
+          
           try {
             // Play sound and vibration immediately when barcode is successfully scanned
             const { playScanBeepWithVibration } = await import('@/lib/sound')
             playScanBeepWithVibration()
             
-            // Stop scanning immediately
+            // Stop scanning immediately to prevent duplicate scans
             await stopScanning()
             
             // Close scanner immediately after sound
             onClose()
             
             // Process the scan and await it to ensure errors are caught
-            const trimmedBarcode = decodedText.trim()
             try {
               await onScan(trimmedBarcode)
             } catch (error) {
               console.error("Error processing scan:", error)
-              throw error // Re-throw to be caught by outer try-catch
+              // Don't re-throw - let the user retry if needed
             }
           } catch (error) {
             console.error("Error in scan handler:", error)
@@ -143,9 +164,14 @@ export function BarcodeScanner({
             onClose()
           }
         },
-        () => {
+        (errorMessage) => {
           // Ignore scanning errors (they're frequent during scanning)
           // These are expected while waiting for a barcode
+          // Only log if it's a significant error
+          if (errorMessage && !errorMessage.includes("NotFoundException")) {
+            // Log non-critical errors for debugging
+            console.debug("Scan error (expected):", errorMessage)
+          }
         }
       )
 

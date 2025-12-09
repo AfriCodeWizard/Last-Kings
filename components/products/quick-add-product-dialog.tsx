@@ -91,35 +91,44 @@ export function QuickAddProductDialog({
   }, [formData.brandId, formData.sizeMl, brands])
 
   const loadBrandsAndCategories = async () => {
-    const [brandsRes, categoriesRes] = await Promise.all([
+    const [brandsRes, categoriesRes, productsRes] = await Promise.all([
       supabase.from("brands").select("id, name").order("name"),
       supabase.from("categories").select("id, name").order("name"),
+      supabase.from("products").select("brand_id, product_type"),
     ])
 
     if (brandsRes.data) {
-      // Get catalog brands for the selected product type
-      const catalogBrands = getBrandsForType(formData.productType)
-      
-      // Filter brands: only show brands that match the product type
-      // A brand matches if it's in the catalog for this product type, or if it's not in any catalog
       const allBrands = brandsRes.data as Array<{ id: string; name: string }>
-      const beverageBrands = getBrandsForType('beverage')
-      const liquorBrands = getBrandsForType('liquor')
       
-      const filtered = allBrands.filter(brand => {
-        const isLiquorBrand = liquorBrands.includes(brand.name)
-        const isBeverageBrand = beverageBrands.includes(brand.name)
-        
-        if (formData.productType === 'liquor') {
-          // Show liquor brands or brands not in any catalog
-          return isLiquorBrand || (!isLiquorBrand && !isBeverageBrand)
-        } else {
-          // Show beverage brands or brands not in any catalog
-          return isBeverageBrand || (!isLiquorBrand && !isBeverageBrand)
+      // Build a map of brand_id to product_types from existing products
+      const brandProductTypes = new Map<string, Set<'liquor' | 'beverage'>>()
+      
+      if (productsRes.data) {
+        for (const product of productsRes.data as Array<{ brand_id: string; product_type: 'liquor' | 'beverage' }>) {
+          if (!brandProductTypes.has(product.brand_id)) {
+            brandProductTypes.set(product.brand_id, new Set())
+          }
+          brandProductTypes.get(product.brand_id)!.add(product.product_type)
         }
+      }
+      
+      // Filter brands based on actual product_type in database
+      // If a brand has products, only show it for the matching product_type
+      // If a brand has no products yet, show it in both (for new products)
+      const filtered = allBrands.filter(brand => {
+        const productTypes = brandProductTypes.get(brand.id)
+        if (!productTypes || productTypes.size === 0) {
+          // Brand has no products yet - show in both dropdowns
+          return true
+        }
+        // Brand has products - only show for matching product_type
+        return productTypes.has(formData.productType)
       })
       
-      // Sort brands: catalog brands first, then others
+      // Get catalog brands for sorting
+      const catalogBrands = getBrandsForType(formData.productType)
+      
+      // Sort brands: catalog brands first, then others alphabetically
       const sorted = filtered.sort((a, b) => {
         const aInCatalog = catalogBrands.includes(a.name)
         const bInCatalog = catalogBrands.includes(b.name)
@@ -169,26 +178,35 @@ export function QuickAddProductDialog({
       return
     }
 
-    const { data, error } = await (supabase
-      .from("brands") as any)
-      .insert({ name: newBrandName.trim() })
-      .select()
-      .single()
+    try {
+      const { data, error } = await (supabase
+        .from("brands") as any)
+        .insert({ name: newBrandName.trim() })
+        .select()
+        .single()
 
-    if (error) {
-      toast.error(`Error creating brand: ${error.message}`)
-      return
-    }
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast.error("Brand already exists")
+        } else {
+          toast.error(`Error creating brand: ${error.message}`)
+        }
+        return
+      }
 
-    if (data) {
-      const newBrand = data as { id: string; name: string }
-      // Reload brands to ensure proper sorting and filtering
-      await loadBrandsAndCategories()
-      // Set the newly created brand as selected
-      setFormData({ ...formData, brandId: newBrand.id })
-      setNewBrandName("")
-      setShowNewBrandDialog(false)
-      toast.success("Brand created and added to dropdown!")
+      if (data) {
+        const newBrand = data as { id: string; name: string }
+        // Reload brands to ensure proper sorting and filtering
+        await loadBrandsAndCategories()
+        // Set the newly created brand as selected
+        setFormData({ ...formData, brandId: newBrand.id })
+        setNewBrandName("")
+        setShowNewBrandDialog(false)
+        toast.success("Brand created and added to dropdown!")
+      }
+    } catch (error: any) {
+      console.error("Error adding brand:", error)
+      toast.error(`Error creating brand: ${error.message || "Unknown error"}`)
     }
   }
 
@@ -198,26 +216,35 @@ export function QuickAddProductDialog({
       return
     }
 
-    const { data, error } = await (supabase
-      .from("categories") as any)
-      .insert({ name: newCategoryName.trim() })
-      .select()
-      .single()
+    try {
+      const { data, error } = await (supabase
+        .from("categories") as any)
+        .insert({ name: newCategoryName.trim() })
+        .select()
+        .single()
 
-    if (error) {
-      toast.error(`Error creating category: ${error.message}`)
-      return
-    }
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast.error("Category already exists")
+        } else {
+          toast.error(`Error creating category: ${error.message}`)
+        }
+        return
+      }
 
-    if (data) {
-      const newCategory = data as { id: string; name: string }
-      // Reload categories to ensure proper sorting and filtering
-      await loadBrandsAndCategories()
-      // Set the newly created category as selected
-      setFormData({ ...formData, categoryId: newCategory.id })
-      setNewCategoryName("")
-      setShowNewCategoryDialog(false)
-      toast.success("Category created and added to dropdown!")
+      if (data) {
+        const newCategory = data as { id: string; name: string }
+        // Reload categories to ensure proper sorting and filtering
+        await loadBrandsAndCategories()
+        // Set the newly created category as selected
+        setFormData({ ...formData, categoryId: newCategory.id })
+        setNewCategoryName("")
+        setShowNewCategoryDialog(false)
+        toast.success("Category created and added to dropdown!")
+      }
+    } catch (error: any) {
+      console.error("Error adding category:", error)
+      toast.error(`Error creating category: ${error.message || "Unknown error"}`)
     }
   }
 
@@ -314,6 +341,19 @@ export function QuickAddProductDialog({
       }
 
       toast.success("Product created successfully!")
+      
+      // Reset form
+      setFormData({
+        brandId: "",
+        categoryId: "",
+        productType: "liquor",
+        sizeMl: "750",
+        price: "",
+        cost: "",
+        sku: "",
+        upc: scannedUPC,
+      })
+      
       onProductCreated(variant.id)
       onClose()
     } catch (error: any) {
