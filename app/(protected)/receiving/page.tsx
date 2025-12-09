@@ -285,9 +285,11 @@ export default function ReceivingPage() {
         return
       }
 
-      if (!variants || variants.length !== scannedItems.length) {
+      const typedVariants = variants as Array<{ id: string; upc: string | null; products: { brands: { name: string } } }> | null
+
+      if (!typedVariants || typedVariants.length !== scannedItems.length) {
         const missingVariants = scannedItems.filter(item => 
-          !variants?.some(v => v.id === item.variant_id)
+          !typedVariants?.some(v => v.id === item.variant_id)
         )
         const missingNames = missingVariants.map(item => item.brand_name).join(", ")
         toast.error(`The following products are not logged into the system: ${missingNames}. Please add them first.`)
@@ -295,7 +297,7 @@ export default function ReceivingPage() {
       }
 
       // STRICT CHECK 2: Verify all variants have UPC/barcode
-      const variantsWithoutUPC = variants.filter(v => !v.upc || v.upc.trim().length === 0)
+      const variantsWithoutUPC = typedVariants.filter(v => !v.upc || v.upc.trim().length === 0)
       if (variantsWithoutUPC.length > 0) {
         const variantNames = variantsWithoutUPC.map((v: any) => 
           v.products?.brands?.name || "Unknown"

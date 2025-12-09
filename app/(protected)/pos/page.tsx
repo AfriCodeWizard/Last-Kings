@@ -327,14 +327,14 @@ export default function POSPage() {
 
       if (!floorLocation) {
         // Create floor location if it doesn't exist
-        const { data: newLocation, error: createError } = await supabase
-          .from("inventory_locations")
+        const { data: newLocation, error: createError } = await ((supabase
+          .from("inventory_locations") as any)
           .insert({
             name: "Main Floor",
             type: "floor"
           })
           .select("id")
-          .single()
+          .single())
 
         if (createError || !newLocation) {
           console.error("Error creating floor location:", createError)
@@ -343,13 +343,13 @@ export default function POSPage() {
         }
 
         // Create stock level entry with quantity 0 (don't increase stock)
-        const { error: stockError } = await supabase
-          .from("stock_levels")
+        const { error: stockError } = await ((supabase
+          .from("stock_levels") as any)
           .insert({
             variant_id: variantId,
             location_id: (newLocation as any).id,
             quantity: 0, // Set to 0, don't increase stock
-          })
+          }))
 
         if (stockError) {
           console.error("Error creating stock level:", stockError)
@@ -371,13 +371,13 @@ export default function POSPage() {
 
         // Only create stock level if it doesn't exist (with quantity 0)
         if (!existingStock) {
-          const { error: stockError } = await supabase
-            .from("stock_levels")
+          const { error: stockError } = await ((supabase
+            .from("stock_levels") as any)
             .insert({
               variant_id: variantId,
               location_id: (floorLocation as any).id,
               quantity: 0, // Set to 0, don't increase stock
-            })
+            }))
 
           if (stockError) {
             console.error("Error creating stock level:", stockError)
