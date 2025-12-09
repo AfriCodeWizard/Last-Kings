@@ -114,7 +114,8 @@ export function QuickAddProductDialog({
           return
         }
 
-        const productIds = products.map(p => p.id)
+        const typedProducts = products as Array<{ id: string }>
+        const productIds = typedProducts.map(p => p.id)
 
         // Then get variants with matching size and product
         const { data: variants, error } = await supabase
