@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Html5Qrcode, Html5QrcodeSupportedFormats, Html5QrcodeCameraScanConfig } from "html5-qrcode"
+import { Html5Qrcode, Html5QrcodeCameraScanConfig } from "html5-qrcode"
 import { Button } from "@/components/ui/button"
 import { X, ScanLine, CameraOff } from "lucide-react"
 import {
@@ -135,11 +135,7 @@ export function BarcodeScanner({
         disableFlip: false,
         
         // Note: html5-qrcode library automatically supports all barcode formats
-        // The formatsToSupport option is not available in the config object
         // The library will attempt to decode all supported formats automatically
-        
-        // Disable verbose logging for better performance
-        verbose: false,
         
         // Video constraints for optimal camera settings
         // Note: html5-qrcode passes these to getUserMedia
@@ -152,15 +148,13 @@ export function BarcodeScanner({
           height: { ideal: 1080, min: 720 },
           
           // Advanced camera settings for better barcode detection
-          // These are passed to MediaTrackConstraints
+          // Note: Some properties may not be supported by all browsers
           advanced: [
             // Enable autofocus for continuous focusing (critical for barcodes)
             { focusMode: "continuous" },
             // Enable auto white balance for different lighting conditions
             { whiteBalanceMode: "continuous" },
-            // Enable auto exposure for varying light levels
-            { exposureMode: "continuous" },
-          ] as MediaTrackConstraintSet[],
+          ] as any,
         } as MediaTrackConstraints,
         
         // Experimental features for better detection
