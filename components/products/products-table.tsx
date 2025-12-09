@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Edit, Save, X } from "lucide-react"
+import { Search, Edit, Save, X, Plus } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
 interface Product {
@@ -166,18 +166,31 @@ export function ProductsTable({ products, onProductDeleted }: ProductsTableProps
                     <TableCell>{product.brands?.name || 'Unknown'}</TableCell>
                     <TableCell>{product.categories?.name || 'Unknown'}</TableCell>
                     <TableCell>
-                      {sizes.length > 0 ? sizes.join(', ') : 'No sizes'}
-                    </TableCell>
-                    <TableCell>
                       {variants.length > 0 ? (
-                        <ProductPriceEditor 
+                        <ProductSizeEditor 
                           variants={variants} 
+                          productId={product.id}
                           isAdmin={isAdmin}
                           onUpdated={onProductDeleted}
                         />
                       ) : (
-                        <span className="text-muted-foreground">No pricing</span>
+                        isAdmin ? (
+                          <AddVariantButton 
+                            productId={product.id}
+                            onAdded={onProductDeleted}
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">No sizes</span>
+                        )
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <ProductPriceEditor 
+                        variants={variants} 
+                        productId={product.id}
+                        isAdmin={isAdmin}
+                        onUpdated={onProductDeleted}
+                      />
                     </TableCell>
                     {isAdmin && (
                       <TableCell>
@@ -195,7 +208,377 @@ export function ProductsTable({ products, onProductDeleted }: ProductsTableProps
   )
 }
 
-function ProductPriceEditor({ variants, isAdmin, onUpdated }: { variants: Array<{ id: string, size_ml: number, price: number }>, isAdmin: boolean, onUpdated?: () => void }) {
+function ProductSizeEditor({ variants, productId, isAdmin, onUpdated }: { variants: Array<{ id: string, size_ml: number }>, productId: string, isAdmin: boolean, onUpdated?: () => void }) {
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null)
+  const [editedSize, setEditedSize] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const handleStartEdit = (variant: { id: string, size_ml: number }) => {
+    setEditingVariantId(variant.id)
+    setEditedSize(variant.size_ml.toString())
+  }
+
+  const handleCancel = () => {
+    setEditingVariantId(null)
+    setEditedSize("")
+  }
+
+  const handleSave = async (variantId: string) => {
+    const newSize = parseInt(editedSize)
+    
+    if (isNaN(newSize) || newSize <= 0) {
+      toast.error("Please enter a valid size (greater than 0)")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const { error } = await (supabase
+        .from("product_variants") as any)
+        .update({ size_ml: newSize })
+        .eq("id", variantId)
+
+      if (error) {
+        throw error
+      }
+
+      toast.success("Size updated successfully")
+      setEditingVariantId(null)
+      
+      if (onUpdated) {
+        Promise.resolve().then(() => {
+          try {
+            onUpdated()
+          } catch (error) {
+            console.error("Error in onUpdated callback:", error)
+          }
+        })
+      }
+    } catch (error: any) {
+      console.error("Error updating size:", error)
+      toast.error(`Error updating size: ${error.message || "Unknown error"}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (variants.length === 0) {
+    return isAdmin ? (
+      <AddVariantButton productId={productId} onAdded={onUpdated} />
+    ) : (
+      <span className="text-muted-foreground">No sizes</span>
+    )
+  }
+
+  const sortedVariants = [...variants].sort((a, b) => a.size_ml - b.size_ml)
+  const sizes = sortedVariants.map((v) => v.size_ml === 1000 ? '1L' : `${v.size_ml}ml`)
+
+  // If only one variant, show inline editing
+  if (sortedVariants.length === 1) {
+    const variant = sortedVariants[0]
+    const isEditing = editingVariantId === variant.id
+
+    return (
+      <div className="flex items-center gap-2">
+        {isEditing ? (
+          <>
+            <Input
+              type="number"
+              value={editedSize}
+              onChange={(e) => setEditedSize(e.target.value)}
+              className="w-24 h-8"
+              min="1"
+              disabled={saving}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSave(variant.id)
+                } else if (e.key === "Escape") {
+                  handleCancel()
+                }
+              }}
+            />
+            <span className="text-xs text-muted-foreground">ml</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleSave(variant.id)}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <Save className="h-4 w-4 text-green-500" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCancel}
+              disabled={saving}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4 text-destructive" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <span>{variant.size_ml === 1000 ? '1L' : `${variant.size_ml}ml`}</span>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleStartEdit(variant)}
+                className="h-6 w-6 p-0"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
+  // Multiple variants - show sizes with inline editing for each
+  return (
+    <div className="space-y-1">
+      <div className="text-sm">
+        {sizes.join(', ')}
+      </div>
+      {isAdmin && (
+        <div className="flex flex-wrap gap-2 text-xs">
+          {sortedVariants.map((variant) => {
+            const isEditing = editingVariantId === variant.id
+            const sizeLabel = variant.size_ml === 1000 ? '1L' : `${variant.size_ml}ml`
+            
+            return (
+              <div key={variant.id} className="flex items-center gap-1">
+                {isEditing ? (
+                  <>
+                    <Input
+                      type="number"
+                      value={editedSize}
+                      onChange={(e) => setEditedSize(e.target.value)}
+                      className="w-20 h-7 text-xs"
+                      min="1"
+                      disabled={saving}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleSave(variant.id)
+                        } else if (e.key === "Escape") {
+                          handleCancel()
+                        }
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground">ml</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleSave(variant.id)}
+                      disabled={saving}
+                      className="h-7 w-7 p-0"
+                    >
+                      <Save className="h-3 w-3 text-green-500" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCancel}
+                      disabled={saving}
+                      className="h-7 w-7 p-0"
+                    >
+                      <X className="h-3 w-3 text-destructive" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-muted-foreground">{sizeLabel}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleStartEdit(variant)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AddVariantButton({ productId, onAdded }: { productId: string, onAdded?: () => void }) {
+  const [isAdding, setIsAdding] = useState(false)
+  const [sizeMl, setSizeMl] = useState("")
+  const [price, setPrice] = useState("")
+  const [cost, setCost] = useState("")
+  const [sku, setSku] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const handleStartAdd = () => {
+    setIsAdding(true)
+    setSizeMl("")
+    setPrice("")
+    setCost("")
+    setSku("")
+  }
+
+  const handleCancel = () => {
+    setIsAdding(false)
+    setSizeMl("")
+    setPrice("")
+    setCost("")
+    setSku("")
+  }
+
+  const handleSave = async () => {
+    const size = parseInt(sizeMl)
+    const priceValue = parseFloat(price)
+    const costValue = parseFloat(cost)
+    
+    if (isNaN(size) || size <= 0) {
+      toast.error("Please enter a valid size (greater than 0)")
+      return
+    }
+    
+    if (isNaN(priceValue) || priceValue < 0) {
+      toast.error("Please enter a valid price (0 or greater)")
+      return
+    }
+    
+    if (isNaN(costValue) || costValue < 0) {
+      toast.error("Please enter a valid cost (0 or greater)")
+      return
+    }
+
+    if (!sku.trim()) {
+      toast.error("Please enter a SKU")
+      return
+    }
+
+    setSaving(true)
+    try {
+      // Generate SKU if not provided
+      const finalSku = sku.trim() || `PROD-${productId.slice(0, 8)}-${size}`
+      
+      const { error } = await (supabase
+        .from("product_variants") as any)
+        .insert({
+          product_id: productId,
+          size_ml: size,
+          price: priceValue,
+          cost: costValue,
+          sku: finalSku,
+        })
+
+      if (error) {
+        throw error
+      }
+
+      toast.success("Variant added successfully")
+      setIsAdding(false)
+      
+      if (onAdded) {
+        Promise.resolve().then(() => {
+          try {
+            onAdded()
+          } catch (error) {
+            console.error("Error in onAdded callback:", error)
+          }
+        })
+      }
+    } catch (error: any) {
+      console.error("Error adding variant:", error)
+      toast.error(`Error adding variant: ${error.message || "Unknown error"}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!isAdding) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleStartAdd}
+        className="h-8"
+      >
+        <Plus className="h-4 w-4 mr-1" />
+        Add Variant
+      </Button>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2 p-2 border rounded">
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          placeholder="Size (ml)"
+          value={sizeMl}
+          onChange={(e) => setSizeMl(e.target.value)}
+          className="w-24 h-8"
+          min="1"
+          disabled={saving}
+        />
+        <Input
+          type="number"
+          step="0.01"
+          placeholder="Price"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          className="w-24 h-8"
+          min="0"
+          disabled={saving}
+        />
+        <Input
+          type="number"
+          step="0.01"
+          placeholder="Cost"
+          value={cost}
+          onChange={(e) => setCost(e.target.value)}
+          className="w-24 h-8"
+          min="0"
+          disabled={saving}
+        />
+        <Input
+          type="text"
+          placeholder="SKU"
+          value={sku}
+          onChange={(e) => setSku(e.target.value)}
+          className="w-32 h-8"
+          disabled={saving}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleSave}
+          disabled={saving}
+          className="h-8"
+        >
+          <Save className="h-4 w-4 text-green-500 mr-1" />
+          Save
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleCancel}
+          disabled={saving}
+          className="h-8"
+        >
+          <X className="h-4 w-4 text-destructive mr-1" />
+          Cancel
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function ProductPriceEditor({ variants, productId, isAdmin, onUpdated }: { variants: Array<{ id: string, size_ml: number, price: number }>, productId: string, isAdmin: boolean, onUpdated?: () => void }) {
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null)
   const [editedPrice, setEditedPrice] = useState("")
   const [saving, setSaving] = useState(false)
@@ -250,7 +633,11 @@ function ProductPriceEditor({ variants, isAdmin, onUpdated }: { variants: Array<
   }
 
   if (variants.length === 0) {
-    return <span className="text-muted-foreground">No pricing</span>
+    return isAdmin ? (
+      <AddVariantButton productId={productId} onAdded={onUpdated} />
+    ) : (
+      <span className="text-muted-foreground">No pricing</span>
+    )
   }
 
   const sortedVariants = [...variants].sort((a, b) => a.size_ml - b.size_ml)
