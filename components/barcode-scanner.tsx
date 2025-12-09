@@ -156,11 +156,6 @@ export function BarcodeScanner({
             { whiteBalanceMode: "continuous" },
           ] as any,
         } as MediaTrackConstraints,
-        
-        // Experimental features for better detection
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true, // Use native browser barcode detector if available
-        } as any,
       }
 
       // Debounce time - prevent duplicate scans
