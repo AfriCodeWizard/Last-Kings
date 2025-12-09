@@ -216,29 +216,34 @@ function StockTable({ stockLevels, userRole }: { stockLevels: StockLevel[], user
 }
 
 function ProductActions({ variantId, productName }: { variantId?: string, productName: string }) {
-  const handleEdit = async () => {
-    if (!variantId) return
-    
-    try {
-      // Get the product_id from the variant
-      const { data: variant, error: variantError } = await supabase
-        .from("product_variants")
-        .select("product_id")
-        .eq("id", variantId)
-        .single()
-
-      if (variantError || !variant) {
-        toast.error("Failed to find product")
-        return
-      }
-
-      // Navigate to product detail page
-      const variantTyped = variant as { product_id: string }
-      window.location.href = `/products/${variantTyped.product_id}`
-    } catch (error) {
-      console.error("Error loading product:", error)
-      toast.error("Failed to load product")
+  const handleEdit = () => {
+    if (!variantId) {
+      toast.error("Product variant ID is missing")
+      return
     }
+    
+    // Use router navigation instead of window.location to avoid server component errors
+    // First get product_id, then navigate
+    supabase
+      .from("product_variants")
+      .select("product_id")
+      .eq("id", variantId)
+      .single()
+      .then(({ data: variant, error: variantError }) => {
+        if (variantError || !variant) {
+          toast.error("Failed to find product")
+          console.error("Error fetching variant:", variantError)
+          return
+        }
+
+        const variantTyped = variant as { product_id: string }
+        // Use window.location for navigation to avoid Next.js router issues
+        window.location.href = `/products/${variantTyped.product_id}`
+      })
+      .catch((error) => {
+        console.error("Error loading product:", error)
+        toast.error("Failed to load product")
+      })
   }
 
   const handleDelete = async () => {
