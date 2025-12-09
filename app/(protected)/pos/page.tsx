@@ -52,6 +52,7 @@ export default function POSPage() {
     try {
       console.log("Querying database for UPC:", value.trim())
       // Query without .single() to avoid error when no results
+      // Require products, brands, and categories (no nulls allowed)
       const { data: variants, error } = await (supabase
         .from("product_variants")
         .select(`
@@ -149,43 +150,60 @@ export default function POSPage() {
       // Sum all stock at floor location (including different lot numbers)
       const totalStock = (stockLevels as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
       
-      console.log("Total stock at floor:", totalStock)
+      console.log("Total stock at floor:", totalStock, "for variant:", variant.id)
 
       // Check if item is already in cart
       const existingInCart = cart.find((item) => item.variant_id === variant.id)
       const cartQuantity = existingInCart ? existingInCart.quantity : 0
+      console.log("Cart quantity:", cartQuantity, "Total stock:", totalStock)
 
       // If no stock available and item has been sold, show error
       if (totalStock <= 0 && totalSold > 0) {
+        console.error("Blocking: Item already sold, no stock available")
         toast.error("⚠️ Item already sold - This item has been sold and is no longer available")
         return
       }
 
       // Block sale if no stock at floor location
       if (totalStock <= 0) {
+        console.error("Blocking: No stock at floor location")
         toast.error("No stock available at main floor. Please transfer items from warehouse to main floor first.")
         return
       }
 
       if (cartQuantity >= totalStock) {
+        console.error("Blocking: Cart quantity exceeds available stock")
         toast.error(`Insufficient stock available - Only ${totalStock} units available at main floor`)
         return
       }
 
-      console.log("Variant found:", variant)
+      // Validate required fields before adding to cart
+      if (!variant.products || !variant.products.brands || !variant.products.brands.name) {
+        console.error("Blocking: Missing brand information", variant)
+        toast.error("Product data incomplete - missing brand information")
+        return
+      }
+
+      if (!variant.products.categories || !variant.products.categories.name) {
+        console.error("Blocking: Missing category information", variant)
+        toast.error("Product data incomplete - missing category information")
+        return
+      }
+
+      console.log("All checks passed, adding to cart. Variant:", variant)
       playScanBeepWithVibration()
       const cartItem = {
         variant_id: variant.id,
-        brand_name: variant.products.brands?.name || '',
+        brand_name: variant.products.brands.name,
         product_type: variant.products.product_type || 'liquor',
         size_ml: variant.size_ml,
         price: variant.price,
         quantity: 1,
-        category_name: variant.products.categories?.name,
+        category_name: variant.products.categories.name,
       }
-      console.log("Adding to cart:", cartItem)
+      console.log("Cart item created:", cartItem)
       addToCart(cartItem)
-      console.log("Item added to cart")
+      console.log("Item successfully added to cart")
     } catch (error) {
       console.error("Error scanning barcode:", error)
       const errorMessage = error instanceof Error ? error.message : "Error processing barcode"

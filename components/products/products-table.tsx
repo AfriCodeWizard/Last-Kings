@@ -80,9 +80,18 @@ export function ProductsTable({ products }: ProductsTableProps) {
               </TableRow>
             ) : (
               filteredProducts.map((product) => {
-                const prices = product.product_variants.map((v) => v.price)
-                const minPrice = Math.min(...prices)
-                const maxPrice = Math.max(...prices)
+                // Handle empty product_variants array
+                const validVariants = product.product_variants?.filter((v) => v && typeof v.price === 'number' && !isNaN(v.price)) || []
+                const sizes = validVariants
+                  .sort((a, b) => a.size_ml - b.size_ml)
+                  .map((v) => {
+                    if (v.size_ml === 1000) return '1L'
+                    return `${v.size_ml}ml`
+                  })
+                
+                const prices = validVariants.map((v) => v.price)
+                const minPrice = prices.length > 0 ? Math.min(...prices) : null
+                const maxPrice = prices.length > 0 ? Math.max(...prices) : null
 
                 return (
                   <TableRow key={product.id}>
@@ -94,7 +103,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
                         {product.image_url && (
                           <Image
                             src={product.image_url}
-                            alt={product.brands.name}
+                            alt={product.brands?.name || 'Product'}
                             width={40}
                             height={40}
                             className="rounded"
@@ -102,7 +111,7 @@ export function ProductsTable({ products }: ProductsTableProps) {
                         )}
                         <div>
                           <div className="font-medium">
-                            {product.brands.name}
+                            {product.brands?.name || 'Unknown Brand'}
                           </div>
                           {product.description && (
                             <div className="text-sm text-muted-foreground line-clamp-1">
@@ -112,21 +121,17 @@ export function ProductsTable({ products }: ProductsTableProps) {
                         </div>
                       </Link>
                     </TableCell>
-                    <TableCell>{product.brands.name}</TableCell>
-                    <TableCell>{product.categories.name}</TableCell>
+                    <TableCell>{product.brands?.name || 'Unknown'}</TableCell>
+                    <TableCell>{product.categories?.name || 'Unknown'}</TableCell>
                     <TableCell>
-                      {product.product_variants
-                        .sort((a, b) => a.size_ml - b.size_ml)
-                        .map((v) => {
-                          if (v.size_ml === 1000) return '1L'
-                          return `${v.size_ml}ml`
-                        })
-                        .join(', ')}
+                      {sizes.length > 0 ? sizes.join(', ') : 'No sizes'}
                     </TableCell>
                     <TableCell>
-                      {minPrice === maxPrice
-                        ? formatCurrency(minPrice)
-                        : `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`}
+                      {minPrice !== null && maxPrice !== null
+                        ? (minPrice === maxPrice
+                            ? formatCurrency(minPrice)
+                            : `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`)
+                        : 'No pricing'}
                     </TableCell>
                   </TableRow>
                 )

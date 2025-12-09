@@ -7,14 +7,35 @@ import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { StockLevelsClient } from "./stock-levels-client"
 import { supabase } from "@/lib/supabase/client"
+import type { UserRole } from "@/types/supabase"
 
 export default function InventoryPage() {
   const [stockLevels, setStockLevels] = useState<any[]>([])
   const [locations, setLocations] = useState<any[]>([])
+  const [userRole, setUserRole] = useState<UserRole | null>(null)
 
   useEffect(() => {
     loadData()
+    loadUserRole()
   }, [])
+
+  const loadUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+        if (userData) {
+          setUserRole(userData.role as UserRole)
+        }
+      }
+    } catch (error) {
+      console.error("Error loading user role:", error)
+    }
+  }
 
   const loadData = async () => {
     try {
@@ -37,6 +58,8 @@ export default function InventoryPage() {
               id,
               size_ml,
               sku,
+              cost,
+              price,
               products(
                 brand_id,
                 product_type,
@@ -119,6 +142,7 @@ export default function InventoryPage() {
             floorLocationId={floorLocation?.id}
             backroomLocationId={backroomLocation?.id}
             warehouseLocationId={warehouseLocation?.id}
+            userRole={userRole}
           />
         </CardContent>
       </Card>
