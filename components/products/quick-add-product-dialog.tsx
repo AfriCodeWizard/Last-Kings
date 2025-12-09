@@ -90,6 +90,66 @@ export function QuickAddProductDialog({
     }
   }, [formData.brandId, formData.sizeMl, brands])
 
+  // Auto-populate price and cost from product catalog when brand and size are selected
+  useEffect(() => {
+    const fetchPriceAndCost = async () => {
+      if (!formData.brandId || !formData.sizeMl) return
+      
+      // Only auto-populate if both price and cost are empty (don't overwrite user input)
+      if (formData.price.trim() !== "" || formData.cost.trim() !== "") return
+
+      try {
+        const brandName = brands.find(b => b.id === formData.brandId)?.name
+        if (!brandName) return
+
+        // Query for existing product variants with same brand and size
+        // First get products with this brand
+        const { data: products, error: productsError } = await supabase
+          .from("products")
+          .select("id")
+          .eq("brand_id", formData.brandId)
+          .eq("product_type", formData.productType)
+
+        if (productsError || !products || products.length === 0) {
+          return
+        }
+
+        const productIds = products.map(p => p.id)
+
+        // Then get variants with matching size and product
+        const { data: variants, error } = await supabase
+          .from("product_variants")
+          .select("price, cost")
+          .eq("size_ml", parseInt(formData.sizeMl))
+          .in("product_id", productIds)
+          .limit(1)
+          .maybeSingle()
+
+        if (error) {
+          console.error("Error fetching price/cost:", error)
+          return
+        }
+
+        if (variants) {
+          const typedVariant = variants as { price: number; cost: number } | null
+          if (typedVariant && typedVariant.price !== null && typedVariant.price !== undefined && 
+              typedVariant.cost !== null && typedVariant.cost !== undefined) {
+            setFormData(prev => ({
+              ...prev,
+              price: typedVariant.price.toString(),
+              cost: typedVariant.cost.toString()
+            }))
+          }
+        }
+      } catch (error) {
+        console.error("Error in fetchPriceAndCost:", error)
+      }
+    }
+
+    fetchPriceAndCost()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.brandId, formData.sizeMl, formData.productType])
+
   const loadBrandsAndCategories = async () => {
     // Optimize: Load brands and categories first (fast), then load products in parallel
     const [brandsRes, categoriesRes] = await Promise.all([

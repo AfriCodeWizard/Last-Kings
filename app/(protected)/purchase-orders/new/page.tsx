@@ -60,6 +60,7 @@ export default function NewPurchaseOrderPage() {
   const [poItems, setPoItems] = useState<POItem[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({})
 
   useEffect(() => {
     loadData()
@@ -135,13 +136,14 @@ export default function NewPurchaseOrderPage() {
   }
 
   const updateQuantity = (variantId: string, quantity: number) => {
-    if (quantity < 1) return
+    // Allow any quantity >= 1, or allow temporary values during typing
+    const validQuantity = quantity >= 1 ? quantity : 1
     setPoItems(poItems.map(item =>
       item.variant_id === variantId
         ? {
             ...item,
-            quantity,
-            subtotal: quantity * item.unit_cost
+            quantity: validQuantity,
+            subtotal: validQuantity * item.unit_cost
           }
         : item
     ))
@@ -486,8 +488,29 @@ export default function NewPurchaseOrderPage() {
                             <Input
                               type="number"
                               min="1"
-                              value={item.quantity}
-                              onChange={(e) => updateQuantity(item.variant_id, parseInt(e.target.value) || 1)}
+                              value={quantityInputs[item.variant_id] !== undefined ? quantityInputs[item.variant_id] : item.quantity.toString()}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                // Allow any input while typing
+                                setQuantityInputs(prev => ({ ...prev, [item.variant_id]: val }))
+                              }}
+                              onBlur={(e) => {
+                                const val = e.target.value.trim()
+                                const numVal = val === "" ? 1 : parseInt(val)
+                                const finalQuantity = isNaN(numVal) || numVal < 1 ? 1 : numVal
+                                updateQuantity(item.variant_id, finalQuantity)
+                                // Clear the input state to sync with actual quantity
+                                setQuantityInputs(prev => {
+                                  const updated = { ...prev }
+                                  delete updated[item.variant_id]
+                                  return updated
+                                })
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.currentTarget.blur()
+                                }
+                              }}
                               className="h-8 text-sm font-sans"
                             />
                           </div>
