@@ -72,11 +72,17 @@ export default function EditProductPage() {
       }
 
       if (product) {
+        const productTyped = product as {
+          brand_id: string
+          category_id: string
+          product_type: "liquor" | "beverage"
+          description: string | null
+        }
         setFormData({
-          brand_id: product.brand_id,
-          category_id: product.category_id,
-          product_type: product.product_type,
-          description: product.description || "",
+          brand_id: productTyped.brand_id,
+          category_id: productTyped.category_id,
+          product_type: productTyped.product_type,
+          description: productTyped.description || "",
         })
       }
     } catch (error) {
