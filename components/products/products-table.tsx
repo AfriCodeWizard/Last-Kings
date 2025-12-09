@@ -1,8 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { supabase } from "@/lib/supabase/client"
+import { toast } from "sonner"
+import type { UserRole } from "@/types/supabase"
 
 // Note: Image component requires Next.js Image optimization
 // For production, ensure images are hosted and accessible
@@ -14,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
@@ -37,10 +41,36 @@ interface Product {
 
 interface ProductsTableProps {
   products: Product[]
+  onProductDeleted?: () => void
 }
 
-export function ProductsTable({ products }: ProductsTableProps) {
+export function ProductsTable({ products, onProductDeleted }: ProductsTableProps) {
   const [search, setSearch] = useState("")
+  const [userRole, setUserRole] = useState<UserRole | null>(null)
+
+  useEffect(() => {
+    loadUserRole()
+  }, [])
+
+  const loadUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+        if (userData) {
+          setUserRole((userData as { role: UserRole }).role)
+        }
+      }
+    } catch (error) {
+      console.error("Error loading user role:", error)
+    }
+  }
+
+  const isAdmin = userRole === 'admin'
 
   const filteredProducts = products.filter((product) =>
     (product.product_type === 'liquor' ? 'liquor' : 'beverage').includes(search.toLowerCase()) ||
@@ -69,12 +99,13 @@ export function ProductsTable({ products }: ProductsTableProps) {
               <TableHead>Category</TableHead>
               <TableHead>Size</TableHead>
               <TableHead>Price Range</TableHead>
+              {isAdmin && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">
                   No products found
                 </TableCell>
               </TableRow>
@@ -133,6 +164,11 @@ export function ProductsTable({ products }: ProductsTableProps) {
                             : `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`)
                         : 'No pricing'}
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <ProductActions productId={product.id} productName={product.brands?.name || 'Product'} onDeleted={onProductDeleted} />
+                      </TableCell>
+                    )}
                   </TableRow>
                 )
               })
@@ -140,6 +176,59 @@ export function ProductsTable({ products }: ProductsTableProps) {
           </TableBody>
         </Table>
       </div>
+    </div>
+  )
+}
+
+function ProductActions({ productId, productName, onDeleted }: { productId: string, productName: string, onDeleted?: () => void }) {
+  const handleEdit = () => {
+    window.location.href = `/products/${productId}`
+  }
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${productName}? This will also delete all associated variants, stock levels, sales, and purchase order items. This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      // Delete the product (cascade will handle related records)
+      const { error: deleteError } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", productId)
+
+      if (deleteError) {
+        throw deleteError
+      }
+
+      toast.success("Product deleted successfully")
+      if (onDeleted) {
+        onDeleted()
+      } else {
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error)
+      toast.error("Failed to delete product")
+    }
+  }
+
+  return (
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleEdit}
+      >
+        Edit
+      </Button>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={handleDelete}
+      >
+        Delete
+      </Button>
     </div>
   )
 }

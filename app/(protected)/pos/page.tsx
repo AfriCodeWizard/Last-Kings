@@ -79,12 +79,35 @@ export default function POSPage() {
 
       if (!variants || variants.length === 0) {
         console.error("No variant found for UPC:", value)
-        toast.error("Product not found. Please ensure the barcode is correct.")
+        // Try case-insensitive search as fallback
+        const { data: fallbackVariants } = await (supabase
+          .from("product_variants")
+          .select("upc")
+          .ilike("upc", value.trim())
+          .limit(5) as any)
+        
+        if (fallbackVariants && fallbackVariants.length > 0) {
+          console.warn("Found similar UPCs (case mismatch?):", fallbackVariants.map((v: any) => v.upc))
+          toast.error(`Product not found. Found similar UPCs but exact match failed. Scanned: "${value.trim()}"`)
+        } else {
+          toast.error("Product not found. Please ensure the barcode is correct.")
+        }
         return
       }
 
       const variant = variants[0]
       console.log("Variant found:", variant)
+      console.log("Variant structure check:", {
+        id: variant.id,
+        size_ml: variant.size_ml,
+        price: variant.price,
+        hasProducts: !!variant.products,
+        hasBrands: !!variant.products?.brands,
+        hasCategories: !!variant.products?.categories,
+        brandName: variant.products?.brands?.name,
+        categoryName: variant.products?.categories?.name,
+        productType: variant.products?.product_type
+      })
 
       // Check if item is already sold - check sale_items table first
       const { data: soldItems } = await supabase
@@ -93,11 +116,13 @@ export default function POSPage() {
         .eq("variant_id", variant.id)
 
       const totalSold = (soldItems as Array<{ quantity: number }> | null)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0
+      console.log("Total sold for variant:", totalSold)
 
       // Warn if item has been sold before
       if (totalSold > 0) {
         const productName = variant.products?.brands?.name || 'Product'
         const productSize = variant.size_ml === 1000 ? '1L' : `${variant.size_ml}ml`
+        console.log("Warning: Item has been sold before", { productName, productSize, totalSold })
         toast.warning(`${productName} ${productSize} has been sold before (${totalSold} units sold).`, {
           description: "This item has previous sales history.",
           duration: 5000,

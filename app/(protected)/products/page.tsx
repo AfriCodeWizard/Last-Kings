@@ -190,7 +190,7 @@ export default function ProductsPage() {
                 <div className="text-sm text-muted-foreground mb-4">
                   All liquor products in your inventory ({liquorProducts.length} products)
                 </div>
-                <ProductsTable products={liquorProducts} />
+                <ProductsTable products={liquorProducts} onProductDeleted={loadProducts} />
               </div>
             </TabsContent>
             <TabsContent value="beverage" className="mt-0">
@@ -198,7 +198,7 @@ export default function ProductsPage() {
                 <div className="text-sm text-muted-foreground mb-4">
                   All beverage products in your inventory ({beverageProducts.length} products)
                 </div>
-                <ProductsTable products={beverageProducts} />
+                <ProductsTable products={beverageProducts} onProductDeleted={loadProducts} />
               </div>
             </TabsContent>
           </Tabs>

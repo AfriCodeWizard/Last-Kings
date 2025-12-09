@@ -191,10 +191,13 @@ function StockTable({ stockLevels, userRole }: { stockLevels: StockLevel[], user
                       <Badge variant="default">In Stock</Badge>
                     )}
                   </TableCell>
-                  {isAdmin && (
+                  {isAdmin && variant?.id && (
                     <TableCell>
-                      <ProductActions variantId={variant?.id} productName={variant?.products?.brands?.name || "Product"} />
+                      <ProductActions variantId={variant.id} productName={variant?.products?.brands?.name || "Product"} />
                     </TableCell>
+                  )}
+                  {isAdmin && !variant?.id && (
+                    <TableCell>-</TableCell>
                   )}
                 </TableRow>
               )
