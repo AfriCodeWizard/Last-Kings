@@ -91,38 +91,55 @@ export function QuickAddProductDialog({
   }, [formData.brandId, formData.sizeMl, brands])
 
   const loadBrandsAndCategories = async () => {
-    const [brandsRes, categoriesRes, productsRes] = await Promise.all([
+    // Optimize: Load brands and categories first (fast), then load products in parallel
+    const [brandsRes, categoriesRes] = await Promise.all([
       supabase.from("brands").select("id, name").order("name"),
       supabase.from("categories").select("id, name").order("name"),
-      supabase.from("products").select("brand_id, product_type"),
     ])
+
+    // Load all products with their types in a single optimized query
+    // This is faster than multiple queries and allows us to filter both brands and categories
+    const productsRes = await supabase
+      .from("products")
+      .select("brand_id, category_id, product_type")
+      .limit(10000) // Reasonable limit
 
     if (brandsRes.data) {
       const allBrands = brandsRes.data as Array<{ id: string; name: string }>
       
-      // Build a map of brand_id to product_types from existing products
+      // Build maps of brand_id and category_id to product_types
       const brandProductTypes = new Map<string, Set<'liquor' | 'beverage'>>()
+      const categoryProductTypes = new Map<string, Set<'liquor' | 'beverage'>>()
       
       if (productsRes.data) {
-        for (const product of productsRes.data as Array<{ brand_id: string; product_type: 'liquor' | 'beverage' }>) {
+        for (const product of productsRes.data as Array<{ brand_id: string; category_id: string; product_type: 'liquor' | 'beverage' }>) {
+          // Track brand product types
           if (!brandProductTypes.has(product.brand_id)) {
             brandProductTypes.set(product.brand_id, new Set())
           }
           brandProductTypes.get(product.brand_id)!.add(product.product_type)
+          
+          // Track category product types
+          if (!categoryProductTypes.has(product.category_id)) {
+            categoryProductTypes.set(product.category_id, new Set())
+          }
+          categoryProductTypes.get(product.category_id)!.add(product.product_type)
         }
       }
       
-      // Filter brands based on actual product_type in database
-      // If a brand has products, only show it for the matching product_type
-      // If a brand has no products yet, show it in both (for new products)
+      // Filter brands:
+      // 1. If brand has products of current type, show it
+      // 2. If brand has NO products at all, show it (for new products)
+      // 3. If brand ONLY has products of OTHER type, exclude it
       const filtered = allBrands.filter(brand => {
         const productTypes = brandProductTypes.get(brand.id)
-        if (!productTypes || productTypes.size === 0) {
-          // Brand has no products yet - show in both dropdowns
-          return true
-        }
-        // Brand has products - only show for matching product_type
-        return productTypes.has(formData.productType)
+        const hasCurrentType = productTypes?.has(formData.productType) || false
+        const hasOtherType = productTypes?.has(formData.productType === 'liquor' ? 'beverage' : 'liquor') || false
+        const hasNoProducts = !productTypes || productTypes.size === 0
+        
+        // Show if: has current type products OR has no products at all
+        // Exclude if: only has other type products
+        return hasCurrentType || (hasNoProducts && !hasOtherType)
       })
       
       // Get catalog brands for sorting
@@ -138,14 +155,25 @@ export function QuickAddProductDialog({
       })
       setBrands(sorted)
     }
+    
     if (categoriesRes.data) {
-      // Show all categories (not just catalog ones) so newly added categories are visible
-      // Catalog categories will be sorted first, but all categories are available
-      const catalogCategories = getCategoriesForType(formData.productType)
       const allCategories = categoriesRes.data as Array<{ id: string; name: string }>
       
+      // Filter categories the same way as brands
+      const filtered = allCategories.filter(category => {
+        const productTypes = categoryProductTypes.get(category.id)
+        const hasCurrentType = productTypes?.has(formData.productType) || false
+        const hasOtherType = productTypes?.has(formData.productType === 'liquor' ? 'beverage' : 'liquor') || false
+        const hasNoProducts = !productTypes || productTypes.size === 0
+        
+        return hasCurrentType || (hasNoProducts && !hasOtherType)
+      })
+      
+      // Get catalog categories for sorting
+      const catalogCategories = getCategoriesForType(formData.productType)
+      
       // Sort: catalog categories first, then others alphabetically
-      const sorted = allCategories.sort((a, b) => {
+      const sorted = filtered.sort((a, b) => {
         const aInCatalog = catalogCategories.includes(a.name)
         const bInCatalog = catalogCategories.includes(b.name)
         if (aInCatalog && !bInCatalog) return -1

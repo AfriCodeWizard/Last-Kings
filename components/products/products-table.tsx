@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { supabase } from "@/lib/supabase/client"
@@ -52,6 +52,11 @@ export function ProductsTable({ products, onProductDeleted }: ProductsTableProps
     loadUserRole()
   }, [])
 
+  // Reset search when products change (e.g., when switching tabs)
+  useEffect(() => {
+    setSearch("")
+  }, [products])
+
   const loadUserRole = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -72,11 +77,26 @@ export function ProductsTable({ products, onProductDeleted }: ProductsTableProps
 
   const isAdmin = userRole === 'admin'
 
-  const filteredProducts = products.filter((product) =>
-    (product.product_type === 'liquor' ? 'liquor' : 'beverage').includes(search.toLowerCase()) ||
-    product.brands.name.toLowerCase().includes(search.toLowerCase()) ||
-    product.categories.name.toLowerCase().includes(search.toLowerCase())
-  )
+  // Memoize filtered products to prevent unnecessary recalculations
+  const filteredProducts = useMemo(() => {
+    if (!products || products.length === 0) {
+      return []
+    }
+    return products.filter((product) =>
+      (product.product_type === 'liquor' ? 'liquor' : 'beverage').includes(search.toLowerCase()) ||
+      product.brands?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      product.categories?.name?.toLowerCase().includes(search.toLowerCase())
+    )
+  }, [products, search])
+
+  // Don't render until we have products array (even if empty) to prevent showing stale data
+  if (!Array.isArray(products)) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-muted-foreground">Loading products...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
