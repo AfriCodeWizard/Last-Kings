@@ -301,14 +301,6 @@ export function BarcodeScanner({
               </div>
             </div>
           )}
-
-          {/* Scanning indicator overlay */}
-          {isScanning && (
-            <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/70 px-3 py-2 rounded-lg">
-              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs text-white font-sans">Scanning at 60fps...</span>
-            </div>
-          )}
         </div>
 
         <div className="px-6 pb-6 pt-4 flex justify-between items-center">
