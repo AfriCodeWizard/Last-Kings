@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, AlertTriangle, TrendingUp, DollarSign, TrendingDown, Warehouse } from "lucide-react"
+import { Package, AlertTriangle, TrendingUp, DollarSign, TrendingDown, Warehouse, Sunrise, Sunset, Clock } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Table,
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   const [salesTodayResult, salesYesterdayResult] = await Promise.all([
     supabase
       .from("sales")
-      .select("total_amount")
+      .select("total_amount, payment_method")
       .gte("created_at", today.toISOString()),
     supabase
       .from("sales")
@@ -54,7 +54,16 @@ export default async function DashboardPage() {
       .lt("created_at", today.toISOString())
   ])
 
-  const salesTotal = salesTodayResult.data?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+  // Calculate today's sales by payment method
+  const salesToday = salesTodayResult.data || []
+  const salesTotal = salesToday.reduce((sum, sale) => sum + sale.total_amount, 0)
+  const cashSales = salesToday
+    .filter(sale => sale.payment_method === 'cash')
+    .reduce((sum, sale) => sum + sale.total_amount, 0)
+  const mpesaSales = salesToday
+    .filter(sale => sale.payment_method === 'mpesa')
+    .reduce((sum, sale) => sum + sale.total_amount, 0)
+  
   const salesYesterdayTotal = salesYesterdayResult.data?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
   
   // Calculate percentage change
@@ -234,6 +243,33 @@ export default async function DashboardPage() {
 
   // Get daily stock snapshots - sales data for all users, stock values for admin only
   const todayDateString = new Date().toISOString().split('T')[0]
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const todayEnd = new Date(todayStart)
+  todayEnd.setDate(todayEnd.getDate() + 1)
+  
+  // Get first and last sale of the day for better presentation
+  const [firstSaleResult, lastSaleResult] = await Promise.all([
+    supabase
+      .from("sales")
+      .select("total_amount, created_at")
+      .gte("created_at", todayStart.toISOString())
+      .lt("created_at", todayEnd.toISOString())
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("sales")
+      .select("total_amount, created_at")
+      .gte("created_at", todayStart.toISOString())
+      .lt("created_at", todayEnd.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+  ])
+
+  const firstSale = firstSaleResult.data
+  const lastSale = lastSaleResult.data
   
   // Get all locations first
   const { data: locations } = await supabase
@@ -241,16 +277,21 @@ export default async function DashboardPage() {
     .select("id, name, type")
     .order("name")
 
-    // Get existing snapshots - all users can see sales data
-    const { data: snapshots } = await supabase
-      .from("daily_stock_snapshots")
-      .select(`
-        *,
-        inventory_locations(id, name, type)
-      `)
-      .eq("snapshot_date", todayDateString)
+  // Get existing snapshots - all users can see sales data
+  const { data: snapshots } = await supabase
+    .from("daily_stock_snapshots")
+    .select(`
+      *,
+      inventory_locations(id, name, type)
+    `)
+    .eq("snapshot_date", todayDateString)
 
   let dailySnapshots: any[] = snapshots || []
+  
+  // Calculate total sales from snapshots (sum across all locations)
+  const totalOpeningSales = dailySnapshots.reduce((sum, s) => sum + (s.opening_sales || 0), 0)
+  const totalClosingSales = dailySnapshots.reduce((sum, s) => sum + (s.closing_sales || 0), 0)
+  const totalSalesAmount = dailySnapshots.reduce((sum, s) => sum + (s.total_sales || 0), 0)
 
   // If snapshots don't exist for all locations, create them (admin can trigger this)
   if (user?.role === 'admin' && locations && locations.length > 0) {
@@ -479,67 +520,129 @@ export default async function DashboardPage() {
       </div>
 
       {/* Daily Sales Overview - Available to all users */}
-      {dailySnapshots.length > 0 && (
-        <Card className="overflow-hidden">
-          <CardHeader>
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* Opening Sales Card */}
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="font-sans flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-gold" />
-                  Daily Sales Overview
-                </CardTitle>
-                <CardDescription className="font-sans">
-                  Opening and closing sales for all locations today
-                </CardDescription>
-              </div>
-              {user?.role === 'admin' && <DailySnapshotsRefresh />}
+              <CardTitle className="text-sm font-medium font-sans text-muted-foreground">
+                Opening Sales
+              </CardTitle>
+              <Sunrise className="h-5 w-5 text-blue-500" />
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <div className="min-w-full">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="font-sans whitespace-nowrap">Location</TableHead>
-                    <TableHead className="text-right font-sans whitespace-nowrap">Opening Sales</TableHead>
-                    <TableHead className="text-right font-sans whitespace-nowrap">Closing Sales</TableHead>
-                    <TableHead className="text-right font-sans whitespace-nowrap">Total Sales</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dailySnapshots.map((snapshot: any) => {
-                    const location = Array.isArray(snapshot.inventory_locations)
-                      ? snapshot.inventory_locations[0]
-                      : snapshot.inventory_locations
-                    const locationName = location?.name || 'Unknown Location'
-
-                    return (
-                      <TableRow key={snapshot.id}>
-                        <TableCell className="font-sans whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Warehouse className="h-4 w-4 text-muted-foreground" />
-                            {locationName}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-sans whitespace-nowrap">
-                          {formatCurrency(snapshot.opening_sales || 0)}
-                        </TableCell>
-                        <TableCell className="text-right font-sans whitespace-nowrap">
-                          {formatCurrency(snapshot.closing_sales || 0)}
-                        </TableCell>
-                        <TableCell className="text-right font-sans whitespace-nowrap">
-                          <span className="font-bold text-gold">
-                            {formatCurrency(snapshot.total_sales || 0)}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold font-sans text-blue-500">
+                {formatCurrency(totalOpeningSales || (firstSale?.total_amount || 0))}
+              </div>
+              {firstSale && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground font-sans">
+                  <Clock className="h-3 w-3" />
+                  <span>
+                    {new Date(firstSale.created_at).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </span>
+                </div>
+              )}
+              {!firstSale && totalOpeningSales === 0 && (
+                <p className="text-xs text-muted-foreground font-sans">No sales yet today</p>
+              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Total Sales Card */}
+        <Card className="relative overflow-hidden border-l-4 border-l-gold bg-gradient-to-br from-gold/10 to-transparent">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium font-sans text-muted-foreground">
+                Total Sales Today
+              </CardTitle>
+              <DollarSign className="h-5 w-5 text-gold" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="text-3xl font-bold font-sans text-gold">
+                {formatCurrency(totalSalesAmount || salesTotal)}
+              </div>
+              
+              {/* Cash and M-Pesa breakdown */}
+              <div className="space-y-1.5 pt-2 border-t border-gold/20">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-sans">Cash:</span>
+                  <span className="font-semibold font-sans text-gold">{formatCurrency(cashSales)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-sans">M-Pesa:</span>
+                  <span className="font-semibold font-sans text-green-500">{formatCurrency(mpesaSales)}</span>
+                </div>
+              </div>
+
+              {/* Yesterday comparison */}
+              <div className="pt-2 border-t border-gold/20 space-y-1">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground font-sans">
+                  {salesPercentageChange >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  <span className={salesPercentageChange >= 0 ? 'text-green-500' : 'text-red-500'}>
+                    {salesPercentageChange >= 0 ? '+' : ''}{salesPercentageChange.toFixed(1)}% from yesterday
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground font-sans">
+                  Yesterday: {formatCurrency(salesYesterdayTotal)}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Closing Sales Card */}
+        <Card className="relative overflow-hidden border-l-4 border-l-purple-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium font-sans text-muted-foreground">
+                Closing Sales
+              </CardTitle>
+              <Sunset className="h-5 w-5 text-purple-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold font-sans text-purple-500">
+                {formatCurrency(totalClosingSales || (lastSale?.total_amount || 0))}
+              </div>
+              {lastSale && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground font-sans">
+                  <Clock className="h-3 w-3" />
+                  <span>
+                    {new Date(lastSale.created_at).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </span>
+                </div>
+              )}
+              {!lastSale && totalClosingSales === 0 && (
+                <p className="text-xs text-muted-foreground font-sans">No sales recorded</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Admin refresh button for sales section */}
+      {user?.role === 'admin' && (
+        <div className="flex justify-end">
+          <DailySnapshotsRefresh />
+        </div>
       )}
 
       {/* Admin Only: Daily Stock Values Overview */}
