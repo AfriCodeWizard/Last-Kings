@@ -66,6 +66,13 @@ export default async function DashboardPage() {
   
   const salesYesterdayTotal = salesYesterdayResult.data?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
   
+  // Get all-time sales for the top card
+  const { data: allTimeSalesResult } = await supabase
+    .from("sales")
+    .select("total_amount")
+  
+  const allTimeSalesTotal = allTimeSalesResult?.reduce((sum, sale) => sum + sale.total_amount, 0) || 0
+  
   // Calculate percentage change
   let salesPercentageChange = 0
   if (salesYesterdayTotal > 0) {
@@ -243,26 +250,21 @@ export default async function DashboardPage() {
 
   // Get daily stock snapshots - sales data for all users, stock values for admin only
   const todayDateString = new Date().toISOString().split('T')[0]
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const todayEnd = new Date(todayStart)
-  todayEnd.setDate(todayEnd.getDate() + 1)
   
-  // Get first and last sale of the day for better presentation
+  // Use the same today date range as defined earlier for consistency
+  // Get first and last sale of the day directly from sales table (most accurate)
   const [firstSaleResult, lastSaleResult] = await Promise.all([
     supabase
       .from("sales")
-      .select("total_amount, created_at")
-      .gte("created_at", todayStart.toISOString())
-      .lt("created_at", todayEnd.toISOString())
+      .select("total_amount, created_at, sale_number")
+      .gte("created_at", today.toISOString())
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle(),
     supabase
       .from("sales")
-      .select("total_amount, created_at")
-      .gte("created_at", todayStart.toISOString())
-      .lt("created_at", todayEnd.toISOString())
+      .select("total_amount, created_at, sale_number")
+      .gte("created_at", today.toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -288,10 +290,9 @@ export default async function DashboardPage() {
 
   let dailySnapshots: any[] = snapshots || []
   
-  // Calculate total sales from snapshots (sum across all locations)
-  const totalOpeningSales = dailySnapshots.reduce((sum, s) => sum + (s.opening_sales || 0), 0)
-  const totalClosingSales = dailySnapshots.reduce((sum, s) => sum + (s.closing_sales || 0), 0)
-  const totalSalesAmount = dailySnapshots.reduce((sum, s) => sum + (s.total_sales || 0), 0)
+  // Use actual first and last sale amounts from sales table (more accurate than snapshots)
+  const openingSalesAmount = firstSale?.total_amount || 0
+  const closingSalesAmount = lastSale?.total_amount || 0
 
   // If snapshots don't exist for all locations, create them (admin can trigger this)
   if (user?.role === 'admin' && locations && locations.length > 0) {
@@ -336,19 +337,12 @@ export default async function DashboardPage() {
       <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium font-sans">Sales Today</CardTitle>
+            <CardTitle className="text-sm font-medium font-sans">All Time Sales</CardTitle>
             <DollarSign className="h-4 w-4 text-gold" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold font-sans text-gold break-words overflow-hidden text-ellipsis">{formatCurrency(salesTotal)}</div>
-            <p className={`text-xs font-sans flex items-center gap-1 mt-1 ${salesPercentageChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {salesPercentageChange >= 0 ? (
-                <TrendingUp className="h-3 w-3 flex-shrink-0" />
-              ) : (
-                <TrendingDown className="h-3 w-3 flex-shrink-0" />
-              )}
-              <span className="truncate">{salesPercentageChange >= 0 ? '+' : ''}{salesPercentageChange.toFixed(1)}% from yesterday</span>
-            </p>
+            <div className="text-xl sm:text-2xl font-bold font-sans text-gold break-words overflow-hidden text-ellipsis">{formatCurrency(allTimeSalesTotal)}</div>
+            <p className="text-xs text-muted-foreground font-sans mt-1">Total revenue since system start</p>
           </CardContent>
         </Card>
 
@@ -534,21 +528,21 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="space-y-2">
               <div className="text-2xl font-bold font-sans text-blue-500">
-                {formatCurrency(totalOpeningSales || (firstSale?.total_amount || 0))}
+                {formatCurrency(openingSalesAmount)}
               </div>
-              {firstSale && (
+              {firstSale ? (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground font-sans">
                   <Clock className="h-3 w-3" />
                   <span>
                     {new Date(firstSale.created_at).toLocaleTimeString('en-US', {
                       hour: '2-digit',
                       minute: '2-digit',
+                      second: '2-digit',
                       hour12: true
                     })}
                   </span>
                 </div>
-              )}
-              {!firstSale && totalOpeningSales === 0 && (
+              ) : (
                 <p className="text-xs text-muted-foreground font-sans">No sales yet today</p>
               )}
             </div>
@@ -568,7 +562,7 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="space-y-3">
               <div className="text-3xl font-bold font-sans text-gold">
-                {formatCurrency(totalSalesAmount || salesTotal)}
+                {formatCurrency(salesTotal)}
               </div>
               
               {/* Cash and M-Pesa breakdown */}
@@ -616,21 +610,21 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="space-y-2">
               <div className="text-2xl font-bold font-sans text-purple-500">
-                {formatCurrency(totalClosingSales || (lastSale?.total_amount || 0))}
+                {formatCurrency(closingSalesAmount)}
               </div>
-              {lastSale && (
+              {lastSale ? (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground font-sans">
                   <Clock className="h-3 w-3" />
                   <span>
                     {new Date(lastSale.created_at).toLocaleTimeString('en-US', {
                       hour: '2-digit',
                       minute: '2-digit',
+                      second: '2-digit',
                       hour12: true
                     })}
                   </span>
                 </div>
-              )}
-              {!lastSale && totalClosingSales === 0 && (
+              ) : (
                 <p className="text-xs text-muted-foreground font-sans">No sales recorded</p>
               )}
             </div>
