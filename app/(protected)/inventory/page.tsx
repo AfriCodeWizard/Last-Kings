@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Warehouse, ArrowRightLeft, ClipboardList } from "lucide-react"
@@ -10,6 +11,7 @@ import { supabase } from "@/lib/supabase/client"
 import type { UserRole } from "@/types/supabase"
 
 export default function InventoryPage() {
+  const router = useRouter()
   const [stockLevels, setStockLevels] = useState<any[]>([])
   const [locations, setLocations] = useState<any[]>([])
   const [userRole, setUserRole] = useState<UserRole | null>(null)
@@ -71,7 +73,14 @@ export default function InventoryPage() {
           .eq("id", user.id)
           .single()
         if (userData) {
-          setUserRole((userData as { role: UserRole }).role)
+          const role = (userData as { role: UserRole }).role
+          setUserRole(role)
+          
+          // Redirect staff users - they don't have access to inventory
+          if (role === 'staff') {
+            router.push('/dashboard')
+            return
+          }
         }
       }
     } catch (error) {

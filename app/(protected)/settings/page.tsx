@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { getCurrentUser, canManageUsers, canAddDistributors } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Building2, MapPin, Users } from "lucide-react"
@@ -18,6 +19,11 @@ import { DeleteDistributorAction } from "./distributors/delete-action"
 export default async function SettingsPage() {
   const supabase = await createClient()
   const user = await getCurrentUser()
+  
+  // Redirect staff users - they don't have access to settings
+  if (user?.role === 'staff') {
+    redirect('/dashboard')
+  }
   const userRole = user?.role || 'staff'
 
   // Only fetch data that the user has permission to see

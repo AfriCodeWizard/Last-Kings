@@ -30,7 +30,7 @@ const allNavItems = [
   { href: "/open-tab", label: "Open Tab", icon: Users, roles: ["admin", "manager", "staff"] as UserRole[] },
   { href: "/reports", label: "Reports", icon: FileText, roles: ["admin", "manager"] as UserRole[] },
   { href: "/transactions", label: "Transactions", icon: History, roles: ["admin", "manager", "staff"] as UserRole[] },
-  { href: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager", "staff"] as UserRole[] },
+  { href: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager"] as UserRole[] },
 ]
 
 interface SidebarProps {
