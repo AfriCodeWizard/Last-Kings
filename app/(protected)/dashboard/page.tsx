@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, AlertTriangle, TrendingUp, DollarSign, TrendingDown } from "lucide-react"
+import { Package, AlertTriangle, TrendingUp, DollarSign, TrendingDown, Warehouse } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Table,
@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { DailySnapshotsRefresh } from "@/components/dashboard/daily-snapshots-refresh"
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -231,6 +232,59 @@ export default async function DashboardPage() {
   
   const topBrandName = topMovingBrand ? topMovingBrand[0] : null
 
+  // Get daily stock snapshots - sales data for all users, stock values for admin only
+  const todayDateString = new Date().toISOString().split('T')[0]
+  
+  // Get all locations first
+  const { data: locations } = await supabase
+    .from("inventory_locations")
+    .select("id, name, type")
+    .order("name")
+
+    // Get existing snapshots - all users can see sales data
+    const { data: snapshots } = await supabase
+      .from("daily_stock_snapshots")
+      .select(`
+        *,
+        inventory_locations(id, name, type)
+      `)
+      .eq("snapshot_date", todayDateString)
+
+  let dailySnapshots: any[] = snapshots || []
+
+  // If snapshots don't exist for all locations, create them (admin can trigger this)
+  if (user?.role === 'admin' && locations && locations.length > 0) {
+    const locationIds = new Set(snapshots?.map((s: any) => s.location_id) || [])
+    const missingLocations = locations.filter(loc => !locationIds.has(loc.id))
+
+    if (missingLocations.length > 0) {
+      // Create snapshots for missing locations
+      await Promise.all(
+        missingLocations.map(async (location) => {
+            try {
+              await supabase.rpc('create_daily_snapshot', {
+                p_date: todayDateString,
+                p_location_id: location.id
+              })
+          } catch (error) {
+            console.error(`Error creating snapshot for location ${location.id}:`, error)
+          }
+        })
+      )
+
+        // Fetch updated snapshots
+        const { data: updatedSnapshots } = await supabase
+          .from("daily_stock_snapshots")
+          .select(`
+            *,
+            inventory_locations(id, name, type)
+          `)
+          .eq("snapshot_date", todayDateString)
+
+      dailySnapshots = updatedSnapshots || []
+    }
+  }
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
@@ -423,6 +477,148 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Daily Sales Overview - Available to all users */}
+      {dailySnapshots.length > 0 && (
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-sans flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-gold" />
+                  Daily Sales Overview
+                </CardTitle>
+                <CardDescription className="font-sans">
+                  Opening and closing sales for all locations today
+                </CardDescription>
+              </div>
+              {user?.role === 'admin' && <DailySnapshotsRefresh />}
+            </div>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-sans whitespace-nowrap">Location</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap">Opening Sales</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap">Closing Sales</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap">Total Sales</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dailySnapshots.map((snapshot: any) => {
+                    const location = Array.isArray(snapshot.inventory_locations)
+                      ? snapshot.inventory_locations[0]
+                      : snapshot.inventory_locations
+                    const locationName = location?.name || 'Unknown Location'
+
+                    return (
+                      <TableRow key={snapshot.id}>
+                        <TableCell className="font-sans whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Warehouse className="h-4 w-4 text-muted-foreground" />
+                            {locationName}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-sans whitespace-nowrap">
+                          {formatCurrency(snapshot.opening_sales || 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-sans whitespace-nowrap">
+                          {formatCurrency(snapshot.closing_sales || 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-sans whitespace-nowrap">
+                          <span className="font-bold text-gold">
+                            {formatCurrency(snapshot.total_sales || 0)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Admin Only: Daily Stock Values Overview */}
+      {user?.role === 'admin' && dailySnapshots.length > 0 && (
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-sans flex items-center gap-2">
+                  <Warehouse className="h-5 w-5 text-gold" />
+                  Daily Stock Values Overview
+                </CardTitle>
+                <CardDescription className="font-sans">
+                  Opening and closing stock values for all locations today (Admin Only)
+                </CardDescription>
+              </div>
+              <DailySnapshotsRefresh />
+            </div>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-sans whitespace-nowrap">Location</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap">Opening Stock Value</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap">Closing Stock Value</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap">Stock Change</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dailySnapshots.map((snapshot: any) => {
+                    const location = Array.isArray(snapshot.inventory_locations)
+                      ? snapshot.inventory_locations[0]
+                      : snapshot.inventory_locations
+                    const locationName = location?.name || 'Unknown Location'
+                    const stockChange = (snapshot.closing_stock_value || 0) - (snapshot.opening_stock_value || 0)
+                    const stockChangePercent = snapshot.opening_stock_value > 0
+                      ? ((stockChange / snapshot.opening_stock_value) * 100).toFixed(2)
+                      : '0.00'
+
+                    return (
+                      <TableRow key={snapshot.id}>
+                        <TableCell className="font-sans whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Warehouse className="h-4 w-4 text-muted-foreground" />
+                            {locationName}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-sans whitespace-nowrap">
+                          {formatCurrency(snapshot.opening_stock_value || 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-sans whitespace-nowrap">
+                          {formatCurrency(snapshot.closing_stock_value || 0)}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            {stockChange >= 0 ? (
+                              <TrendingUp className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <TrendingDown className="h-3 w-3 text-red-500" />
+                            )}
+                            <span className={`font-sans ${stockChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {formatCurrency(Math.abs(stockChange))}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              ({stockChangePercent}%)
+                            </span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
