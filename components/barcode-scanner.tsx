@@ -196,28 +196,27 @@ export function BarcodeScanner({
             timestamp: new Date().toISOString()
           })
 
-          // Process scan with debounce to prevent rapid-fire duplicates
+          // Process scan with minimal debounce to prevent rapid-fire duplicates
           scanTimeoutRef.current = setTimeout(async () => {
             try {
-              // Play feedback sound immediately for instant user feedback
-              const { playScanBeepWithVibration } = await import('@/lib/sound')
-              playScanBeepWithVibration()
-
-              // CRITICAL FIX: Stop scanning FIRST to prevent duplicate scans,
-              // but keep dialog open until processing completes
+              // CRITICAL FIX: Close dialog IMMEDIATELY for instant feedback
+              // Stop scanning and close dialog first - instant user feedback
               await stopScanning()
+              onClose() // Close immediately - allows QuickAdd to show instantly
 
-              // Process the scan BEFORE closing dialog
-              // This ensures the dialog stays open during processing, preventing UI freeze
+              // Play feedback sound (non-blocking, happens in background)
+              import('@/lib/sound').then(({ playScanBeepWithVibration }) => {
+                playScanBeepWithVibration()
+              }).catch(() => {
+                // Ignore sound errors - not critical
+              })
+
+              // Process the scan AFTER closing dialog (non-blocking)
+              // This allows QuickAdd dialog to show immediately if product not found
               try {
                 await onScan(trimmedBarcode)
-                // Only close dialog AFTER successful processing
-                // This ensures user sees the result immediately
-                onClose()
               } catch (error) {
                 console.error("Error processing scan:", error)
-                // On error, still close dialog but allow user to retry
-                onClose()
                 // Don't re-throw - allow user to retry by opening scanner again
               }
             } catch (error) {
@@ -226,7 +225,7 @@ export function BarcodeScanner({
               await stopScanning()
               onClose()
             }
-          }, 30) // Optimized delay for fastest response (30ms is enough for sound and prevents race conditions)
+          }, 0) // Zero delay for instant response - debouncing handled by lastScannedRef
         },
         (errorMessage) => {
           // Increment scan attempts for tracking

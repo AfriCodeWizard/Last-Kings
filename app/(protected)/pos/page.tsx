@@ -87,10 +87,11 @@ export default function POSPage() {
       )
 
       if (!variant) {
-        // Product not found - show quick add dialog
+        // Product not found - show quick add dialog IMMEDIATELY
+        // All state updates happen synchronously for instant dialog display
         setScannedUPC(trimmedValue)
         setPendingScanUPC(trimmedValue)
-        setShowQuickAdd(true)
+        setShowQuickAdd(true) // Show immediately - scanner is already closed
         setIsScanning(false)
         return
       }
