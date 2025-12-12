@@ -159,7 +159,8 @@ export function BarcodeScanner({
       }
 
       // Debounce time - prevent duplicate scans
-      const SCAN_DEBOUNCE_MS = 300 // Reduced from 500ms for faster re-scanning
+      // OPTIMIZED: Reduced to 200ms for faster response while still preventing duplicates
+      const SCAN_DEBOUNCE_MS = 200
 
       await html5QrCode.start(
         cameraId,
@@ -198,27 +199,34 @@ export function BarcodeScanner({
           // Process scan with debounce to prevent rapid-fire duplicates
           scanTimeoutRef.current = setTimeout(async () => {
             try {
-              // Play feedback sound immediately
+              // Play feedback sound immediately for instant user feedback
               const { playScanBeepWithVibration } = await import('@/lib/sound')
               playScanBeepWithVibration()
 
-              // Stop scanning immediately to prevent duplicate scans
+              // CRITICAL FIX: Stop scanning FIRST to prevent duplicate scans,
+              // but keep dialog open until processing completes
               await stopScanning()
-              onClose()
 
-              // Process the scan
+              // Process the scan BEFORE closing dialog
+              // This ensures the dialog stays open during processing, preventing UI freeze
               try {
                 await onScan(trimmedBarcode)
+                // Only close dialog AFTER successful processing
+                // This ensures user sees the result immediately
+                onClose()
               } catch (error) {
                 console.error("Error processing scan:", error)
-                // Don't re-throw - allow user to retry
+                // On error, still close dialog but allow user to retry
+                onClose()
+                // Don't re-throw - allow user to retry by opening scanner again
               }
             } catch (error) {
               console.error("Error in scan handler:", error)
+              // Ensure scanner is stopped even on error
               await stopScanning()
               onClose()
             }
-          }, 100) // Small delay to ensure sound plays
+          }, 30) // Optimized delay for fastest response (30ms is enough for sound and prevents race conditions)
         },
         (errorMessage) => {
           // Increment scan attempts for tracking
