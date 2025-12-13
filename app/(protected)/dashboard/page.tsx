@@ -457,7 +457,6 @@ export default async function DashboardPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="font-sans whitespace-nowrap">Brand Name</TableHead>
-                      <TableHead className="font-sans whitespace-nowrap">Category</TableHead>
                       <TableHead className="text-right font-sans whitespace-nowrap">Qty Expected</TableHead>
                       <TableHead className="text-right font-sans whitespace-nowrap">Status</TableHead>
                     </TableRow>
@@ -478,24 +477,10 @@ export default async function DashboardPage() {
                                     : products.brands?.name)
                                 : 'Unknown Brand'))
                         : 'Unknown Brand'
-                      const category = products 
-                        ? (Array.isArray(products) 
-                            ? (products[0]?.categories 
-                                ? (Array.isArray(products[0].categories) 
-                                    ? products[0].categories[0]?.name 
-                                    : products[0].categories?.name)
-                                : 'N/A')
-                            : (products?.categories
-                                ? (Array.isArray(products.categories)
-                                    ? products.categories[0]?.name
-                                    : products.categories?.name)
-                                : 'N/A'))
-                        : 'N/A'
                       
                       return (
                         <TableRow key={item.id}>
                           <TableCell className="font-sans whitespace-nowrap">{brandName}</TableCell>
-                          <TableCell className="font-sans whitespace-nowrap">{category}</TableCell>
                           <TableCell className="text-right font-sans whitespace-nowrap">{item.remainingQty}</TableCell>
                           <TableCell className="text-right whitespace-nowrap">
                             <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-sans">Processing</Badge>
@@ -643,17 +628,19 @@ export default async function DashboardPage() {
       {user?.role === 'admin' && dailySnapshots.length > 0 && (
         <Card className="overflow-hidden">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle className="font-sans flex items-center gap-2">
-                  <Warehouse className="h-5 w-5 text-gold" />
+                <CardTitle className="font-sans flex items-center gap-2 text-lg sm:text-xl">
+                  <Warehouse className="h-4 w-4 sm:h-5 sm:w-5 text-gold" />
                   Daily Stock Values Overview
                 </CardTitle>
-                <CardDescription className="font-sans">
+                <CardDescription className="font-sans text-xs sm:text-sm mt-1">
                   Opening and closing stock values for all locations today (Admin Only)
                 </CardDescription>
               </div>
-              <DailySnapshotsRefresh />
+              <div className="flex-shrink-0">
+                <DailySnapshotsRefresh />
+              </div>
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto">
@@ -661,10 +648,10 @@ export default async function DashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-sans whitespace-nowrap">Location</TableHead>
-                    <TableHead className="text-right font-sans whitespace-nowrap">Opening Stock Value</TableHead>
-                    <TableHead className="text-right font-sans whitespace-nowrap">Closing Stock Value</TableHead>
-                    <TableHead className="text-right font-sans whitespace-nowrap">Stock Change</TableHead>
+                    <TableHead className="font-sans whitespace-nowrap text-xs sm:text-sm">Location</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap text-xs sm:text-sm">Opening</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap text-xs sm:text-sm">Closing</TableHead>
+                    <TableHead className="text-right font-sans whitespace-nowrap text-xs sm:text-sm">Change</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -680,24 +667,24 @@ export default async function DashboardPage() {
 
                     return (
                       <TableRow key={snapshot.id}>
-                        <TableCell className="font-sans whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Warehouse className="h-4 w-4 text-muted-foreground" />
-                            {locationName}
+                        <TableCell className="font-sans whitespace-nowrap text-xs sm:text-sm">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <Warehouse className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="truncate max-w-[120px] sm:max-w-none">{locationName}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-sans whitespace-nowrap">
-                          {formatCurrency(snapshot.opening_stock_value || 0)}
+                        <TableCell className="text-right font-sans whitespace-nowrap text-xs sm:text-sm">
+                          <span className="block sm:inline">{formatCurrency(snapshot.opening_stock_value || 0)}</span>
                         </TableCell>
-                        <TableCell className="text-right font-sans whitespace-nowrap">
-                          {formatCurrency(snapshot.closing_stock_value || 0)}
+                        <TableCell className="text-right font-sans whitespace-nowrap text-xs sm:text-sm">
+                          <span className="block sm:inline">{formatCurrency(snapshot.closing_stock_value || 0)}</span>
                         </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
+                        <TableCell className="text-right whitespace-nowrap text-xs sm:text-sm">
+                          <div className="flex items-center justify-end gap-1 flex-wrap sm:flex-nowrap">
                             {stockChange >= 0 ? (
-                              <TrendingUp className="h-3 w-3 text-green-500" />
+                              <TrendingUp className="h-3 w-3 text-green-500 flex-shrink-0" />
                             ) : (
-                              <TrendingDown className="h-3 w-3 text-red-500" />
+                              <TrendingDown className="h-3 w-3 text-red-500 flex-shrink-0" />
                             )}
                             <span className={`font-sans ${stockChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                               {formatCurrency(Math.abs(stockChange))}

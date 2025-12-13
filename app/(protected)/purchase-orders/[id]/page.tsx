@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table"
 import { formatCurrency, formatDateTime } from "@/lib/utils"
 import { notFound } from "next/navigation"
+import { DraftActions } from "./draft-actions"
 
 export default async function PurchaseOrderDetailPage({
   params,
@@ -117,7 +118,7 @@ export default async function PurchaseOrderDetailPage({
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
           <Badge
             variant={
               purchaseOrder.status === "received"
@@ -132,6 +133,12 @@ export default async function PurchaseOrderDetailPage({
           >
             {purchaseOrder.status}
           </Badge>
+          <DraftActions
+            poId={purchaseOrder.id}
+            distributorEmail={distributor?.email}
+            distributorPhone={distributor?.phone}
+            status={purchaseOrder.status}
+          />
         </div>
       </div>
 
